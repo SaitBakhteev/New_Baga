@@ -1,0 +1,10 @@
+migrations
+.idea
+venv
+.venv
+any_checks.py
+__pycache__/
+app/__pycache__/
+app/database/__pycache__/
+.env
+pyproject.toml
