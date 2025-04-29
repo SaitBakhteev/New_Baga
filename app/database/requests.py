@@ -39,7 +39,7 @@ async def get_all_users():
 async def create_event(data):  # добавить событие
     try:
         await Event.create(
-            # created_at = data['created_at'],
+            created_at = data['created_at'],
             payment_dedline = data['payment_dedline'],
             event_datetime = data['event_datetime'],
             participants_count = data['participants_count'],
@@ -65,18 +65,17 @@ async def create_template(text: str):
 async def get_event(id=None, for_telegramm=False) -> Event():
     try:
         if for_telegramm:
-            return await (Event.get(id=id).prefetch_related('gym').
-                          values(
-                'training_type', 'date', 'begin', 'end',
-                'gym__info', 'participants_count'
-            )
+            return await (
+                Event.get(id=id).values('payment_dedline',
+                                        'event_datetime', 'event_text',
+                                        'participants_count')
             )
         return await Event.get(id=id) if id else \
-            await (Event.all().prefetch_related('gym').
-                   order_by('id').
-                   values('id', 'training_type', 'gym__info',
-                          'date', 'begin', 'end', 'participants_count')
-                   )
+            await (
+                Event.all().order_by('id').
+                values('payment_dedline', 'event_datetime',
+                       'event_text','participants_count')
+            )
     except DoesNotExist:
         return
 

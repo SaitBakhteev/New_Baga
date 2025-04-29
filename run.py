@@ -11,11 +11,11 @@ from apscheduler.triggers.cron import CronTrigger
 from tortoise import Tortoise, connections
 from tortoise.exceptions import DBConnectionError, OperationalError
 
-from app.user import user, user_cache
-from app.database.requests import get_all_users
+from app.user import user_router, user_cache, dedlines
+from app.database.requests import get_all_users, get_event
 
 from config import TOKEN, TORTOISE_ORM
-from app.schedule import delete_events, update
+from app.schedule import delete_events, update, test
 
 logger = logging.getLogger(__name__)
 
@@ -43,8 +43,7 @@ bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 logging.basicConfig(format=logging.BASIC_FORMAT,
                     level=logging.INFO,
                     handlers=[info_file_handler, error_file_handler, msg_handler,
-                              logging.StreamHandler()]
-                    )
+                              logging.StreamHandler()])
 
 
 async def connect_to_db():
@@ -71,25 +70,54 @@ async def connect_to_db():
         return False
 
 
+# Специальные функции перепланировщики
+async def replanner_creator(scheduler):
+    if dedlines:
+        scheduler.add_job(replanner, CronTrigger(hour=dedlines[0].hour,
+                                                 minute=dedlines[0].minute,
+                                                 day=dedlines[0].day,
+                                                 month=dedlines[0].month),
+                          args=[scheduler], id="replanner")
+    else:
+        scheduler.add_job(replanner, CronTrigger(hour=1, minute=56),
+                          args=[scheduler], id="replanner", )
+
+
+async def replanner(scheduler):  # перепланировщик для исполняемых функций
+    if dedlines:
+        await test()
+        dedlines.pop(0)
+    scheduler.remove_job('replanner')
+    await replanner_creator(scheduler)
+
+
 async def startup(dispatcher: Dispatcher):
     try:
         if not await connect_to_db():
             raise RuntimeError
         
-        # Формирование user_cache
+        # Формирование user_cache и dedlines
         users = await get_all_users()
-        for user in users:
-            user_cache[user.tg_id] = user
+        for user_ in users:
+            user_cache[user_.tg_id] = user_
+        events = await get_event()
+        for item in events:
+            dedlines.append(item['payment_dedline'])
 
         scheduler = AsyncIOScheduler()
         scheduler.add_job(delete_events, CronTrigger(hour=1, minute=58))
         scheduler.add_job(update, CronTrigger(hour=2, minute=0))
+        print(109)
+        await replanner_creator(scheduler)
+
         scheduler.start()
+        print(113)
         logger.info("Starting Bot...")
     except RuntimeError as e:
         logger.error(f"On startup: {e}")
     except Exception as e:
         logger.error(f"ERROR_on_Starting Bot...: {e}")
+
 
 async def shutdown(dispatcher: Dispatcher):
     await Tortoise.close_connections()
@@ -98,7 +126,7 @@ async def shutdown(dispatcher: Dispatcher):
 
 async def main():
     dp = Dispatcher()
-    dp.include_router(user)
+    dp.include_router(user_router)
     dp.startup.register(startup)
     dp.shutdown.register(shutdown)
 

@@ -76,3 +76,7 @@ async def update():
         logger.info(f'DBConnectionError: {e}')
     except Exception as e:
         logger.error(e)
+
+
+async def test():
+    print(f"Schedule_test on {datetime.now().strftime("%H:%M")}")

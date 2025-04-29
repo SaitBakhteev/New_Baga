@@ -3,6 +3,7 @@ migrations
 venv
 .venv
 any_checks.py
+checks.py
 __pycache__/
 app/__pycache__/
 app/database/__pycache__/
