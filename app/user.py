@@ -441,6 +441,14 @@ async def add_dedline_and_finish(call: CallbackQuery, state: FSMContext):
         data["payment_dedline"] = payment_dedline
 
         await db_req.create_event(data)
+
+        # Обновление списка dedlines
+        dedlines.clear()
+        events = await db_req.get_event(for_schedule=True)
+        for item in events:
+            payment_dedline = item['payment_dedline']
+            dedlines.append((item['id'], payment_dedline.replace(tzinfo=None)))
+
         await call.message.answer(f"<b>Создана следующая тренировка</b>:\n\n"
                                   f"{data['event_text']}\n\n")
         await state.clear()

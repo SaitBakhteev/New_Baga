@@ -2,7 +2,7 @@ import logging
 from tortoise.exceptions import DoesNotExist
 
 from app.database.models import User, Event, EventUser, Template
-from datetime import datetime, timezone
+from datetime import datetime, timedelta
 
 
 logger = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ async def create_template(text: str):
 
 # Получение объектов моделей
 
-async def get_event(id=None, for_telegramm=False) -> Event():
+async def get_event(id=None, for_telegramm=False, for_schedule=False) -> Event():
     try:
         if for_telegramm:
             return await (
@@ -70,12 +70,19 @@ async def get_event(id=None, for_telegramm=False) -> Event():
                                         'event_datetime', 'event_text',
                                         'participants_count')
             )
-        return await Event.get(id=id) if id else \
-            await (
-                Event.all().order_by('id').
-                values('payment_dedline', 'event_datetime',
-                       'event_text','participants_count')
-            )
+        elif for_schedule:
+            # Добавлять времена планировщику имеет смысл не менее, чем за час до наступдения дедлайна
+            reper_datetime = datetime.now() + timedelta(hours=1)
+            return await (Event.filter(payment_dedline__gt=reper_datetime).order_by('payment_dedline').
+                          values('id', 'payment_dedline'))
+
+        else:
+            return await Event.get(id=id) if id else \
+                await (
+                    Event.all().order_by('id').
+                    values('payment_dedline', 'event_datetime',
+                           'event_text','participants_count')
+                )
     except DoesNotExist:
         return
 

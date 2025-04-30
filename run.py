@@ -73,13 +73,13 @@ async def connect_to_db():
 # Специальные функции перепланировщики
 async def replanner_creator(scheduler):
     if dedlines:
-        scheduler.add_job(replanner, CronTrigger(hour=dedlines[0].hour,
-                                                 minute=dedlines[0].minute,
-                                                 day=dedlines[0].day,
-                                                 month=dedlines[0].month),
+        scheduler.add_job(replanner, CronTrigger(hour=dedlines[0][1].hour,
+                                                 minute=dedlines[0][1].minute,
+                                                 day=dedlines[0][1].day,
+                                                 month=dedlines[0][1].month),
                           args=[scheduler], id="replanner")
     else:
-        scheduler.add_job(replanner, CronTrigger(hour=1, minute=56),
+        scheduler.add_job(replanner, CronTrigger(hour=9, minute=24),
                           args=[scheduler], id="replanner", )
 
 
@@ -100,18 +100,16 @@ async def startup(dispatcher: Dispatcher):
         users = await get_all_users()
         for user_ in users:
             user_cache[user_.tg_id] = user_
-        events = await get_event()
+        events = await get_event(for_schedule=True)
         for item in events:
-            dedlines.append(item['payment_dedline'])
-
+            payment_dedline = item['payment_dedline']
+            dedlines.append((item['id'], payment_dedline.replace(tzinfo=None)))
+        print(f'dedlines = {dedlines}')
         scheduler = AsyncIOScheduler()
         scheduler.add_job(delete_events, CronTrigger(hour=1, minute=58))
         scheduler.add_job(update, CronTrigger(hour=2, minute=0))
-        print(109)
         await replanner_creator(scheduler)
-
         scheduler.start()
-        print(113)
         logger.info("Starting Bot...")
     except RuntimeError as e:
         logger.error(f"On startup: {e}")
