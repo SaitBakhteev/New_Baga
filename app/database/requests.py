@@ -1,3 +1,5 @@
+import uuid
+from uuid import uuid1
 import logging
 from tortoise.exceptions import DoesNotExist
 
@@ -62,7 +64,8 @@ async def create_template(text: str):
 
 # Получение объектов моделей
 
-async def get_event(id=None, for_telegramm=False, for_schedule=False) -> Event():
+async def get_event(id=None, for_telegramm=False,
+                    for_schedule=False, last_record=False) -> Event():
     try:
         if for_telegramm:
             return await (
@@ -73,14 +76,15 @@ async def get_event(id=None, for_telegramm=False, for_schedule=False) -> Event()
         elif for_schedule:
             # Добавлять времена планировщику имеет смысл не менее, чем за час до наступдения дедлайна
             reper_datetime = datetime.now() + timedelta(hours=1)
-            return await (Event.filter(payment_dedline__gt=reper_datetime).order_by('payment_dedline').
-                          values('id', 'payment_dedline'))
-
+            return await (Event.filter(payment_dedline__gt=reper_datetime).order_by('-id').
+                          first().values('id', 'payment_dedline')) if last_record \
+                else await (Event.filter(payment_dedline__gt=reper_datetime).order_by('payment_dedline').
+                            values('id', 'payment_dedline'))
         else:
             return await Event.get(id=id) if id else \
                 await (
                     Event.all().order_by('id').
-                    values('payment_dedline', 'event_datetime',
+                    values('id', 'payment_dedline', 'event_datetime',
                            'event_text','participants_count')
                 )
     except DoesNotExist:
@@ -98,10 +102,7 @@ async def get_event_user(event_id=None, user_tg_id=None,
                           values('user__tg_username',
                                  'user__tg_name',
                                  'payment_confirmed',
-                                 'paid_check',
-                                 'event__training_type',
-                                 'event__date',
-                                 'event__gym__info',))
+                                 'paid_check',))
         else:
 
             # Запрос к БД для выделения знаком 🟢 тех тренировок, на которые уже записан пользователь
@@ -184,11 +185,16 @@ async def update_event_user_for_payment_verify(id_list: list, is_confirm=True):
 
 
 
-# async def test():
-#     try:
-#         now = datetime.now()
-#         await EventUser.filter(id__gt=0).update(created_at=now)
-#     except Exception as e:
-#         logger.error(f'{e}')
-#
-#
+async def test():
+
+    for i in  range(52, 59):
+        await EventUser.create(event_id=14, user_id=i)
+    # for i in range(50):
+    #     posfix = str(uuid1())
+    #     posfix = posfix[:posfix.find('-')]
+    #     await User.create(
+    #         tg_id=-100-i, tg_username=f'username_{posfix}',
+    #         tg_name=f'test_name_{posfix[::-1]}'
+    #     )
+    # #
+    # #

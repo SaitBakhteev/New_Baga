@@ -15,7 +15,7 @@ from app.user import user_router, user_cache, dedlines
 from app.database.requests import get_all_users, get_event
 
 from config import TOKEN, TORTOISE_ORM
-from app.schedule import delete_events, update, test
+from app.schedule import delete_events, update, update
 
 logger = logging.getLogger(__name__)
 
@@ -73,10 +73,10 @@ async def connect_to_db():
 # Специальные функции перепланировщики
 async def replanner_creator(scheduler):
     if dedlines:
-        scheduler.add_job(replanner, CronTrigger(hour=dedlines[0][1].hour,
-                                                 minute=dedlines[0][1].minute,
-                                                 day=dedlines[0][1].day,
-                                                 month=dedlines[0][1].month),
+        scheduler.add_job(replanner, CronTrigger(hour=dedlines[0][0].hour,
+                                                 minute=dedlines[0][0].minute,
+                                                 day=dedlines[0][0].day,
+                                                 month=dedlines[0][0].month),
                           args=[scheduler], id="replanner")
     else:
         scheduler.add_job(replanner, CronTrigger(hour=9, minute=24),
@@ -85,7 +85,7 @@ async def replanner_creator(scheduler):
 
 async def replanner(scheduler):  # перепланировщик для исполняемых функций
     if dedlines:
-        await test()
+        await update(dedlines[0][1])
         dedlines.pop(0)
     scheduler.remove_job('replanner')
     await replanner_creator(scheduler)
@@ -103,11 +103,12 @@ async def startup(dispatcher: Dispatcher):
         events = await get_event(for_schedule=True)
         for item in events:
             payment_dedline = item['payment_dedline']
-            dedlines.append((item['id'], payment_dedline.replace(tzinfo=None)))
-        print(f'dedlines = {dedlines}')
+            dedlines.append((payment_dedline.replace(tzinfo=None), item['id']))
         scheduler = AsyncIOScheduler()
-        scheduler.add_job(delete_events, CronTrigger(hour=1, minute=58))
-        scheduler.add_job(update, CronTrigger(hour=2, minute=0))
+        scheduler.add_job(delete_events, CronTrigger(hour=23, minute=58))
+        scheduler.add_job(delete_events, CronTrigger(hour=11, minute=58))
+        scheduler.add_job(update, CronTrigger(hour=12, minute=0))
+        scheduler.add_job(update, CronTrigger(hour=0, minute=0))
         await replanner_creator(scheduler)
         scheduler.start()
         logger.info("Starting Bot...")

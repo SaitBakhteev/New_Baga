@@ -32,7 +32,7 @@ class Event(Model):  # модель создаваемых тренирвок
     user = fields.ManyToManyField('models.User', related_name="participants", through='EventUser')
 
     def __str__(self):
-        return f'{self.event_text}'
+        return f'event_id = {self.id}'
 
 
 class EventUser(Model):

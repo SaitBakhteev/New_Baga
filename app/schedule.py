@@ -19,56 +19,59 @@
 import logging
 
 from tortoise.exceptions import DoesNotExist, DBConnectionError
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta
 from app.database.models import Event, EventUser
 
 
 logger = logging.getLogger(__name__)
 
+
 # Удаление записей прошедших тренировок из БД
 async def delete_events():
-    today = date.today()
-    await Event.filter(date__lt=today).delete()
+    await Event.filter(event_datetime__lt=datetime.now()).delete()
 
 
-async def update():
+async def update(event_id=None):
     try:
-        # Установка порогового значения даты, определяющая дедлайн оплаты
-        now = datetime.now(tz=timezone.utc)
-        dedline_date = now - timedelta(days=1)
-
         # Получение из БД всех объектов EventUser
-        event_user = await (EventUser.all().select_related('event').
-                            order_by('event_id'))
+        event_user = await (EventUser.filter(event__payment_dedline__isnull=True).
+                            select_related('event').order_by('event_id')) if event_id is None else \
+            await ((EventUser.all().select_related('event').
+                    filter(event_id=event_id).order_by('created_at')))
+        if event_user:
+            # Установка порогового значения даты, определяющая дедлайн оплаты
+            now = datetime.now()
+            dedline_date = now - timedelta(days=1) if event_id is None \
+                else event_user[0].event.payment_dedline.replace(tzinfo=None)
 
-        # Распределение объектов event_user по ключам 'event_id' в новом словаре
-        _dict = dict()
-        for i, item in enumerate(event_user):
-            if item.event.id not in _dict.keys():
-                _dict[item.event.id] = []
-            _dict[item.event.id].append(item)
+            # Распределение объектов event_user по ключам 'event_id' в новом словаре
+            _dict = dict()
+            for i, item in enumerate(event_user):
+                if item.event.id not in _dict.keys():
+                    _dict[item.event.id] = []
+                _dict[item.event.id].append(item)
 
-        # Сортировка сформированных списков в словаре по 'created_at'
-        sorted_dict = {k: sorted(v, key=lambda obj: obj.created_at) for k, v in _dict.items()}
+            # Сортировка сформированных списков в словаре по 'created_at'
+            sorted_dict = {k: sorted(v, key=lambda obj: obj.created_at) for k, v in _dict.items()}
+            print(f'sorted_dict = {sorted_dict}')
+            objects_to_update = []
+            for item in sorted_dict:
+                participants_count = sorted_dict[item][0].event.participants_count
+                seconds = 0
+                for i, obj in enumerate(sorted_dict[item]):
+                    if obj.created_at.replace(tzinfo=None) <= dedline_date:
+                        if (obj.paid_check is None and obj.payment_confirmed is None) \
+                                or (obj.paid_check is not None and obj.payment_confirmed is False):
+                            seconds += 1
+                            update_datetime = now + timedelta(seconds=seconds)
+                            obj.paid_check, obj.payment_confirmed, obj.created_at = (
+                                None, None, update_datetime)
+                            objects_to_update.append(obj)
 
-        objects_to_update = []
-        for item in sorted_dict:
-            participants_count = sorted_dict[item][0].event.participants_count
-            seconds = 0
-            for i, obj in enumerate(sorted_dict[item]):
-                if obj.created_at <= dedline_date:
-                    if (obj.paid_check is None and obj.payment_confirmed is None) \
-                            or (obj.paid_check is not None and obj.payment_confirmed is False):
-                        seconds += 1
-                        update_datetime = now + timedelta(seconds=seconds)
-                        obj.paid_check, obj.payment_confirmed, obj.created_at = (
-                            None, None, update_datetime)
-                        objects_to_update.append(obj)
-        
-                if i == participants_count - 1:
-                    break
-        if objects_to_update:
-            await EventUser.bulk_update(objects_to_update, ['paid_check', 'payment_confirmed', 'created_at'])
+                    if i == participants_count - 1:
+                        break
+            if objects_to_update:
+                await EventUser.bulk_update(objects_to_update, ['paid_check', 'payment_confirmed', 'created_at'])
                
     except DoesNotExist as e:
         logger.info(f'DoesNotExist: {e}')
@@ -76,7 +79,3 @@ async def update():
         logger.info(f'DBConnectionError: {e}')
     except Exception as e:
         logger.error(e)
-
-
-async def test():
-    print(f"Schedule_test on {datetime.now().strftime("%H:%M")}")

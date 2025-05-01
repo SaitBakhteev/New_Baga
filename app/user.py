@@ -10,6 +10,7 @@ import app.database.requests as db_req  # импортирование моду�
 
 from app.calendar import NewCalendar
 
+from app.schedule import update
 from datetime import datetime, timedelta, time, date, timezone
 from aiogram_calendar import SimpleCalendarCallback
 
@@ -154,7 +155,7 @@ async def send_bugs_message(message: Message, state: FSMContext, is_admin:bool):
                              'Возможно причина в отстуствии имени аккаунта телеграмм.')
         logger.error('Error on /bugs')
         pass
-    await cmd_start(message, state, is_admin)
+    await state.clear()
 
 # Список админов
 @user_router.callback_query(F.data=='admin_list')
@@ -171,8 +172,8 @@ async def admin_list(call: CallbackQuery, state: FSMContext):
     except Exception as e:
         logger.error(f'Error_on admin_list: {e}\n'
                      f'user_cache = {user_cache}')
-        await cmd_start(call, state, True)
         await call.message.answer('Возникла неизвестная ошибка.')
+        await state.clear()
 
 
 @user_router.callback_query(F.data.startswith('edit_admin:'))
@@ -192,7 +193,8 @@ async def edit_admin(call: CallbackQuery, state: FSMContext):
     except Exception as e:
         logger.error(e)
         await call.message.answer('Возникла ошибка.')
-        await cmd_start(call, state, True)
+        await state.clear()
+
 
 @user_router.message(st.EditAdminFSM.edit_admin)
 async def finish_edit_admin(message: Message, state: FSMContext):
@@ -207,7 +209,7 @@ async def finish_edit_admin(message: Message, state: FSMContext):
         logger.error(e)
         await message.answer('Возникла ошибка.')
         pass
-    await cmd_start(message, state, True)
+    await state.clear()
 
 
 @user_router.message(Command('event'))
@@ -221,7 +223,6 @@ async def show_trainings(update: Message | CallbackQuery, state: FSMContext, is_
     event_user = await db_req.get_event_user(user_tg_id=user_id)
     if not events:
         await message.answer('Запланированных тренировок пока нет.')
-        await cmd_start(message, state, is_admin)
     else:
         await message.answer(
             'Выберите тренировку.\n'
@@ -245,11 +246,14 @@ async def choose_event(update: CallbackQuery | Message, state: FSMContext,
 
         if isinstance(update, CallbackQuery):
             this_call_query = True if update.data.startswith('choose_event') else False
-
         event_id = int(update.data.split(':')[1]) if this_call_query else data.get('event_id')
         event = next(item for item in events if item['id'] == event_id) if this_call_query else data.get('event')
         event_user = await db_req.get_event_user(event_id=event_id)
-        text = await kb.show_text_about_event(event, event_user)
+
+
+        text = await kb.show_text_about_event(event, event_user,
+                                              tg_id=update.from_user.id,
+                                              is_admin=is_admin)
         call_id = update.from_user.id
 
         await state.update_data(event_id=event_id, event=event, event_user=event_user)
@@ -326,8 +330,6 @@ async def delete_from_training(call: CallbackQuery, state: FSMContext, is_admin:
     # await call.message.delete()
     await state.clear()
     await call.answer('Вы удалились из записи на тренировку.')
-    await cmd_start(call, state, is_admin)
-
 
 
 ''' ДОСТУПНЫЕ АДМИНУ ФУНКЦИИ  '''
@@ -440,17 +442,15 @@ async def add_dedline_and_finish(call: CallbackQuery, state: FSMContext):
                                   f"<b><i>Срок оплаты</i></b>: в течение суток после запси на тренировку\n")
         data["payment_dedline"] = payment_dedline
 
-        await db_req.create_event(data)
-
-        # Обновление списка dedlines
-        dedlines.clear()
-        events = await db_req.get_event(for_schedule=True)
-        for item in events:
-            payment_dedline = item['payment_dedline']
-            dedlines.append((item['id'], payment_dedline.replace(tzinfo=None)))
-
         await call.message.answer(f"<b>Создана следующая тренировка</b>:\n\n"
                                   f"{data['event_text']}\n\n")
+
+        # Два запроса в БД: запись новой тренировки и получение её данных
+        await db_req.create_event(data)
+        last_event = await db_req.get_event(for_schedule=True, last_record=True)
+        payment_dedline, id = last_event['payment_dedline'], last_event['id']
+        dedlines.append((payment_dedline.replace(tzinfo=None), id))
+        dedlines.sort()
         await state.clear()
     except Exception as e:
         await call.message.answer("Возникла ошибка! Повторите создайте тренировки")
@@ -596,7 +596,6 @@ async def chancel_training_state(message: Message, state: FSMContext, is_admin: 
         event_id = data.get('event_id')
         await db_req.delete_event(event_id)
         await message.answer('Тренировка удалена.')
-        await cmd_start(message, state, is_admin)
     else:
         await message.answer('Удаление тренировки отменено.')
         await choose_event(message, state, is_admin)
@@ -605,8 +604,4 @@ async def chancel_training_state(message: Message, state: FSMContext, is_admin: 
 
 @user_router.message(Command('test'))
 async def test(message: Message):
-    # events = await db_req.get_event()
-    # dedlines = [item['payment_dedline'] for item in events]
-
-    print(f"dedlines = {dedlines}\n"
-          f"user_cache = {user_cache}")
+    await update()

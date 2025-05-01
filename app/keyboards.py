@@ -25,12 +25,11 @@ async def return_to_start_markup(process_interrupt=True) -> InlineKeyboardMarkup
 show_trainings_kb = InlineKeyboardButton(text='📅 Выбрать тренировку 🖍', callback_data='show_trainings')
 tutorial_kb = InlineKeyboardButton(text='💡 Инструкция по использованию бота📘', callback_data='tutorial')
 
-''' КНОПКИ ДЛЯ АДМИНА '''
+
+''' КНОПКИ СТАРТОВОГО МЕНЮ АДМИН ПАНЕЛИ '''
 add_event_admin_kb = InlineKeyboardButton(text='💠 Создать тренировку 🗓', callback_data='add_event')
-add_gym_kb_admin_kb = InlineKeyboardButton(text='💠 Добавить зал ➕', callback_data='add_gym')
-look_gym_kb_admin_kb = InlineKeyboardButton(text='💠 Текущие залы 📍', callback_data='show_gyms')
-admin_tutorial_kb = InlineKeyboardButton(text='💠 Инструкция для админа 📙', callback_data='admin_tutorial')
-admin_list_admin_kb = InlineKeyboardButton(text='💠 Список админов 💵', callback_data='admin_list')
+delete_template_kb = InlineKeyboardButton(text='💠 Удалить шаблон 📃', callback_data='delete_template')
+admin_list_admin_kb = InlineKeyboardButton(text='💠 Управление списком админов 😎', callback_data='admin_list')
 
 
 # Отображает в поле ввода сообщения заготовку для создания тренировки
@@ -102,18 +101,18 @@ async def admin_kb_markup(is_any_process=True) -> InlineKeyboardMarkup:
     keyboard.button(text=caption, callback_data='return_to_start')
     return keyboard.as_markup()
 
+
 async def start_menu(admin_perm=False) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardBuilder()
     keyboard.add(show_trainings_kb)
     keyboard.add(tutorial_kb)
     if admin_perm:
         keyboard.add(add_event_admin_kb)
-        keyboard.add(add_gym_kb_admin_kb)
-        keyboard.add(look_gym_kb_admin_kb)
-        keyboard.add(admin_tutorial_kb)
         keyboard.add(admin_list_admin_kb)
+        keyboard.add(delete_template_kb)
     keyboard.adjust(1)
     return keyboard.as_markup()
+
 
 async def keyboard_builder(prefix: str, lst: list,
                            return_to_start_for_interrupt=True
@@ -146,9 +145,15 @@ def show_events_kb(event_user: list, *args) -> InlineKeyboardMarkup:
         events_id_list = [item['event__id'] for item in event_user]
         for arg in args:
             tag = '🟢' if arg['id'] in events_id_list else ''
-            gym, date = arg['gym__info'], arg['date'].strftime("%d.%m.%Y")
-            begin, end = str(arg['begin'])[:-3], str(arg['end'])[:-3]
-            text = f"{tag} {arg['training_type']}; {date}, {begin} - {end}. {gym}"
+            for i, item in enumerate(arg['event_text'].split('\n')):
+                if i > 2:
+                    break
+                fragment = item.split(':')[1].strip()
+                match i:
+                    case 0: training_type = fragment
+                    case 1: gym = fragment
+                    case 2: event_date = fragment
+            text = tag + ' ' + training_type + '; ' + event_date + '; ' + gym
             keyboard.button(text=text, callback_data=f"choose_event:{arg['id']}")
         keyboard.add(return_to_start)
         keyboard.adjust(1)
@@ -158,22 +163,11 @@ def show_events_kb(event_user: list, *args) -> InlineKeyboardMarkup:
 
 
 # Фрмирование текста по тренировке со списком участников
-async def show_text_about_event(event: dict, event_user: list) -> str:
-    # hh = time()
-    date = event['date'].strftime("%d.%m.%Y")
-    begin, end = str(event['begin'])[:-3], str(event['end'])[:-3]
-    # begin, end = event['begin'].strftime('%H:%M'), event['end'].strftime('%H:%M')
-    participants_count = int(event['participants_count'])
-
-    #Формирование текущего списка запланированной тренировки
-    text = (f"<b>{str(event['training_type']).upper()}</b>\n"
-             f"<b>{event['gym__info']}: </b>\n"
-             f"<b><i>Дата</i></b>: {date}.\n"
-             f"<b><i>Начало</i></b>: {begin}.\n"
-             f"<b><i>Конец</i></b>: {end}.\n"
-             f"Квота на тренировку: <b><i>{participants_count} участников</i></b>\n\n"
-             f"<b>ОСНОВНОЙ СПИСОК</b>\n")
-
+async def show_text_about_event(event: dict, event_user: list,
+                                tg_id: int,
+                                is_admin: bool=False) -> str:
+    text, participants_count = event['event_text'], int(event['participants_count'])
+    text += '\n\n<b>ОСНОВНОЙ СПИСОК</b>\n'
     for i, item in enumerate(event_user):
         if i + 1 <= participants_count:
             if item['payment_confirmed'] is False:
@@ -187,7 +181,15 @@ async def show_text_about_event(event: dict, event_user: list) -> str:
         else:
             tag = ''
         name = item["user__tg_name"] if item["user__tg_name"] else ''
-        username = f"@{item['user__tg_username']}" if item['user__tg_username'] else ""
+
+        if is_admin:  # в списке участников имя аккаунта выводится только для админов
+            username = f"@{item['user__tg_username']}" if item['user__tg_username'] else ""
+        else:
+            username = ''
+
+        # Чтобы пользователь видел себя выделенным шрифтом в списке на тренировку
+        name = f'<b><i>{name}</i></b>' if item['user__tg_id'] == tg_id else name
+
         text+=f"{i+1}. {name} {username}  {tag}\n"
         if i + 1 == participants_count:
             text += "\n 📌📌 <b><i>Резерв</i></b>: \n"
