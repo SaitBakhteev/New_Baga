@@ -180,15 +180,17 @@ async def update_event_user(user_id: int, event_id: int,
 async def update_event_user_for_payment_verify(id_list: list, is_confirm=True):
     if is_confirm: # если админ подтверждает оплату
         await EventUser.filter(id__in=id_list).update(payment_confirmed=True)
-    else: # если админ опровергает оплату
+    elif is_confirm == False: # если админ опровергает оплату
         await EventUser.filter(id__in=id_list).update(payment_confirmed=False)
-
+    else:  # если админ отменяет верификацию оплаты
+        print(f'is_conf = {is_confirm}')
+        await EventUser.filter(id__in=id_list).update(payment_confirmed=None)
 
 
 async def test():
-
-    for i in  range(52, 59):
-        await EventUser.create(event_id=14, user_id=i)
+    print('test')
+    # for i in  range(52, 59):
+    #     await EventUser.create(event_id=14, user_id=i)
     # for i in range(50):
     #     posfix = str(uuid1())
     #     posfix = posfix[:posfix.find('-')]

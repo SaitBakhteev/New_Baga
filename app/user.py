@@ -466,12 +466,17 @@ async def payment_verification(call: CallbackQuery, state: FSMContext):
         verify_type = call.data.split(':')[1]
         await state.update_data(verify_type=verify_type)
 
-        if verify_type == 'confirm':
-            text = ("Вы выбрали тип верификации <i>'✅ Подтвердить оплату'</i>.\n"
+        if verify_type == 'change':
+            text = ("Вы выбрали тип верификации <i>'✖️ Отменить верификацию оплаты'</i>. "
+                    "Данное действие вы можете осуществить для участников с <u>любым</u> статусом.\n")
+
+        elif verify_type == 'confirm':
+            text = ("Вы выбрали тип верификации <i>'✅ Подтвердить оплату'</i>. "
                     "Данное действие вы можете осуществить только для участников со статусами ✔️, ⚠️ и ❌.\n")
+
         else:
-            text = ("Вы выбрали тип верификации <i>'❌ Опровергнуть оплату'</i>.\n"
-                    "Данное действие вы можете осуществить только для участников со статусом ✔️.\n"
+            text = ("Вы выбрали тип верификации <i>'❌ Опровергнуть оплату'</i>. "
+                    "Данное действие вы можете осуществить только для участников со статусом ✔️. "
                     "Если ни один из выбранных вами участников не будет соответствовать данному критерию, "
                     "то бот отменит операцию.\n")
 
@@ -503,9 +508,12 @@ async def confirm_payment(message: Message, state: FSMContext, is_admin: bool):
         if any(num > participants_count or num==0 for num in number_list):
             raise IndexError
         index_list =  list(map(lambda x: x-1, number_list))
+        print(f'index_list = {index_list}')
 
         # Формирование списка id объектов EventUser для обновления в БД значений поля 'payment_confirmed'
-        if verify_type == 'confirm':  # Подтвердить платеж можно только, если поле 'payment_confirmed' не True
+        if verify_type == 'change':  # Отменить верификацию оплаты ✖️
+            id_list = [event_user[i]['id'] for i in index_list]
+        elif verify_type == 'confirm':  # Подтвердить платеж можно только, если поле 'payment_confirmed' не True
             id_list = [event_user[i]['id'] for i in index_list if event_user[i]['payment_confirmed'] is not True]
         else: # Опровергнуть платеж можно, если 'payment_confirmed' пустое и 'paid_check' не пустое
             id_list = [event_user[i]['id'] for i in index_list if event_user[i]['payment_confirmed'] is None
@@ -513,7 +521,9 @@ async def confirm_payment(message: Message, state: FSMContext, is_admin: bool):
 
         # Обновление в БД
         if len(id_list) > 0:
-            if verify_type=='refute':
+            if verify_type=='change':
+                await db_req.update_event_user_for_payment_verify(id_list, is_confirm=None)
+            elif verify_type=='refute':
                 await db_req.update_event_user_for_payment_verify(id_list, is_confirm=False)
             else:
                 await db_req.update_event_user_for_payment_verify(id_list)
@@ -604,4 +614,4 @@ async def chancel_training_state(message: Message, state: FSMContext, is_admin: 
 
 @user_router.message(Command('test'))
 async def test(message: Message):
-    await update()
+    await db_req.test()

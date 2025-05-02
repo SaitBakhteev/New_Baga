@@ -143,7 +143,9 @@ def show_events_kb(event_user: list, *args) -> InlineKeyboardMarkup:
     try:
         keyboard = InlineKeyboardBuilder()
         events_id_list = [item['event__id'] for item in event_user]
+
         for arg in args:
+            print('\n')
             tag = '🟢' if arg['id'] in events_id_list else ''
             for i, item in enumerate(arg['event_text'].split('\n')):
                 if i > 2:
@@ -222,6 +224,7 @@ async def sign_up_for_training(
         if availible_pay:
             keyboard.button(text='✔️ Тренировка оплачена', callback_data='i_payed_check')
         if admin_permissions:
+            keyboard.button(text='💠 Отменить верификацию оплаты ✖️', callback_data='verify_payment:change')
             keyboard.button(text='💠 Подтвердить оплату ✅', callback_data='verify_payment:confirm')
             keyboard.button(text='💠 Опровергнуть оплату ❌', callback_data='verify_payment:refute')
             keyboard.button(text='💠 Удалить участника 🚷', callback_data='drop_or_chancel:participant')
