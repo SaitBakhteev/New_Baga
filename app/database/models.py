@@ -12,7 +12,7 @@ from pytz import timezone
 
 class User(Model):
     id = fields.IntField(primary_key=True)
-    tg_id = fields.BigIntField()
+    tg_id = fields.BigIntField(unique=True)
     tg_username = fields.CharField(max_length=64, null=True)
     tg_name = fields.CharField(max_length=64, null=True)
     created_at = fields.DatetimeField(auto_now_add=True, timezone=timezone('Europe/Moscow'))
@@ -29,6 +29,7 @@ class Event(Model):  # модель создаваемых тренирвок
     event_datetime = fields.DatetimeField()  # запланированная дата и время тренировки
     participants_count = fields.IntField(default=18)  # число участников тренировки
     event_text = fields.TextField(null=True)
+    boss = fields.ForeignKeyField('models.User', related_name='boss', null=True, on_delete=fields.NO_ACTION)
     user = fields.ManyToManyField('models.User', related_name="participants", through='EventUser')
 
     def __str__(self):
@@ -42,6 +43,7 @@ class EventUser(Model):
     paid_check = fields.CharField(null=True, max_length=4)  # поле оповещения пользователем боту об оплате
     created_at = fields.DatetimeField(auto_now_add=True, timezone=timezone('Europe/Moscow'))
     payment_confirmed = fields.BooleanField(default=None, null=True)  # подтверждение оплаты, доступное только админу
+    friend = fields.CharField(max_length=50, null=True, on_delete=fields.NO_ACTION)
 
     class Meta:
         table = 'EventUser'

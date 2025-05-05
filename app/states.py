@@ -17,6 +17,10 @@ class CreateEventFSM(StatesGroup):
     dedline_type = State()
 
 
+class EditEvent(StatesGroup):
+    insert_template = State()
+
+
 class UpdateEventUserFSM(StatesGroup):
     payment_confirmed = State()
     reset_confirmed = State()
@@ -25,7 +29,9 @@ class DeleteGymFSM(StatesGroup):
     delete_gym = State()
 
 class DropParticipantFromTrainFSM(StatesGroup):
+    waiting = State()
     drop_participant = State()
+
 
 class ChancelTraininigFSM(StatesGroup):
     chancel_training = State()
@@ -35,3 +41,7 @@ class WrightBugsFSM(StatesGroup):
 
 class EditAdminFSM(StatesGroup):
     edit_admin = State()
+
+
+class DeleteTemplateFSM(StatesGroup):
+    delete_template = State()

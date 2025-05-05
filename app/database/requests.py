@@ -12,17 +12,18 @@ logger = logging.getLogger(__name__)
 
 # ----- ПОЛЬЗОВАТЕЛЬ -----------
 # Создание или получение пользователя
-async def get_or_create_user(from_user, for_telegramm=False):
+async def get_or_create_user(from_user, for_telegramm=False, create_user=False):
     try:
         if for_telegramm:
             return await User.get(tg_id=from_user.id).values('id', 'admin_permissions')
 
         user = await User.get_or_none(tg_id=from_user.id)
-        if not user:
+        if create_user:
             await User.create(
                 tg_id=from_user.id, tg_username=from_user.username,
                 tg_name=from_user.first_name, created_at=datetime.now()
             )
+            return
         return user
     except Exception as e:
         logger.error(f"User is not created; {e}")
@@ -35,6 +36,15 @@ async def get_all_users():
     return await User.all()
 
 
+async def get_user_by_username(tg_username: str):
+    try:
+        boss = await User.filter(tg_username=tg_username).get()
+        return boss.id
+    except DoesNotExist as e:
+        logger.error(f"get_user_by_username: {e}")
+        return None
+
+
 ''' ДЕЙСТВИЯ С БД, ДОСТУПНЫЕ ТОЛЬКО АДМИНУ '''
 # добавление объектов моделей
 
@@ -45,7 +55,8 @@ async def create_event(data):  # добавить событие
             payment_dedline = data['payment_dedline'],
             event_datetime = data['event_datetime'],
             participants_count = data['participants_count'],
-            event_text = data['event_text']
+            event_text = data['event_text'],
+            boss_id = data['boss_id']
         )
     except Exception:
         return
@@ -130,7 +141,7 @@ async def get_event_user(event_id=None, user_tg_id=None,
 
 
 async def get_templates() -> Template():
-    return await Template.all().values('text')
+    return await Template.all().values('id', 'text')
 
 
 # Удаление объектов моделей
@@ -147,6 +158,15 @@ async def delete_event_user(user_id: int, event_id: int):
     except Exception as e:
         logger.error(f'delete_event_user_other error: {e}')
 
+
+async def delete_template(template_id: int):
+    try:
+        template = await Template.filter(id=template_id).get()
+        await template.delete()
+        return 'OK'
+    except DoesNotExist as e:
+        logger.error(f'delete_template: {e}')
+        return 'Error'
 
 """ Обновление времени записи на тренировку для участников,
 которые не выполнинли условия по оплате. Данное обновление
@@ -166,14 +186,37 @@ async def update_admin_and_get(tg_username: str, admin_permissions: bool):
         logger.error(f'update_admin_and_get: {e}')
 
 
+async def update_event(event_id: int, data):
+    await Event.filter(id=event_id).update(
+        event_datetime=data['event_datetime'],
+        participants_count=data['participants_count'],
+        event_text=data['event_text']
+    )
+
+
 # Запрос к БД для обновления записей EventUser при нажатии пользователем кнопки '✔️ Я оплатил'
 async def update_event_user(user_id: int, event_id: int,
-                            paid_check: bool, payment_confirmed: bool):
-    logger.error(f'even - {event_id}; user: {user_id}')
-    if paid_check and not payment_confirmed:
-        await (EventUser.filter(user_id=user_id,
-                               event_id=event_id).
-               update(paid_check='paid'))
+                            payment_notify: bool = False,
+                            replace_to_end: bool=None):
+    try:
+        print(f'event_id = {event_id}; user: {user_id}')
+        if payment_notify:
+            await (EventUser.filter(user_id=user_id,
+                                   event_id=event_id).
+                   update(paid_check='paid'))
+        elif replace_to_end:
+            await (EventUser.filter(user_id=user_id,
+                                   event_id=event_id).
+                   update(created_at=datetime.now()))
+
+        else:
+            await (EventUser.filter(user_id=user_id,
+                                   event_id=event_id).
+                   update(paid_check=None, payment_confirmed=None))
+    except DoesNotExist:
+        logger.error(f'update_event_user: Does Not exist')
+    except Exception as e:
+        logger.error(f'update_event_user: {e}')
 
 
 # Запрос к БД для обновления записей EventUser при проверке админом оплаты

@@ -13,6 +13,13 @@ logger = logging.getLogger(__name__)
 # Кнопка возврата в стартовое меню в виде переменной и функции в зависимости от контекста
 return_to_start = InlineKeyboardButton(text='⤴️ В начало', callback_data='return_to_start')
 
+registration_kb = InlineKeyboardMarkup(
+    inline_keyboard=[[InlineKeyboardButton(
+        text='🖍 Регистрация', callback_data='registration'
+    )
+    ]]
+)
+
 
 async def return_to_start_markup(process_interrupt=True) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardBuilder()
@@ -32,6 +39,15 @@ delete_template_kb = InlineKeyboardButton(text='💠 Удалить шаблон
 admin_list_admin_kb = InlineKeyboardButton(text='💠 Управление списком админов 😎', callback_data='admin_list')
 
 
+async def admin_panel():
+    keyboard = InlineKeyboardBuilder()
+    keyboard.add(add_event_admin_kb)
+    keyboard.add(delete_template_kb)
+    keyboard.add(admin_list_admin_kb)
+    keyboard.adjust(1)
+    return keyboard.as_markup()
+
+
 # Отображает в поле ввода сообщения заготовку для создания тренировки
 async def input_template(current_template: str = None,
                          save: bool = False,
@@ -48,6 +64,7 @@ async def input_template(current_template: str = None,
                         "Длительность: 2 часа\n"
                         "❗️Число участников: 12\n"
                         "Стоимость тренировки: 350\n"
+                        "❗️Босс тренировки:\n"
                         "Как оплатить: перевод на карту Сбер 1111 2222 3333 4744, Рустам Вагизович. Б")
             title = "Чистый шаблон"
         else:
@@ -205,7 +222,8 @@ async def show_text_about_event(event: dict, event_user: list,
 async def sign_up_for_training(
         signed_up_for_training: bool,
         availible_pay: bool,
-        admin_permissions=False
+        admin_permissions=False, payment_confirmed=False,
+        availible_notify_by_payment: bool = None,
 ) -> InlineKeyboardMarkup:
     try:
         keyboard = InlineKeyboardBuilder()
@@ -221,19 +239,46 @@ async def sign_up_for_training(
             ))
 
         # Эта кнопка доступна при соблюдении 2 условий: участник в основном списке, поле 'payment_confirmed' в БД not True
-        if availible_pay:
-            keyboard.button(text='✔️ Тренировка оплачена', callback_data='i_payed_check')
+        # Пока не подтвердил оплату, кнопки уведомдления или отмены уведомсления об оплате доступны
+        if payment_confirmed is not True and signed_up_for_training:
+            if availible_pay:
+                text, call = '✔️ Тренировка оплачена', 'payment_notify:i_payed_check'
+            else:
+                text, call = '✖️ Отменить оповещение об оплате', 'payment_notify:i_chancelled_check'
+
+            # Кнопка уведомления об оплате или её отмена доступна, только если участник не в резерве
+            if availible_notify_by_payment:
+                keyboard.button(text=text, callback_data=call)
         if admin_permissions:
-            keyboard.button(text='💠 Отменить верификацию оплаты ✖️', callback_data='verify_payment:change')
+            keyboard.button(text='💠 Отмена верификации 🔘', callback_data='verify_payment:change')
             keyboard.button(text='💠 Подтвердить оплату ✅', callback_data='verify_payment:confirm')
             keyboard.button(text='💠 Опровергнуть оплату ❌', callback_data='verify_payment:refute')
+            keyboard.button(text='💠 Сдвинуть в конец очереди ⬇️',
+                            callback_data='drop_or_chancel:replace_to_end')
             keyboard.button(text='💠 Удалить участника 🚷', callback_data='drop_or_chancel:participant')
+            keyboard.button(text='💠 Редактировать тренировку ✏️', callback_data=f'edit_event')
             keyboard.button(text='💠 🚫 ОТМЕНИТЬ ТРЕНИРОВКУ 💥', callback_data='drop_or_chancel:chancel_training')
         keyboard.add(return_to_start)
         keyboard.adjust(1)
         return keyboard.as_markup()
     except Exception as e:
         logging.error(e)
+
+
+# Клавиатура подтверждения удаления или перемещения в конец очереди участника
+drop_participant_kb = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Да', callback_data='drop_paricipant:yes'),
+     InlineKeyboardButton(text='Нет', callback_data='drop_paricipant:No')]
+])
+
+
+# Клавиатура для вставки текущего шаблона редактируемой тренировки
+async def insert_template_on_edit_admin(template: str) -> InlineKeyboardMarkup:
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text='Вставить текущий шаблон тренировки',
+                              switch_inline_query_current_chat=template)]
+    ])
+    return keyboard
 
 
 ''' Функция, возвращающая инлайновые кнопки по записи на спортивные тренировки. 

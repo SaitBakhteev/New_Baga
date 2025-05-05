@@ -3350,3 +3350,1914 @@ KeyError: 'current_template'
 2025-04-29 14:24:30,714 - __main__ - ERROR - ERROR_on_Starting Bot...: 'datetime.datetime' object is not subscriptable
 2025-04-29 14:39:02,596 - __main__ - ERROR - ERROR_on_Starting Bot...: The following arguments have not been supplied: scheduler
 2025-04-29 14:39:07,306 - __main__ - ERROR - ERROR_on_Starting Bot...: The following arguments have not been supplied: scheduler
+2025-04-29 21:41:16,427 - __main__ - ERROR - ERROR_on_Starting Bot...: 'NoneType' object has no attribute 'hour'
+2025-04-29 21:42:33,512 - __main__ - ERROR - ERROR_on_Starting Bot...: 'NoneType' object has no attribute 'hour'
+2025-04-29 21:45:28,269 - __main__ - ERROR - ERROR_on_Starting Bot...: 'NoneType' object has no attribute 'hour'
+2025-04-30 10:09:10,554 - aiogram.event - ERROR - Cause exception while process update id=812799485 by bot id=6984364717
+TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Превышен таймаут семафора]
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiohttp\connector.py", line 1068, in _wrap_create_connection
+    sock = await aiohappyeyeballs.start_connection(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiohappyeyeballs\impl.py", line 122, in start_connection
+    raise first_exception
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiohappyeyeballs\impl.py", line 73, in start_connection
+    sock = await _connect_sock(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiohappyeyeballs\impl.py", line 208, in _connect_sock
+    await loop.sock_connect(sock, address)
+  File "D:\Programs\Python\Lib\asyncio\proactor_events.py", line 727, in sock_connect
+    return await self._proactor.connect(sock, address)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Programs\Python\Lib\asyncio\windows_events.py", line 798, in _poll
+    value = callback(transferred, key, ov)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Programs\Python\Lib\asyncio\windows_events.py", line 594, in finish_connect
+    ov.getresult()
+OSError: [WinError 121] Превышен таймаут семафора
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\client\session\aiohttp.py", line 181, in make_request
+    async with session.post(
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiohttp\client.py", line 1357, in __aenter__
+    self._resp: _RetType = await self._coro
+                           ^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiohttp\client.py", line 661, in _request
+    conn = await self._connector.connect(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiohttp\connector.py", line 556, in connect
+    proto = await self._create_connection(req, traces, timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiohttp\connector.py", line 1009, in _create_connection
+    _, proto = await self._create_direct_connection(req, traces, timeout)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiohttp\connector.py", line 1343, in _create_direct_connection
+    raise last_exc
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiohttp\connector.py", line 1312, in _create_direct_connection
+    transp, proto = await self._wrap_create_connection(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiohttp\connector.py", line 1083, in _wrap_create_connection
+    raise client_error(req.connection_key, exc) from exc
+aiohttp.client_exceptions.ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Превышен таймаут семафора]
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 67, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 349, in add_event
+    await call.message.answer("Шаблоны для создания тренировки",
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\methods\base.py", line 84, in emit
+    return await bot(self)
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\client\bot.py", line 488, in __call__
+    return await self.session(self, method, timeout=request_timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\client\session\base.py", line 254, in __call__
+    return cast(TelegramType, await middleware(bot, method))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\client\session\aiohttp.py", line 188, in make_request
+    raise TelegramNetworkError(method=method, message=f"{type(e).__name__}: {e}")
+aiogram.exceptions.TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Превышен таймаут семафора]
+2025-04-30 20:42:34,268 - __main__ - ERROR - ERROR_on_Starting Bot...: list.append() takes exactly one argument (2 given)
+2025-04-30 21:05:19,620 - __main__ - ERROR - ERROR_on_Starting Bot...: 'ValuesQuery' object is not iterable
+2025-04-30 21:05:43,910 - __main__ - ERROR - ERROR_on_Starting Bot...: 'ValuesQuery' object is not iterable
+2025-04-30 21:06:53,263 - __main__ - ERROR - ERROR_on_Starting Bot...: 'ValuesQuery' object is not iterable
+2025-04-30 21:07:23,613 - __main__ - ERROR - ERROR_on_Starting Bot...: 'ValuesQuery' object is not iterable
+2025-04-30 21:09:16,746 - __main__ - ERROR - ERROR_on_Starting Bot...: 'ValuesQuery' object is not iterable
+2025-04-30 21:11:08,857 - __main__ - ERROR - ERROR_on_Starting Bot...: 'int' object has no attribute 'hour'
+2025-04-30 21:16:59,784 - __main__ - ERROR - ERROR_on_Starting Bot...: 'int' object has no attribute 'hour'
+2025-04-30 21:17:58,113 - __main__ - ERROR - ERROR_on_Starting Bot...: 'int' object has no attribute 'hour'
+2025-05-01 01:58:00,387 - apscheduler.executors.default - ERROR - Job "delete_events (trigger: cron[hour='1', minute='58'], next run at: 2025-05-02 01:58:00 MSK)" raised an exception
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\apscheduler\executors\base_py3.py", line 30, in run_coroutine_job
+    retval = await job.func(*job.args, **job.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\schedule.py", line 32, in delete_events
+    await Event.filter(date__lt=today).delete()
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\queryset.py", line 1214, in __await__
+    self._make_query()
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\queryset.py", line 1203, in _make_query
+    self.resolve_filters(
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\queryset.py", line 142, in resolve_filters
+    modifier &= node.resolve(model, model._meta.basetable)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\expressions.py", line 369, in resolve
+    return self._resolve_kwargs(model, table)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\expressions.py", line 327, in _resolve_kwargs
+    key, value = self._get_actual_filter_params(model, raw_key, raw_value)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\expressions.py", line 321, in _get_actual_filter_params
+    raise FieldError(f"Unknown filter param '{key}'. Allowed base values are {allowed}")
+tortoise.exceptions.FieldError: Unknown filter param 'date__lt'. Allowed base values are ['EventUsers', 'created_at', 'event_datetime', 'event_text', 'id', 'participants_count', 'payment_dedline', 'user']
+2025-05-01 02:00:00,474 - apscheduler.executors.default - ERROR - Job "update (trigger: cron[hour='2', minute='0'], next run at: 2025-05-02 02:00:00 MSK)" raised an exception
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\apscheduler\executors\base_py3.py", line 30, in run_coroutine_job
+    retval = await job.func(*job.args, **job.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\schedule.py", line 96, in update
+    event_users = await (
+                  ^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\queryset.py", line 1051, in __await__
+    self._make_query()
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\queryset.py", line 1013, in _make_query
+    self.resolve_filters(
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\queryset.py", line 142, in resolve_filters
+    modifier &= node.resolve(model, model._meta.basetable)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\expressions.py", line 369, in resolve
+    return self._resolve_kwargs(model, table)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\expressions.py", line 331, in _resolve_kwargs
+    filter_modifier = self._resolve_regular_kwarg(model, key, value, table)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\expressions.py", line 288, in _resolve_regular_kwarg
+    modifier = self._resolve_nested_filter(model, key, value, table)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\expressions.py", line 219, in _resolve_nested_filter
+    modifier = q.resolve(
+               ^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\expressions.py", line 369, in resolve
+    return self._resolve_kwargs(model, table)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\expressions.py", line 331, in _resolve_kwargs
+    filter_modifier = self._resolve_regular_kwarg(model, key, value, table)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\expressions.py", line 290, in _resolve_regular_kwarg
+    criterion, join = self._process_filter_kwarg(model, key, value, table)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\expressions.py", line 275, in _process_filter_kwarg
+    else model._meta.db.executor_class._field_to_db(field_object, value, model)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\backends\base\executor.py", line 178, in _field_to_db
+    return field_object.to_db_value(attr, instance)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\fields\base.py", line 260, in to_db_value
+    value = self.field_type(value)  # pylint: disable=E1102
+            ^^^^^^^^^^^^^^^^^^^^^^
+TypeError: int() argument must be a string, a bytes-like object or a real number, not 'builtin_function_or_method'
+2025-05-01 02:22:28,052 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramRetryAfter: Telegram server says - Flood control exceeded on method 'GetUpdates'. Retry in 5 seconds.
+Original description: Too Many Requests: retry after 5
+(background on this error at: https://core.telegram.org/bots/faq#my-bot-is-hitting-limits-how-do-i-avoid-this)
+2025-05-01 02:22:31,560 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramServerError: Telegram server says - Bad Gateway
+2025-05-01 02:55:11,560 - aiogram.event - ERROR - Cause exception while process update id=812799590 by bot id=6984364717
+AttributeError: 'EventUser' object has no attribute 'participants_count'
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 68, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 607, in test
+    await update_on_payment_dedline(13)
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\schedule.py", line 90, in update_on_payment_dedline
+    participants_count = event_users[0].participants_count
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'EventUser' object has no attribute 'participants_count'
+2025-05-01 02:55:35,071 - aiogram.event - ERROR - Cause exception while process update id=812799591 by bot id=6984364717
+AttributeError: 'EventUser' object has no attribute 'participants_count'
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 68, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 607, in test
+    await update_on_payment_dedline(13)
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\schedule.py", line 90, in update_on_payment_dedline
+    # participants_count = event_users[0].participants_count
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'EventUser' object has no attribute 'participants_count'
+2025-05-01 03:28:23,808 - app.schedule - ERROR - can't compare offset-naive and offset-aware datetimes
+2025-05-01 03:30:25,076 - app.schedule - ERROR - can't compare offset-naive and offset-aware datetimes
+2025-05-01 03:31:25,360 - app.schedule - ERROR - can't compare offset-naive and offset-aware datetimes
+2025-05-01 03:34:58,818 - app.schedule - ERROR - can't compare offset-naive and offset-aware datetimes
+2025-05-01 03:36:33,823 - app.schedule - ERROR - can't compare offset-naive and offset-aware datetimes
+2025-05-01 03:37:19,368 - app.schedule - ERROR - can't compare offset-naive and offset-aware datetimes
+2025-05-01 03:39:30,097 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [Errno 1] [SSL: APPLICATION_DATA_AFTER_CLOSE_NOTIFY] application data after close notify (_ssl.c:2685)
+2025-05-01 03:39:37,573 - app.schedule - ERROR - can't compare offset-naive and offset-aware datetimes
+2025-05-01 03:41:00,175 - app.schedule - ERROR - can't compare offset-naive and offset-aware datetimes
+2025-05-01 10:19:58,200 - app.schedule - ERROR - can't compare offset-naive and offset-aware datetimes
+2025-05-01 10:20:53,518 - app.schedule - ERROR - can't compare offset-naive and offset-aware datetimes
+2025-05-01 10:23:25,691 - app.schedule - ERROR - can't compare offset-naive and offset-aware datetimes
+2025-05-01 10:49:55,182 - app.schedule - ERROR - 'int' object has no attribute 'payment_dedline'
+2025-05-01 18:49:21,261 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2025-05-01 18:49:22,264 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [getaddrinfo failed]
+2025-05-01 18:49:23,700 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [getaddrinfo failed]
+2025-05-01 18:49:25,679 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [getaddrinfo failed]
+2025-05-01 18:49:28,199 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [getaddrinfo failed]
+2025-05-01 18:49:31,668 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [getaddrinfo failed]
+2025-05-01 18:49:35,889 - asyncio - ERROR - Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "D:\Programs\Python\Lib\asyncio\events.py", line 84, in _run
+    self._context.run(self._callback, *self._args)
+  File "D:\Programs\Python\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionAbortedError: [WinError 10053] Программа на вашем хост-компьютере разорвала установленное подключение
+2025-05-01 21:11:00,246 - app.keyboards - ERROR - err = 'id'
+2025-05-01 21:12:41,534 - app.keyboards - ERROR - err = 'id'
+2025-05-01 21:14:54,350 - app.keyboards - ERROR - err = 'id'
+2025-05-01 21:15:25,060 - app.keyboards - ERROR - err = 'id'
+2025-05-01 21:43:08,340 - app.database.requests - ERROR - even - 13; user: 1
+2025-05-02 15:36:52,479 - app.user - ERROR - name 'pa' is not defined
+2025-05-02 16:17:46,631 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2025-05-02 16:51:33,545 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [Errno 1] [SSL: APPLICATION_DATA_AFTER_CLOSE_NOTIFY] application data after close notify (_ssl.c:2685)
+2025-05-02 19:23:20,663 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2025-05-02 19:23:21,721 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [getaddrinfo failed]
+2025-05-02 19:23:23,052 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [getaddrinfo failed]
+2025-05-02 19:23:24,763 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [getaddrinfo failed]
+2025-05-02 19:23:27,012 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [getaddrinfo failed]
+2025-05-02 19:23:29,893 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [getaddrinfo failed]
+2025-05-02 19:24:10,014 - asyncio - ERROR - Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "D:\Programs\Python\Lib\asyncio\events.py", line 84, in _run
+    self._context.run(self._callback, *self._args)
+  File "D:\Programs\Python\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionAbortedError: [WinError 10053] Программа на вашем хост-компьютере разорвала установленное подключение
+2025-05-02 19:25:20,035 - app.database.requests - ERROR - update_admin_and_get: 'NoneType' object has no attribute 'tg_name'
+2025-05-02 19:25:20,036 - app.user - ERROR - cannot unpack non-iterable NoneType object
+2025-05-02 20:32:56,967 - app.database.requests - ERROR - get_event_user: User DoesNotExist
+2025-05-02 20:32:56,968 - app.keyboards - ERROR - err = 'NoneType' object is not iterable
+2025-05-02 20:33:34,525 - app.database.requests - ERROR - get_event_user: User DoesNotExist
+2025-05-02 20:33:34,525 - app.keyboards - ERROR - err = 'NoneType' object is not iterable
+2025-05-02 20:36:10,035 - app.database.requests - ERROR - get_event_user: User DoesNotExist
+2025-05-02 20:36:10,035 - app.keyboards - ERROR - err = 'NoneType' object is not iterable
+2025-05-02 20:45:26,381 - aiogram.event - ERROR - Cause exception while process update id=812799940 by bot id=6984364717
+NameError: name 'tg_id' is not defined
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 70, in __call__
+    print(f'user_cache[e] = {user_cache[tg_id]}')
+                                        ^^^^^
+NameError: name 'tg_id' is not defined
+2025-05-02 20:47:27,880 - app.database.requests - ERROR - get_event_user: User DoesNotExist
+2025-05-02 20:47:27,880 - app.keyboards - ERROR - err = 'NoneType' object is not iterable
+2025-05-02 20:47:37,277 - app.database.requests - ERROR - get_event_user: User DoesNotExist
+2025-05-02 20:47:37,277 - app.keyboards - ERROR - err = 'NoneType' object is not iterable
+2025-05-02 21:09:33,927 - aiogram.event - ERROR - Cause exception while process update id=812799944 by bot id=6984364717
+ValidationError: 4 validation errors for SendMessage
+reply_markup.InlineKeyboardMarkup
+  Input should be a valid dictionary or instance of InlineKeyboardMarkup [type=model_type, input_value=InlineKeyboardButton(text...ack_game=None, pay=None), input_type=InlineKeyboardButton]
+    For further information visit https://errors.pydantic.dev/2.9/v/model_type
+reply_markup.ReplyKeyboardMarkup
+  Input should be a valid dictionary or instance of ReplyKeyboardMarkup [type=model_type, input_value=InlineKeyboardButton(text...ack_game=None, pay=None), input_type=InlineKeyboardButton]
+    For further information visit https://errors.pydantic.dev/2.9/v/model_type
+reply_markup.ReplyKeyboardRemove
+  Input should be a valid dictionary or instance of ReplyKeyboardRemove [type=model_type, input_value=InlineKeyboardButton(text...ack_game=None, pay=None), input_type=InlineKeyboardButton]
+    For further information visit https://errors.pydantic.dev/2.9/v/model_type
+reply_markup.ForceReply
+  Input should be a valid dictionary or instance of ForceReply [type=model_type, input_value=InlineKeyboardButton(text...ack_game=None, pay=None), input_type=InlineKeyboardButton]
+    For further information visit https://errors.pydantic.dev/2.9/v/model_type
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 51, in __call__
+    await registration(message=event)
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 82, in registration
+    await message.answer(
+          ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\types\message.py", line 2038, in answer
+    return SendMessage(
+           ^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\pydantic\main.py", line 212, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 4 validation errors for SendMessage
+reply_markup.InlineKeyboardMarkup
+  Input should be a valid dictionary or instance of InlineKeyboardMarkup [type=model_type, input_value=InlineKeyboardButton(text...ack_game=None, pay=None), input_type=InlineKeyboardButton]
+    For further information visit https://errors.pydantic.dev/2.9/v/model_type
+reply_markup.ReplyKeyboardMarkup
+  Input should be a valid dictionary or instance of ReplyKeyboardMarkup [type=model_type, input_value=InlineKeyboardButton(text...ack_game=None, pay=None), input_type=InlineKeyboardButton]
+    For further information visit https://errors.pydantic.dev/2.9/v/model_type
+reply_markup.ReplyKeyboardRemove
+  Input should be a valid dictionary or instance of ReplyKeyboardRemove [type=model_type, input_value=InlineKeyboardButton(text...ack_game=None, pay=None), input_type=InlineKeyboardButton]
+    For further information visit https://errors.pydantic.dev/2.9/v/model_type
+reply_markup.ForceReply
+  Input should be a valid dictionary or instance of ForceReply [type=model_type, input_value=InlineKeyboardButton(text...ack_game=None, pay=None), input_type=InlineKeyboardButton]
+    For further information visit https://errors.pydantic.dev/2.9/v/model_type
+2025-05-02 21:09:34,076 - aiogram.event - ERROR - Cause exception while process update id=812799945 by bot id=6984364717
+ValidationError: 4 validation errors for SendMessage
+reply_markup.InlineKeyboardMarkup
+  Input should be a valid dictionary or instance of InlineKeyboardMarkup [type=model_type, input_value=InlineKeyboardButton(text...ack_game=None, pay=None), input_type=InlineKeyboardButton]
+    For further information visit https://errors.pydantic.dev/2.9/v/model_type
+reply_markup.ReplyKeyboardMarkup
+  Input should be a valid dictionary or instance of ReplyKeyboardMarkup [type=model_type, input_value=InlineKeyboardButton(text...ack_game=None, pay=None), input_type=InlineKeyboardButton]
+    For further information visit https://errors.pydantic.dev/2.9/v/model_type
+reply_markup.ReplyKeyboardRemove
+  Input should be a valid dictionary or instance of ReplyKeyboardRemove [type=model_type, input_value=InlineKeyboardButton(text...ack_game=None, pay=None), input_type=InlineKeyboardButton]
+    For further information visit https://errors.pydantic.dev/2.9/v/model_type
+reply_markup.ForceReply
+  Input should be a valid dictionary or instance of ForceReply [type=model_type, input_value=InlineKeyboardButton(text...ack_game=None, pay=None), input_type=InlineKeyboardButton]
+    For further information visit https://errors.pydantic.dev/2.9/v/model_type
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 51, in __call__
+    await registration(message=event)
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 82, in registration
+    await message.answer(
+          ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\types\message.py", line 2038, in answer
+    return SendMessage(
+           ^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\pydantic\main.py", line 212, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 4 validation errors for SendMessage
+reply_markup.InlineKeyboardMarkup
+  Input should be a valid dictionary or instance of InlineKeyboardMarkup [type=model_type, input_value=InlineKeyboardButton(text...ack_game=None, pay=None), input_type=InlineKeyboardButton]
+    For further information visit https://errors.pydantic.dev/2.9/v/model_type
+reply_markup.ReplyKeyboardMarkup
+  Input should be a valid dictionary or instance of ReplyKeyboardMarkup [type=model_type, input_value=InlineKeyboardButton(text...ack_game=None, pay=None), input_type=InlineKeyboardButton]
+    For further information visit https://errors.pydantic.dev/2.9/v/model_type
+reply_markup.ReplyKeyboardRemove
+  Input should be a valid dictionary or instance of ReplyKeyboardRemove [type=model_type, input_value=InlineKeyboardButton(text...ack_game=None, pay=None), input_type=InlineKeyboardButton]
+    For further information visit https://errors.pydantic.dev/2.9/v/model_type
+reply_markup.ForceReply
+  Input should be a valid dictionary or instance of ForceReply [type=model_type, input_value=InlineKeyboardButton(text...ack_game=None, pay=None), input_type=InlineKeyboardButton]
+    For further information visit https://errors.pydantic.dev/2.9/v/model_type
+2025-05-02 21:15:22,276 - app.database.requests - ERROR - get_event_user: User DoesNotExist
+2025-05-02 21:15:22,276 - app.keyboards - ERROR - err = 'NoneType' object is not iterable
+2025-05-02 21:52:41,780 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [Errno 1] [SSL: APPLICATION_DATA_AFTER_CLOSE_NOTIFY] application data after close notify (_ssl.c:2685)
+2025-05-02 22:03:49,724 - aiogram.event - ERROR - Cause exception while process update id=812799981 by bot id=6984364717
+TelegramBadRequest: Telegram server says - Bad Request: MESSAGE_TOO_LONG
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 50, in __call__
+    await registration(message=event)
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 82, in registration
+    await message.answer(
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\methods\base.py", line 84, in emit
+    return await bot(self)
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\client\bot.py", line 488, in __call__
+    return await self.session(self, method, timeout=request_timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\client\session\base.py", line 254, in __call__
+    return cast(TelegramType, await middleware(bot, method))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\client\session\aiohttp.py", line 189, in make_request
+    response = self.check_response(
+               ^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\client\session\base.py", line 120, in check_response
+    raise TelegramBadRequest(method=method, message=description)
+aiogram.exceptions.TelegramBadRequest: Telegram server says - Bad Request: MESSAGE_TOO_LONG
+2025-05-02 22:04:53,726 - aiogram.event - ERROR - Cause exception while process update id=812799983 by bot id=6984364717
+TelegramBadRequest: Telegram server says - Bad Request: MESSAGE_TOO_LONG
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 50, in __call__
+    await registration(message=event)
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 82, in registration
+    await message.answer(
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\methods\base.py", line 84, in emit
+    return await bot(self)
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\client\bot.py", line 488, in __call__
+    return await self.session(self, method, timeout=request_timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\client\session\base.py", line 254, in __call__
+    return cast(TelegramType, await middleware(bot, method))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\client\session\aiohttp.py", line 189, in make_request
+    response = self.check_response(
+               ^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\client\session\base.py", line 120, in check_response
+    raise TelegramBadRequest(method=method, message=description)
+aiogram.exceptions.TelegramBadRequest: Telegram server says - Bad Request: MESSAGE_TOO_LONG
+2025-05-02 22:06:13,383 - aiogram.event - ERROR - Cause exception while process update id=812799984 by bot id=6984364717
+AttributeError: 'Message' object has no attribute 'message'
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 50, in __call__
+    await registration(message=event.message)
+                               ^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\pydantic\main.py", line 856, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'Message' object has no attribute 'message'. Did you mean: 'message_id'?
+2025-05-02 22:06:16,958 - aiogram.event - ERROR - Cause exception while process update id=812799985 by bot id=6984364717
+AttributeError: 'Message' object has no attribute 'message'
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 50, in __call__
+    await registration(message=event.message)
+                               ^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\pydantic\main.py", line 856, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'Message' object has no attribute 'message'. Did you mean: 'message_id'?
+2025-05-02 22:48:09,275 - aiogram.event - ERROR - Cause exception while process update id=812800042 by bot id=6984364717
+TypeError: cmd_start() missing 2 required positional arguments: 'state' and 'is_admin'
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 52, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 108, in registration_callback_query
+    await cmd_start(call.message)
+          ^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: cmd_start() missing 2 required positional arguments: 'state' and 'is_admin'
+2025-05-02 22:52:19,280 - app.database.requests - ERROR - get_event_user: User DoesNotExist
+2025-05-02 22:52:19,280 - app.keyboards - ERROR - err = 'NoneType' object is not iterable
+2025-05-02 23:01:14,573 - aiogram.event - ERROR - Cause exception while process update id=812800076 by bot id=6984364717
+TypeError: registration_callback_query() missing 1 required positional argument: 'is_admin'
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 52, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+                 ^^^^^^^^^
+TypeError: registration_callback_query() missing 1 required positional argument: 'is_admin'
+2025-05-02 23:10:01,801 - app.database.requests - ERROR - User is not created; (1062, "Duplicate entry '1933865493' for key 'user.uid_user_tg_id_ba6243'")
+2025-05-02 23:10:57,920 - app.database.requests - ERROR - User is not created; (1062, "Duplicate entry '1933865493' for key 'user.uid_user_tg_id_ba6243'")
+2025-05-02 23:11:16,841 - app.database.requests - ERROR - User is not created; (1062, "Duplicate entry '1933865493' for key 'user.uid_user_tg_id_ba6243'")
+2025-05-02 23:21:03,335 - app.user - ERROR - Telegram server says - Bad Request: message to delete not found
+2025-05-03 20:01:25,655 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2025-05-03 20:01:27,314 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [getaddrinfo failed]
+2025-05-03 20:01:28,665 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [getaddrinfo failed]
+2025-05-03 20:01:30,376 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [getaddrinfo failed]
+2025-05-03 20:01:32,627 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [getaddrinfo failed]
+2025-05-03 20:01:35,420 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [getaddrinfo failed]
+2025-05-03 20:27:59,956 - asyncio - ERROR - Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "D:\Programs\Python\Lib\asyncio\events.py", line 84, in _run
+    self._context.run(self._callback, *self._args)
+  File "D:\Programs\Python\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionAbortedError: [WinError 10053] Программа на вашем хост-компьютере разорвала установленное подключение
+2025-05-03 20:32:42,310 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2025-05-03 22:09:40,174 - app.user - ERROR - cannot access local variable 'availible_notify_by_payment' where it is not associated with a value
+2025-05-03 22:09:45,773 - app.user - ERROR - cannot access local variable 'availible_notify_by_payment' where it is not associated with a value
+2025-05-03 22:14:07,746 - app.user - ERROR - Telegram server says - Bad Request: query is too old and response timeout expired or query ID is invalid
+2025-05-03 22:14:29,551 - app.user - ERROR - Telegram server says - Bad Request: query is too old and response timeout expired or query ID is invalid
+2025-05-04 08:30:12,699 - app.database.requests - ERROR - update_admin_and_get: 'NoneType' object has no attribute 'tg_name'
+2025-05-04 08:30:12,813 - app.user - ERROR - cannot unpack non-iterable NoneType object
+2025-05-04 08:34:32,174 - app.database.requests - ERROR - update_admin_and_get: 'NoneType' object has no attribute 'tg_name'
+2025-05-04 08:34:32,174 - app.user - ERROR - cannot unpack non-iterable NoneType object
+2025-05-04 08:35:37,822 - app.database.requests - ERROR - update_admin_and_get: 'NoneType' object has no attribute 'tg_name'
+2025-05-04 08:35:37,822 - app.user - ERROR - cannot unpack non-iterable NoneType object
+2025-05-04 08:37:46,662 - app.database.requests - ERROR - update_admin_and_get: 'NoneType' object has no attribute 'tg_name'
+2025-05-04 08:37:46,662 - app.user - ERROR - cannot unpack non-iterable NoneType object
+2025-05-04 08:58:10,669 - app.database.requests - ERROR - update_admin_and_get: 'NoneType' object has no attribute 'tg_name'
+2025-05-04 08:58:10,669 - app.user - ERROR - cannot unpack non-iterable NoneType object
+2025-05-04 08:58:18,532 - app.database.requests - ERROR - update_admin_and_get: 'NoneType' object has no attribute 'tg_name'
+2025-05-04 08:58:18,532 - app.user - ERROR - cannot unpack non-iterable NoneType object
+2025-05-04 08:58:59,944 - app.database.requests - ERROR - update_admin_and_get: 'NoneType' object has no attribute 'tg_name'
+2025-05-04 08:58:59,944 - app.user - ERROR - cannot unpack non-iterable NoneType object
+2025-05-04 09:35:06,201 - app.user - ERROR - 'NoneType' object is not iterable
+2025-05-04 09:36:01,893 - aiogram.event - ERROR - Cause exception while process update id=812800408 by bot id=6984364717
+OperationalError: (2013, 'Lost connection to MySQL server during query')
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\backends\mysql\client.py", line 54, in translate_exceptions_
+    return await func(self, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\backends\mysql\client.py", line 209, in execute_query
+    await cursor.execute(query, values)
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiomysql\cursors.py", line 239, in execute
+    await self._query(query)
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiomysql\cursors.py", line 457, in _query
+    await conn.query(q)
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiomysql\connection.py", line 469, in query
+    await self._read_query_result(unbuffered=unbuffered)
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiomysql\connection.py", line 683, in _read_query_result
+    await result.read()
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiomysql\connection.py", line 1164, in read
+    first_packet = await self.connection._read_packet()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiomysql\connection.py", line 625, in _read_packet
+    raise OperationalError(
+pymysql.err.OperationalError: (2013, 'Lost connection to MySQL server during query')
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 77, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 279, in show_trainings
+    events = await db_req.get_event()
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\database\requests.py", line 86, in get_event
+    await (
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\queryset.py", line 1701, in _execute
+    result = await self._db.execute_query_dict(str(self.query))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\backends\mysql\client.py", line 217, in execute_query_dict
+    return (await self.execute_query(query, values))[1]
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\tortoise\backends\mysql\client.py", line 62, in translate_exceptions_
+    raise OperationalError(exc)
+tortoise.exceptions.OperationalError: (2013, 'Lost connection to MySQL server during query')
+2025-05-04 10:52:47,384 - aiogram.event - ERROR - Cause exception while process update id=812800446 by bot id=6984364717
+AttributeError: 'State' object has no attribute 'copy'
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 79, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 560, in edit_event
+    await state.set_data(st.CreateEventFSM.template)
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\context.py", line 18, in set_data
+    await self.storage.set_data(key=self.key, data=data)
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\storage\memory.py", line 47, in set_data
+    self.storage[key].data = data.copy()
+                             ^^^^^^^^^
+AttributeError: 'State' object has no attribute 'copy'
+2025-05-04 11:40:08,520 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [Errno 1] [SSL: APPLICATION_DATA_AFTER_CLOSE_NOTIFY] application data after close notify (_ssl.c:2685)
+2025-05-04 11:44:07,434 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2025-05-04 11:45:32,430 - app.user - ERROR - Ошибка при добавлении тренировки: Cannot acquire connection after closing pool
+2025-05-04 12:50:27,991 - aiogram.event - ERROR - Cause exception while process update id=812800569 by bot id=6984364717
+TypeError: unsupported operand type(s) for &: 'bool' and 'State'
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 113, in trigger
+    result, data = await handler.check(event, **kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 94, in check
+    check = await event_filter.call(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 48, in call
+    return await loop.run_in_executor(None, wrapped)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Programs\Python\Lib\concurrent\futures\thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\magic_filter\magic.py", line 97, in resolve
+    return self._resolve(value=value)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\magic_filter\magic.py", line 81, in _resolve
+    value = operation.resolve(value=value, initial_value=initial_value)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\magic_filter\operations\combination.py", line 18, in resolve
+    return self.combinator(value, resolve_if_needed(self.right, initial_value=initial_value))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: unsupported operand type(s) for &: 'bool' and 'State'
+2025-05-04 12:54:23,866 - aiogram.event - ERROR - Cause exception while process update id=812800575 by bot id=6984364717
+TypeError: unsupported operand type(s) for &: 'bool' and 'StateFilter'
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 113, in trigger
+    result, data = await handler.check(event, **kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 94, in check
+    check = await event_filter.call(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 48, in call
+    return await loop.run_in_executor(None, wrapped)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Programs\Python\Lib\concurrent\futures\thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\magic_filter\magic.py", line 97, in resolve
+    return self._resolve(value=value)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\magic_filter\magic.py", line 81, in _resolve
+    value = operation.resolve(value=value, initial_value=initial_value)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\magic_filter\operations\combination.py", line 18, in resolve
+    return self.combinator(value, resolve_if_needed(self.right, initial_value=initial_value))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: unsupported operand type(s) for &: 'bool' and 'StateFilter'
+2025-05-04 12:57:07,971 - aiogram.event - ERROR - Cause exception while process update id=812800579 by bot id=6984364717
+TypeError: unsupported operand type(s) for &: 'bool' and 'StateFilter'
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 113, in trigger
+    result, data = await handler.check(event, **kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 94, in check
+    check = await event_filter.call(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 48, in call
+    return await loop.run_in_executor(None, wrapped)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Programs\Python\Lib\concurrent\futures\thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\magic_filter\magic.py", line 97, in resolve
+    return self._resolve(value=value)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\magic_filter\magic.py", line 81, in _resolve
+    value = operation.resolve(value=value, initial_value=initial_value)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\magic_filter\operations\combination.py", line 18, in resolve
+    return self.combinator(value, resolve_if_needed(self.right, initial_value=initial_value))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: unsupported operand type(s) for &: 'bool' and 'StateFilter'
+2025-05-04 18:03:00,771 - aiogram.event - ERROR - Cause exception while process update id=812800584 by bot id=6984364717
+TelegramForbiddenError: Telegram server says - Forbidden: bot was kicked from the supergroup chat
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 56, in __call__
+    await registration(event)
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 90, in registration
+    await event_message.answer(
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\methods\base.py", line 84, in emit
+    return await bot(self)
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\client\bot.py", line 488, in __call__
+    return await self.session(self, method, timeout=request_timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\client\session\base.py", line 254, in __call__
+    return cast(TelegramType, await middleware(bot, method))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\client\session\aiohttp.py", line 189, in make_request
+    response = self.check_response(
+               ^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\client\session\base.py", line 128, in check_response
+    raise TelegramForbiddenError(method=method, message=description)
+aiogram.exceptions.TelegramForbiddenError: Telegram server says - Forbidden: bot was kicked from the supergroup chat
+2025-05-04 18:21:45,716 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2025-05-04 18:29:01,312 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2025-05-04 19:05:03,953 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2025-05-04 19:05:04,223 - app.user - ERROR - Ошибка при добавлении тренировки: (2013, 'Lost connection to MySQL server during query')
+2025-05-04 19:57:32,028 - aiogram.event - ERROR - Cause exception while process update id=812800815 by bot id=6984364717
+TypeError: 'coroutine' object is not iterable
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 79, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 279, in delete_template
+    for template in templates:
+TypeError: 'coroutine' object is not iterable
+2025-05-04 20:03:01,571 - aiogram.event - ERROR - Cause exception while process update id=812800817 by bot id=6984364717
+TypeError: 'coroutine' object is not iterable
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 79, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 279, in delete_template
+    for template in templates:
+TypeError: 'coroutine' object is not iterable
+2025-05-04 20:03:01,722 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2025-05-04 20:05:35,964 - aiogram.event - ERROR - Cause exception while process update id=812800822 by bot id=6984364717
+TypeError: 'coroutine' object is not iterable
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 79, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 280, in delete_template
+    for template in templates:
+TypeError: 'coroutine' object is not iterable
+2025-05-04 20:37:34,495 - app.database.requests - ERROR - delete_template: Object "Template" does not exist
+2025-05-04 20:38:23,107 - app.database.requests - ERROR - delete_template: Object "Template" does not exist
+2025-05-04 20:41:58,499 - app.database.requests - ERROR - delete_template: Object "Template" does not exist
+2025-05-04 20:43:14,301 - app.database.requests - ERROR - delete_template: Object "Template" does not exist
+2025-05-04 20:43:17,612 - app.database.requests - ERROR - delete_template: Object "Template" does not exist
+2025-05-04 20:44:06,011 - app.database.requests - ERROR - delete_template: Object "Template" does not exist
+2025-05-04 20:47:33,896 - app.database.requests - ERROR - delete_template: Object "Template" does not exist
+2025-05-04 20:47:44,059 - app.database.requests - ERROR - delete_template: Object "Template" does not exist
+2025-05-04 20:48:07,373 - app.user - ERROR - invalid literal for int() with base 10: '/admpan'
+2025-05-04 20:48:09,653 - app.user - ERROR - invalid literal for int() with base 10: '/admpan'
+2025-05-04 20:48:13,204 - app.user - ERROR - invalid literal for int() with base 10: '/admpan'
+2025-05-04 20:48:22,776 - app.user - ERROR - invalid literal for int() with base 10: '/admpan'
+2025-05-04 20:49:31,072 - app.user - ERROR - invalid literal for int() with base 10: '5ыв'
+2025-05-04 20:50:03,998 - app.database.requests - ERROR - delete_template: Object "Template" does not exist
+2025-05-04 20:50:55,240 - aiogram.event - ERROR - Cause exception while process update id=812800920 by bot id=6984364717
+ValueError: invalid literal for int() with base 10: '5выа'
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 79, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 297, in delete_template_finish
+    template_id = int(message.text.strip())
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: invalid literal for int() with base 10: '5выа'
+2025-05-04 20:57:58,370 - app.database.requests - ERROR - delete_template: Object "Template" does not exist
+2025-05-04 20:59:06,602 - app.database.requests - ERROR - delete_template: Object "Template" does not exist
+2025-05-04 21:25:32,973 - aiogram.event - ERROR - Cause exception while process update id=812800943 by bot id=6984364717
+TypeError: 'coroutine' object is not subscriptable
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 79, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 505, in input_template
+    boss = db_req.get_user_by_username(boss_val)['id']
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+TypeError: 'coroutine' object is not subscriptable
+2025-05-04 21:29:50,846 - aiogram.event - ERROR - Cause exception while process update id=812800952 by bot id=6984364717
+TypeError: 'coroutine' object is not subscriptable
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 79, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 505, in input_template
+    boss = db_req.get_user_by_username(boss_val)['id']
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+TypeError: 'coroutine' object is not subscriptable
+2025-05-04 21:34:00,842 - aiogram.event - ERROR - Cause exception while process update id=812800958 by bot id=6984364717
+TypeError: list indices must be integers or slices, not str
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 79, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 506, in input_template
+    print(f'boss = {int(boss['id'])}')
+                        ~~~~^^^^^^
+TypeError: list indices must be integers or slices, not str
+2025-05-04 21:35:48,002 - app.database.requests - ERROR - get_user_by_username: Object "User" does not exist
+2025-05-04 21:35:48,003 - aiogram.event - ERROR - Cause exception while process update id=812800961 by bot id=6984364717
+TypeError: 'NoneType' object is not subscriptable
+Traceback (most recent call last):
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 79, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\.venv\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "D:\Pyth_learn\Projects\e10b01a81dadc0acd00e7b38a2da7aa3\baga\app\user.py", line 506, in input_template
+    print(f'boss = {int(boss['id'])}')
+                        ~~~~^^^^^^
+TypeError: 'NoneType' object is not subscriptable
+2025-05-04 21:43:55,526 - app.database.requests - ERROR - get_user_by_username: Object "User" does not exist
+2025-05-04 21:55:35,751 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [Errno 1] [SSL: APPLICATION_DATA_AFTER_CLOSE_NOTIFY] application data after close notify (_ssl.c:2685)
+2025-05-04 22:21:45,125 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
