@@ -1,0 +1,10 @@
+venv
+.idea
+**/__pycache__/
+sudo dydtemctl ssh status
+db.sqlite3
+logs/error.log
+logs/general.log
+logs/bot.log
+.env
+~$plan.pptx
