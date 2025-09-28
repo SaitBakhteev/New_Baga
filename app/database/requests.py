@@ -30,8 +30,6 @@ async def get_or_create_user(from_user, for_telegramm=False, create_user=False):
         return
 
 
-
-
 async def get_all_users():
     return await User.all()
 
@@ -113,7 +111,8 @@ async def get_event_user(event_id=None, user_tg_id=None,
                           values('user__tg_username',
                                  'user__tg_name',
                                  'payment_confirmed',
-                                 'paid_check',))
+                                 'paid_check',
+                                 ))
         else:
 
             # Запрос к БД для выделения знаком 🟢 тех тренировок, на которые уже записан пользователь
@@ -133,7 +132,8 @@ async def get_event_user(event_id=None, user_tg_id=None,
                                  'user__tg_name',
                                  'user__tg_username',
                                  'payment_confirmed',
-                                 'paid_check'))
+                                 'paid_check',
+                                 'friend',))
     except DoesNotExist:
         logger.error('get_event_user: User DoesNotExist')
     except Exception as e:

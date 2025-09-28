@@ -120,6 +120,7 @@ async def startup(dispatcher: Dispatcher):
         users = await get_all_users()
         for user_ in users:
             user_cache[user_.tg_id] = user_
+        print(user_cache)
         events = await get_event(for_schedule=True)
         for item in events:
             payment_dedline = item['payment_dedline']

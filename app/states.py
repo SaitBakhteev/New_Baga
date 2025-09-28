@@ -17,6 +17,11 @@ class CreateEventFSM(StatesGroup):
     dedline_type = State()
 
 
+class AddFriendFSM(StatesGroup):
+    add_friend = State()
+    add_friend_confirm = State()
+
+
 class EditEvent(StatesGroup):
     insert_template = State()
 

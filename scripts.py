@@ -1,7 +1,3 @@
-with open("asdasd.rt", "w") as f:
-    f.writelines('фрбуз')
-
-with open("asdasd.rt", "r") as f:
-    a = f.read()
-
-print(a)
+lst = '   [1,22,3]   '
+print(lst.strip())
+print(lst)

@@ -234,6 +234,7 @@ async def sign_up_for_training(
         availible_pay: bool,
         admin_permissions=False, payment_confirmed=False,
         availible_notify_by_payment: bool = None,
+        **kwargs
 ) -> InlineKeyboardMarkup:
     try:
         keyboard = InlineKeyboardBuilder()
@@ -248,8 +249,8 @@ async def sign_up_for_training(
                 callback_data='delete_from_training'
             ))
 
-        # Эта кнопка доступна при соблюдении 2 условий: участник в основном списке, поле 'payment_confirmed' в БД not True
-        # Пока не подтвердил оплату, кнопки уведомдления или отмены уведомсления об оплате доступны
+        ''' Эта кнопка доступна при соблюдении 2 условий: участник в основном списке, поле 'payment_confirmed'
+        в БД not True. Пока не подтвердил оплату, кнопки уведомдления или отмены уведомсления об оплате доступны '''
         if payment_confirmed is not True and signed_up_for_training:
             if availible_pay:
                 text, call = '✔️ Тренировка оплачена', 'payment_notify:i_payed_check'
@@ -259,6 +260,10 @@ async def sign_up_for_training(
             # Кнопка уведомления об оплате или её отмена доступна, только если участник не в резерве
             if availible_notify_by_payment:
                 keyboard.button(text=text, callback_data=call)
+
+        if kwargs['friend'] is None:  # если доступно запись друга на тренировку
+            keyboard.button(text='🤜🏽Записать друга🤛🏽', callback_data='add_friend')
+
         if admin_permissions:
             keyboard.button(text='💠 Отмена верификации 🔘', callback_data='verify_payment:change')
             keyboard.button(text='💠 Подтвердить оплату ✅', callback_data='verify_payment:confirm')
@@ -279,6 +284,13 @@ async def sign_up_for_training(
 drop_participant_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Да', callback_data='drop_paricipant:yes'),
      InlineKeyboardButton(text='Нет', callback_data='drop_paricipant:No')]
+])
+
+
+# Клавиатура подтверждения добавления друга
+add_friend_confirm_kb = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Да', callback_data='add_friend:yes'),
+     InlineKeyboardButton(text='Нет', callback_data='add_friend:No')]
 ])
 
 

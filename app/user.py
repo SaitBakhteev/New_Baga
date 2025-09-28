@@ -390,7 +390,6 @@ async def choose_event(update: CallbackQuery | Message, state: FSMContext,
         event = next(item for item in events if item['id'] == event_id) if this_call_query else data.get('event')
         event_user = await db_req.get_event_user(event_id=event_id)
 
-
         text = await kb.show_text_about_event(event, event_user,
                                               tg_id=update.from_user.id,
                                               is_admin=is_admin)
@@ -404,7 +403,9 @@ async def choose_event(update: CallbackQuery | Message, state: FSMContext,
             else False
 
         availible_notify_by_payment = None
+
         # Если пользователь ранее записался на эту тренировку, то кнопка записи на тренировку не отображается
+        friend = None
         if signed_up_for_training:
             user_id, paid_check, payment_confirmed = (
                 next((item['user__id'], item['paid_check'], item['payment_confirmed'])
@@ -419,12 +420,14 @@ async def choose_event(update: CallbackQuery | Message, state: FSMContext,
                                      and paid_check is None
                                      and payment_confirmed is None ) else False
             availible_notify_by_payment = True if user_place_on_list <= participants_count else None
+            friend = next(item['friend'] for item in event_user if item['user__tg_id'] == call_id)
 
         keyboard = await kb.sign_up_for_training(signed_up_for_training,
                                                  availible_pay,
                                                  admin_permissions=is_admin,
                                                  payment_confirmed=payment_confirmed,
-                                                 availible_notify_by_payment=availible_notify_by_payment)
+                                                 availible_notify_by_payment=availible_notify_by_payment,
+                                                 friend=friend)
         if isinstance(update, CallbackQuery):
             await update.message.delete()
             await update.answer()
@@ -498,6 +501,46 @@ async def delete_from_training_confirm(message: Message, state: FSMContext, is_a
         await message.delete()
         await message.answer('Удаление прервано')
         await state.set_state(None)
+
+
+# Записать друга на тренировку
+@user_router.callback_query(F.data=='add_friend')
+async def add_friend(call: CallbackQuery, state: FSMContext):
+    await call.message.answer('Введите никнейм вашего друга.\n'
+                              '<i>Пример</i>: @ivanov1934',
+                              parse_mode='HTML')
+    await state.set_state(st.AddFriendFSM.add_friend)
+
+
+@user_router.message(st.AddFriendFSM.add_friend)
+async def add_friend(message: Message, state: FSMContext):
+    try:
+        text = message.text.strip(':').replace('@', '')
+        if text != message.from_user.username:
+            friend = None
+            for k in user_cache:
+                if user_cache[k].tg_username == text:
+                    friend = text
+                    break
+            if friend is not None:
+                await state.set_state(st.AddFriendFSM.add_friend_confirm)
+                await message.answer('⚠️ Внимание! Записать друга на тренировку можно только <b>один раз</b>!\n'
+                                     'Вы подтверждаете запись друга?')
+            message_text = f' ☑️Вы записали на тренировку друга с никнеймом <i>{friend}</i>' if friend is not None \
+                else f'🤷🏻‍♂️ Пользователь с никнеймом {text} не зарегистрирован в боте'
+        else:
+            message_text = '☝🏽Вы не можете добавить себя вместо друга'
+        await message.answer(message_text, parse_mode='HTML')
+    except Exception as e:
+        logger.error(f'Add+friend: {e}')
+
+
+@user_router.callback_query(F.data.startswith('add_friend') and st.AddFriendFSM.add_friend_confirm)
+async def add_friend_confirm(call: CallbackQuery, state: FSMContext):
+    call_data = call.data.split(':')[1]
+    if call_data == 'yes':
+
+
 
 ''' ДОСТУПНЫЕ АДМИНУ ФУНКЦИИ  '''
 
@@ -907,8 +950,10 @@ async def chancel_training_state(message: Message, state: FSMContext, is_admin: 
 
 ''' ----------- КОНЕЦ АДМИНСКИХ ФУНКЦИЙ  ------------ '''
 
-# @user_router.message(Command('test'))
-# async def test(message: Message):
+@user_router.message(Command('test'))
+async def test(message: Message):
+    for k in user_cache:
+        print(user_cache[k].tg_username)
 #     print(f'dedlines = {dedlines}\n'
 #           f'dedline_notifications = {dedline_notifications}')
 #
