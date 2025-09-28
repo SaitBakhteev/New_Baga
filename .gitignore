@@ -7,6 +7,7 @@ logs/general.log
 logs/bot.log
 .env
 ~$plan.pptx
+asdasd.rt
 
 # По БД
 db.sqlite3
