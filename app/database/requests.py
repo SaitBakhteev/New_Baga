@@ -141,6 +141,15 @@ async def get_event_user(event_id=None, user_tg_id=None,
         logger.error(f'get_event_user: {e}')
 
 
+# Запрос для проверки можно ли добавить друга
+async def get_event_user_for_check_friend(event_id, user_id=None, friend=None):
+    ''' Проверяем, не записался ли до нас друг сам или нет ли у нас уже добавленного друга'''
+    if user_id:
+        return await EventUser.filter(event_id=event_id, user_id=user_id).exists()
+    elif friend:
+        return await EventUser.filter(event_id=event_id, friend=friend).exists()
+
+
 async def get_templates() -> Template():
     return await Template.all().values('id', 'text')
 

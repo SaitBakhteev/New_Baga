@@ -536,7 +536,7 @@ async def add_friend(message: Message, state: FSMContext):
                 await message.answer(message_text, parse_mode='HTML')
         else:
             message_text = '☝🏽Вы не можете добавить себя вместо друга'
-        await message.answer(message_text, parse_mode='HTML')
+            await message.answer(message_text, parse_mode='HTML')
     except Exception as e:
         logger.error(f'Add+friend: {e}')
 
@@ -548,12 +548,13 @@ async def add_friend_confirm(call: CallbackQuery, state: FSMContext, is_admin: b
     friend_id, friend = data['friend_id'], data['friend']
     if call_data == 'yes':
         await db_req.create_event_user(data, friend_id=friend_id)
-        user = user_cache[call.from_user]
-        await db_req.update_event_user_after_add_friend(user)
+        user = user_cache[call.from_user.id]
+        await db_req.update_event_user_after_add_friend(user=user)
         await call.message.answer(f'Ваш друг с никнеймом <i>{friend}</i> в запись на '
-                                  f'тренировку добавлен упешно☑️')
+                                  f'тренировку добавлен успешно☑️')
     else:
         await call.message.answer(f'Вы отменили запись друга на тренировку🟡')
+    await state.set_state(None)  # выходим из состояния, чтобы кнопки дезактивировались
     await choose_event(call, state, is_admin)
 
 
