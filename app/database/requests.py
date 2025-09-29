@@ -61,8 +61,9 @@ async def create_event(data):  # добавить событие
 
 
 # Создание записи пользователя на тренировку
-async def create_event_user(data):
-    await EventUser.create(user_id=data['user_id'],
+async def create_event_user(data, **kwargs):
+    user_id = kwargs['friend_id'] if 'friend_id' in kwargs else data['user_id']
+    await EventUser.create(user_id=user_id,
                            event_id=data['event_id'],
                            created_at=datetime.now())
 
@@ -241,6 +242,11 @@ async def update_event_user_for_payment_verify(id_list: list, is_confirm=True):
     else:  # если админ отменяет верификацию оплаты
         print(f'is_conf = {is_confirm}')
         await EventUser.filter(id__in=id_list).update(payment_confirmed=None)
+
+
+# Обновление поля friend после записи друга на тренировку
+async def update_event_user_after_add_friend(user):
+    await EventUser.filter(user=user).update(friend='+')
 
 
 async def test():

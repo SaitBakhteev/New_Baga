@@ -520,14 +520,17 @@ async def add_friend(message: Message, state: FSMContext):
             friend = None
             for k in user_cache:
                 if user_cache[k].tg_username == text:
-                    friend = text
+                    friend_id, friend = user_cache[k].id, user_cache[k].tg_name
                     break
             if friend is not None:
+                message_text = ('⚠️ Внимание! Записать друга на тренировку можно только <b>один раз</b>!\n'
+                                'Вы подтверждаете запись друга?')
+                await state.update_data(friend_id=friend_id, friend=friend)
                 await state.set_state(st.AddFriendFSM.add_friend_confirm)
-                await message.answer('⚠️ Внимание! Записать друга на тренировку можно только <b>один раз</b>!\n'
-                                     'Вы подтверждаете запись друга?')
-            message_text = f' ☑️Вы записали на тренировку друга с никнеймом <i>{friend}</i>' if friend is not None \
-                else f'🤷🏻‍♂️ Пользователь с никнеймом {text} не зарегистрирован в боте'
+                await message.answer(message_text, reply_markup=kb.add_friend_confirm_kb, parse_mode='HTML')
+            else:
+                message_text = f'🤷🏻‍♂️ Пользователь с никнеймом {text} не зарегистрирован в боте'
+                await message.answer(message_text, parse_mode='HTML')
         else:
             message_text = '☝🏽Вы не можете добавить себя вместо друга'
         await message.answer(message_text, parse_mode='HTML')
@@ -536,10 +539,19 @@ async def add_friend(message: Message, state: FSMContext):
 
 
 @user_router.callback_query(F.data.startswith('add_friend') and st.AddFriendFSM.add_friend_confirm)
-async def add_friend_confirm(call: CallbackQuery, state: FSMContext):
+async def add_friend_confirm(call: CallbackQuery, state: FSMContext, is_admin: bool):
     call_data = call.data.split(':')[1]
+    data = await state.get_data()
+    friend_id, friend = data['friend_id'], data['friend']
     if call_data == 'yes':
-
+        await db_req.create_event_user(data, friend_id=friend_id)
+        user = user_cache[call.from_user]
+        await db_req.update_event_user_after_add_friend(user)
+        await call.message.answer(f'Ваш друг с никнеймом <i>{friend}</i> в запись на '
+                                  f'тренировку добавлен упешно☑️')
+    else:
+        await call.message.answer(f'Вы отменили запись друга на тренировку🟡')
+    await choose_event(call, state, is_admin)
 
 
 ''' ДОСТУПНЫЕ АДМИНУ ФУНКЦИИ  '''
