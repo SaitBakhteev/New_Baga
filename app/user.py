@@ -1,4 +1,5 @@
 import logging
+import os
 
 from functools import reduce
 
@@ -20,6 +21,8 @@ from app.tutorial import TUTORIAL, ADMIN_TUTORIAL, SIGN_UP_FOR_TRAINING_TUTORIAL
 
 from config import TRAINING_TYPES, DEDLINE_TYPE
 
+
+BOT_NAME = os.getenv('BOT_NAME')
 
 logger = logging.getLogger(__name__)
 user_router = Router()
@@ -612,7 +615,7 @@ async def add_event(call: CallbackQuery, state: FSMContext):
 
 @user_router.message(st.CreateEventFSM.template)
 async def input_template(message: Message, state: FSMContext):
-    text = message.text.replace("@Sport_y_doma_training_bot", "").strip()
+    text = message.text.replace(f"{BOT_NAME}", "").strip()
     event_text = ""
     data = await state.get_data()
     try:
