@@ -30,7 +30,7 @@ registration_kb = InlineKeyboardMarkup(
 )
 
 
-async def return_to_start_markup(process_interrupt=True) -> InlineKeyboardMarkup:
+def return_to_start_markup(process_interrupt=True) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardBuilder()
     caption = '⛔️ Прервать процесс' if process_interrupt else '⤴️ В начало'
     keyboard.button(text=caption, callback_data='return_to_start')

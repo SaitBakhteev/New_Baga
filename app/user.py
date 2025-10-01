@@ -212,7 +212,7 @@ async def queue(message: Message):
 @user_router.message(Command('bug'))
 async def bug(message: Message, state:FSMContext):
     await message.answer('Напишите о проблеме работы бота и отправьте сообщение.',
-                         reply_markup= await kb.return_to_start_markup())
+                         reply_markup= kb.return_to_start_markup())
     await state.set_state(st.WrightBugsFSM.wright_bug)
 
 @user_router.message(st.WrightBugsFSM.wright_bug)
@@ -283,7 +283,7 @@ async def edit_admin(call: CallbackQuery, state: FSMContext):
                                   'для которого хотите установить или отменить админский статус.\n '
                                   '<i>Например, если у пользователя аккаунт <u>"@Ivanov_79"</u>, то '
                              'нужно ввести <u>"Ivanov_79"</u></i>.',
-                             reply_markup=await kb.return_to_start_markup(), parse_mode='HTML')
+                             reply_markup=kb.return_to_start_markup(), parse_mode='HTML')
         await state.set_state(st.EditAdminFSM.edit_admin)
     except Exception as e:
         logger.error(f'Ошибка при редактировании списка админов: {e}')
@@ -484,7 +484,7 @@ async def delete_from_training(call: CallbackQuery, state: FSMContext, is_admin:
     await call.message.answer('Если Вы уверены, что хотите удалиться из тренировки '
                               'напишите в сообщении <i><b>да</b></i> и отправьте его.\n'
                               'Если сомневаетесь, прервите процесс или отправьте любое слово',
-                              reply_markup=await kb.return_to_start_markup(),
+                              reply_markup=kb.return_to_start_markup(),
                               parse_mode='HTML')
     await state.set_state(st.DeleteFromTrainingFSM.delete_from_training)
 
@@ -642,7 +642,6 @@ async def input_template(message: Message, state: FSMContext):
                 case 3:  # время тренировки и дальнейшее формирование datetime тренировки
                     hour, minute = value.replace(" ", "").split(":")
                     event_time = time(hour=int(hour), minute=int(minute))
-                    print(f"event_time= {event_time}")
                     event_datetime = datetime.combine(date=event_date, time=event_time)
                     if (event_datetime < datetime.now() + timedelta(hours=13)
                             or event_datetime > datetime.now() + timedelta(days=90)):
@@ -651,7 +650,7 @@ async def input_template(message: Message, state: FSMContext):
                     participants_count = int(value)
                 case 7:
                     boss_val = None  # на всякий случай, поскольку дебаггер показал непонятки
-                    if value.strip() != "":
+                    if value.strip() != "" and value.strip() != "-":
                         boss_val = value.strip().replace('@', '')
                         boss = await db_req.get_user_by_username(boss_val)
                         if boss:
@@ -666,6 +665,7 @@ async def input_template(message: Message, state: FSMContext):
                     event_text += f"<b>{key}</b>: {value}\n"
                 else:
                     value = f'@{value}' if boss_id is not None else '-'
+                    value.replace('@@', '@')  # ещё одна перестраховка
                     event_text += f"<b>{key}</b>: {value}\n"
             else:
                 event_text += (f"\n<b>ИНФОРМАЦИЯ ОБ ОПЛАТЕ</b>:\n"
@@ -684,7 +684,6 @@ async def input_template(message: Message, state: FSMContext):
         else:
             await add_dedline_and_finish(message, state)
     except ValueError as e:
-        print(f"ОШИБКА!!!: {e}")
         if str(e) == "month must be in 1..12":
                 error_message = "Некорректно введен месяц"
         elif str(e) == "unreal date":
@@ -820,7 +819,7 @@ async def payment_verification(call: CallbackQuery, state: FSMContext):
                  '<i><b>3, 5, 8</b></i>\n\n'
                  "<i>Примечание</i>: статусы могут быть обновлены <u>частично</u> или вовсе <u>не обновлены</u>.\n"
                  'С более подробной иформацией можете ознакомиться в <b>/admin</b>')
-        await call.message.answer(text, parse_mode='HTML', reply_markup=await kb.return_to_start_markup())
+        await call.message.answer(text, parse_mode='HTML', reply_markup=kb.return_to_start_markup())
         await state.set_state(st.UpdateEventUserFSM.payment_confirmed)
     except Exception as e:
         logger.error(e)
@@ -903,7 +902,7 @@ async def drop_or_chancel(call: CallbackQuery, state: FSMContext):
         text = ('Если точно хотите отменить эту тренировку, введите "да" '
                 'в сообщении боту, иначе операция будет отменена.')
         await state.set_state(st.ChancelTraininigFSM.chancel_training)
-    keyboard = await kb.return_to_start_markup()
+    keyboard = kb.return_to_start_markup()
     await call.message.answer(text, reply_markup=keyboard, parse_mode='HTML')
 
 
