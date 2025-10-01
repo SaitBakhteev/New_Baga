@@ -62,10 +62,15 @@ async def create_event(data):  # добавить событие
 
 # Создание записи пользователя на тренировку
 async def create_event_user(data, **kwargs):
-    user_id = kwargs['friend_id'] if 'friend_id' in kwargs else data['user_id']
-    await EventUser.create(user_id=user_id,
-                           event_id=data['event_id'],
-                           created_at=datetime.now())
+    if 'friend_id' not in kwargs:
+        await EventUser.create(user_id=data['user_id'],
+                               event_id=data['event_id'],
+                               created_at=datetime.now())
+    else:
+        await EventUser.create(user_id=kwargs['friend_id'],
+                               event_id=data['event_id'],
+                               friend=kwargs['i_am_friend'],
+                               created_at=datetime.now())
 
 
 async def create_template(text: str):
@@ -142,12 +147,13 @@ async def get_event_user(event_id=None, user_tg_id=None,
 
 
 # Запрос для проверки можно ли добавить друга
-async def get_event_user_for_check_friend(event_id, user_id=None, friend=None):
+async def get_event_user_for_check_friend(event_id, friend_id=None, i_am_friend=None):
     ''' Проверяем, не записался ли до нас друг сам или нет ли у нас уже добавленного друга'''
-    if user_id:
-        return await EventUser.filter(event_id=event_id, user_id=user_id).exists()
-    elif friend:
-        return await EventUser.filter(event_id=event_id, friend=friend).exists()
+    if friend_id:
+        return await EventUser.filter(event_id=event_id, user_id=friend_id).exists()
+    elif i_am_friend:
+        event_user = await EventUser.filter(event_id=event_id, friend=i_am_friend).values('user__tg_username')
+        return event_user[0]['user__tg_username'] if len(event_user) > 0 else None
 
 
 async def get_templates() -> Template():

@@ -518,25 +518,38 @@ async def add_friend(call: CallbackQuery, state: FSMContext):
 @user_router.message(st.AddFriendFSM.add_friend)
 async def add_friend(message: Message, state: FSMContext):
     try:
-        text = message.text.strip(':').replace('@', '')
+        data = await state.get_data()
+        event_id = data.get('event_id')
+        text = message.text.strip().replace('@', '')
         if text != message.from_user.username:
             friend = None
             for k in user_cache:
                 if user_cache[k].tg_username == text:
-                    friend_id, friend = user_cache[k].id, user_cache[k].tg_name
+                    friend_id, friend = user_cache[k].id, user_cache[k].tg_username
                     break
             if friend is not None:
-                message_text = ('⚠️ Внимание! Записать друга на тренировку можно только <b>один раз</b>!\n'
-                                'Вы подтверждаете запись друга?')
-                await state.update_data(friend_id=friend_id, friend=friend)
-                await state.set_state(st.AddFriendFSM.add_friend_confirm)
-                await message.answer(message_text, reply_markup=kb.add_friend_confirm_kb, parse_mode='HTML')
+                ''' Проверяем не записывался ли ранее мой друг (friend_signed_up) и не
+                записывал ли я кого-нибудь жо этого (my_prev_friend) '''
+                friend_signed_up = await db_req.get_event_user_for_check_friend(event_id, friend_id=friend_id)
+                my_prev_friend = await db_req.get_event_user_for_check_friend(
+                    event_id, i_am_friend=message.from_user.username
+                )
+
+                if not friend_signed_up and not my_prev_friend:
+                    message_text = ('⚠️ Внимание! Записать друга на тренировку можно только <b>один раз</b>!\n'
+                                    'Вы подтверждаете запись друга?')
+                    await state.update_data(friend_id=friend_id, friend=friend)
+                    await state.set_state(st.AddFriendFSM.add_friend_confirm)
+                    return await message.answer(message_text, reply_markup=kb.add_friend_confirm_kb, parse_mode='HTML')
+                elif friend_signed_up:
+                    message_text = f'☑️ Ваш друг с никнеймом <i>{friend}</i> уже состоит в записи на тренировку'
+                elif my_prev_friend:
+                    message_text = f'⛔️ Вы ранее уже записали друга с никнеймом <i>{my_prev_friend}</i>'
             else:
-                message_text = f'🤷🏻‍♂️ Пользователь с никнеймом {text} не зарегистрирован в боте'
-                await message.answer(message_text, parse_mode='HTML')
+                message_text = f'🤷🏻‍♂️ Пользователь с никнеймом <i>{text}</i> не зарегистрирован в боте'
         else:
             message_text = '☝🏽Вы не можете добавить себя вместо друга'
-            await message.answer(message_text, parse_mode='HTML')
+        await message.answer(message_text, parse_mode='HTML')
     except Exception as e:
         logger.error(f'Add+friend: {e}')
 
@@ -547,11 +560,8 @@ async def add_friend_confirm(call: CallbackQuery, state: FSMContext, is_admin: b
     data = await state.get_data()
     friend_id, friend = data['friend_id'], data['friend']
     if call_data == 'yes':
-        await db_req.create_event_user(data, friend_id=friend_id)
-        user = user_cache[call.from_user.id]
-        await db_req.update_event_user_after_add_friend(user=user)
-        await call.message.answer(f'Ваш друг с никнеймом <i>{friend}</i> в запись на '
-                                  f'тренировку добавлен успешно☑️')
+        await db_req.create_event_user(data, friend_id=friend_id, i_am_friend=call.from_user.username)
+        await call.message.answer(f'Вы успешно записали друга с никнеймом <i>{friend}</i> на тренировку 🖍')
     else:
         await call.message.answer(f'Вы отменили запись друга на тренировку🟡')
     await state.set_state(None)  # выходим из состояния, чтобы кнопки дезактивировались
@@ -968,8 +978,8 @@ async def chancel_training_state(message: Message, state: FSMContext, is_admin: 
 
 @user_router.message(Command('test'))
 async def test(message: Message):
-    for k in user_cache:
-        print(user_cache[k].tg_username)
+    text = await db_req.get_event_user_for_check_friend(event_id=52, friend_id=1055)
+    print(text)
 #     print(f'dedlines = {dedlines}\n'
 #           f'dedline_notifications = {dedline_notifications}')
 #

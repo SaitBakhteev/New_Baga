@@ -261,8 +261,7 @@ async def sign_up_for_training(
             if availible_notify_by_payment:
                 keyboard.button(text=text, callback_data=call)
 
-        if signed_up_for_training and kwargs['friend'] is None:  # если доступно запись друга на тренировку
-            keyboard.button(text='🤜🏽Записать друга🤛🏽', callback_data='add_friend')
+        keyboard.button(text='🤜🏽Записать друга🤛🏽', callback_data='add_friend')
 
         if admin_permissions:
             keyboard.button(text='💠 Отмена верификации 🔘', callback_data='verify_payment:change')
