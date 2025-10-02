@@ -393,7 +393,7 @@ async def show_trainings(message: Message, state: FSMContext):
 
 # После выбора тренировки отображается текущий список заявишихся участников
 @user_router.callback_query(F.data.startswith('choose_event'))
-async def choose_event(message, state: FSMContext,
+async def choose_event(update: Message | CallbackQuery, state: FSMContext,
                        is_admin: bool):
     try:
         data = await state.get_data()
@@ -438,12 +438,15 @@ async def choose_event(message, state: FSMContext,
             availible_notify_by_payment = True if user_place_on_list <= participants_count else None
             friend = next(item['friend'] for item in event_user if item['user__tg_id'] == call_id)
 
-        keyboard = await kb.sign_up_for_training(signed_up_for_training,
-                                                 availible_pay,
-                                                 admin_permissions=is_admin,
-                                                 payment_confirmed=payment_confirmed,
-                                                 availible_notify_by_payment=availible_notify_by_payment,
-                                                 friend=friend)
+        keyboard = kb.sign_up_for_training(
+            signed_up_for_training,
+            availible_pay,
+            admin_permissions=is_admin,
+            payment_confirmed=payment_confirmed,
+            availible_notify_by_payment=availible_notify_by_payment,
+            friend=friend,
+            event_id=event_id
+        )
         if isinstance(update, CallbackQuery):
             await update.message.delete()
             await update.answer()
@@ -524,7 +527,7 @@ async def delete_from_training_confirm(message: Message, state: FSMContext, is_a
 async def add_friend(call: CallbackQuery, state: FSMContext):
     await call.message.answer('Введите никнейм вашего друга.\n'
                               '<i>Пример</i>: @ivanov1934',
-                              parse_mode='HTML')
+                              parse_mode='HTML', reply_markup=kb.return_to_start_markup())
     await state.set_state(st.AddFriendFSM.add_friend)
 
 
@@ -595,7 +598,7 @@ async def admin_panel(message: Message, state: FSMContext, is_admin: bool):
 # Видео-Инструкция для админа
 @user_router.message(Command('admin'))
 @user_router.callback_query(F.data=='admin_tutorial')
-async def admin_tutorial(message, state: FSMContext):
+async def admin_tutorial(update: Message | CallbackQuery, state: FSMContext):
     await state.clear()
     message = update.message if isinstance(update, CallbackQuery) else update
     await message.answer(VIDEO_ADMIN_TUTORIAL, parse_mode='HTML')
@@ -800,6 +803,11 @@ async def add_dedline_and_finish(call: CallbackQuery | Message, state: FSMContex
     asyncio.create_task(delete_bkg(call_mess))
 
 #----------Конец по добавке тренировки --------------
+
+@user_router.callback_query(F.data.startswith("training_manage"))
+async def training_manage(call: CallbackQuery, state: FSMContext):
+    await call.message.answer('Кнопки администрировния тренировки', reply_markup=kb.admin_train_manag_kb)
+
 
 # --------- Редактирование тренировки -----------
 @user_router.callback_query(F.data == 'edit_event')
