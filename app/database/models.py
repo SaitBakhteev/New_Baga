@@ -25,6 +25,7 @@ class User(Model):
 
 class Event(Model):  # модель создаваемых тренирвок
     id = fields.IntField(primary_key=True)
+    training_type = fields.CharField(max_length=30, null=True)
     created_at = fields.DatetimeField()
     payment_dedline = fields.DatetimeField(null=True)
     event_datetime = fields.DatetimeField()  # запланированная дата и время тренировки

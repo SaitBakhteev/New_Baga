@@ -16,7 +16,7 @@ from app.user import user_router, user_cache, dedlines, dedline_notifications
 from app.database.requests import get_all_users, get_event
 
 from config import TOKEN, TORTOISE_ORM
-from app.schedule import delete_events, update
+from app.schedule import delete_events, message
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +97,7 @@ async def replanner_creator(scheduler, notify=False):
 
 async def replanner(scheduler):  # перепланировщик для исполняемых функций
     if dedlines:
-        await update(dedlines[0][1])
+        await message(dedlines[0][1])
         dedlines.pop(0)
     scheduler.remove_job('replanner')
     await replanner_creator(scheduler)
@@ -105,7 +105,7 @@ async def replanner(scheduler):  # перепланировщик для исп�
 
 async def notify_replanner(scheduler):  # перепланировщик для отправки уведомлений
     if dedline_notifications:
-        await update(dedline_notifications[0][1], True, bot)
+        await message(dedline_notifications[0][1], True, bot)
         dedline_notifications.pop(0)
     scheduler.remove_job('notify_replanner')
     await replanner_creator(scheduler, True)
@@ -131,9 +131,9 @@ async def startup(dispatcher: Dispatcher):
               f'dedline_notifications = {dedline_notifications}')
         scheduler = AsyncIOScheduler()
         scheduler.add_job(delete_events, CronTrigger(hour=23, minute=58))
-        scheduler.add_job(update, CronTrigger(hour=0, minute=0))
+        scheduler.add_job(message, CronTrigger(hour=0, minute=0))
         scheduler.add_job(delete_events, CronTrigger(hour=11, minute=58))
-        scheduler.add_job(update, CronTrigger(hour=12, minute=0))
+        scheduler.add_job(message, CronTrigger(hour=12, minute=0))
         await replanner_creator(scheduler)
         await replanner_creator(scheduler, True)
         scheduler.start()

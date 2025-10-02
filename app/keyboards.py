@@ -6,6 +6,7 @@ from aiogram.types import (
 )
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+from config import TRAINING_TYPES
 
 logger = logging.getLogger(__name__)
 
@@ -59,23 +60,23 @@ async def admin_panel():
 
 
 # Отображает в поле ввода сообщения заготовку для создания тренировки
-async def input_template(current_template: str = None,
-                         save: bool = False,
-                         templates: list = None) -> InlineKeyboardMarkup:
+def input_template(current_template: str = None,
+                   save: bool = False,
+                   templates: list = None) -> InlineKeyboardMarkup:
 
     keyboard = InlineKeyboardBuilder()
 
     if not save:
         if current_template is None:
-            template = ("Тип тренировки: волейбол\n"
-                        "Адрес зала: КЭК, Спартаковская 6\n"
-                        "❗️Дата тренировки: 25.06.2025\n"
-                        "❗️Время: 11:00\n"
+            template = ("Адрес зала: КЭК, Спартаковская 6\n"
+                        "❗️Дата тренировки: 01.11.2025\n"
+                        "❗️Время: 06:00\n"
                         "Длительность: 2 часа\n"
                         "❗️Число участников: 12\n"
                         "Стоимость тренировки: 350\n"
                         "❗️Босс тренировки:\n"
-                        "Как оплатить: перевод на карту Сбер 1111 2222 3333 4744, Рустам Вагизович. Б")
+                        "Как оплатить:  карта ТИНЬКОФФ 💳📍4377 7237 4025 3178📍💳. "
+                        "После кидаем скрин чека @Rustambagautdinov")
             title = "Чистый шаблон"
         else:
             template, title = current_template, "Текущий шаблон"
@@ -172,17 +173,16 @@ def show_events_kb(event_user: list, *args) -> InlineKeyboardMarkup:
         events_id_list = [item['event__id'] for item in event_user]
 
         for arg in args:
-            print('\n')
             tag = '🟢' if arg['id'] in events_id_list else ''
             for i, item in enumerate(arg['event_text'].split('\n')):
                 if i > 2:
                     break
-                fragment = item.split(':')[1].strip()
+                fragment = item.split(':')[1].strip() if i < 2 else f'{item.split(':')[1]}:{item.split(':')[2]}'
                 match i:
-                    case 0: training_type = fragment
-                    case 1: gym = fragment
-                    case 2: event_date = fragment
-            text = tag + ' ' + training_type + '; ' + event_date + '; ' + gym
+                    case 0: gym = fragment
+                    case 1: event_date = fragment
+                    case 2: event_time = fragment
+            text = tag + ' ' + event_date + ', ' + event_time + '; ' + gym
             keyboard.button(text=text, callback_data=f"choose_event:{arg['id']}")
         keyboard.add(return_to_start)
         keyboard.adjust(1)
@@ -301,6 +301,14 @@ async def insert_template_on_edit_admin(template: str) -> InlineKeyboardMarkup:
     ])
     return keyboard
 
+
+# Выбор типа тренировки
+def training_types_kb() -> InlineKeyboardMarkup:
+    keyboard = InlineKeyboardBuilder()
+    for i, item in enumerate(TRAINING_TYPES):
+        keyboard.add(InlineKeyboardButton(text=item, callback_data=f'training_type:{i}'))
+    keyboard.adjust(1)
+    return keyboard.as_markup()
 
 ''' Функция, возвращающая инлайновые кнопки по записи на спортивные тренировки. 
 Состав отображемых кнопок зависит от входных условий. Например, кнопка добавления

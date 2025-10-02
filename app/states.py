@@ -12,6 +12,7 @@ class CreateGymFSM(StatesGroup):
 
 
 class CreateEventFSM(StatesGroup):
+    training_type = State()
     template = State()
     save_template = State()
     dedline_type = State()
@@ -51,5 +52,10 @@ class EditAdminFSM(StatesGroup):
 class DeleteTemplateFSM(StatesGroup):
     delete_template = State()
 
+
 class DeleteFromTrainingFSM(StatesGroup):
     delete_from_training = State()
+
+
+class ChooseEventFSM(StatesGroup):
+    training_type = State()

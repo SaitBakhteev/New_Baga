@@ -49,6 +49,7 @@ async def get_user_by_username(tg_username: str):
 async def create_event(data):  # добавить событие
     try:
         await Event.create(
+            training_type = data['training_type'],
             created_at = data['created_at'],
             payment_dedline = data['payment_dedline'],
             event_datetime = data['event_datetime'],
@@ -80,7 +81,8 @@ async def create_template(text: str):
 # Получение объектов моделей
 
 async def get_event(id=None, for_telegramm=False,
-                    for_schedule=False, last_record=False) -> Event():
+                    for_schedule=False, last_record=False,
+                    training_type=None) -> Event():
     try:
         if for_telegramm:
             return await (
@@ -95,6 +97,12 @@ async def get_event(id=None, for_telegramm=False,
                           first().values('id', 'payment_dedline')) if last_record \
                 else await (Event.filter(payment_dedline__gt=reper_datetime).order_by('payment_dedline').
                             values('id', 'payment_dedline'))
+        elif training_type:
+            return await (Event.filter(training_type=training_type).order_by('id').
+                          values(
+                'id', 'payment_dedline', 'event_datetime','event_text','participants_count'
+            )
+            )
         else:
             return await Event.get(id=id) if id else \
                 await (
@@ -107,7 +115,8 @@ async def get_event(id=None, for_telegramm=False,
 
 
 async def get_event_user(event_id=None, user_tg_id=None,
-                         payment_verification=False) -> EventUser():
+                         payment_verification=False,
+                         event_ids:list =None) -> EventUser():
     try:
 
         # Запрос к БД для верификации оплаты
@@ -123,10 +132,12 @@ async def get_event_user(event_id=None, user_tg_id=None,
 
             # Запрос к БД для выделения знаком 🟢 тех тренировок, на которые уже записан пользователь
             if user_tg_id:
-                user = await User.get(tg_id=user_tg_id).values('tg_id')
-                return await (EventUser.filter(user__tg_id=user['tg_id']).
+                user = await User.get(tg_id=user_tg_id)
+                return await (EventUser.filter(
+                    user=user, event__id__in=event_ids).
                               prefetch_related('user', 'event').
                               values('user__tg_id', 'event__id'))
+
 
             # Запрос к БД для отображения списка участников согласно хронологии их записи
             return await (EventUser.filter(event_id=event_id).prefetch_related(

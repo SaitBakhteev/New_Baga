@@ -33,7 +33,7 @@ async def delete_events():
     await Event.filter(event_datetime__lt=now).delete()
 
 
-async def update(event_id=None, notify=False, bot: Bot = None):
+async def message(event_id=None, notify=False, bot: Bot = None):
     try:
         # Получение из БД всех объектов EventUser
         event_user = await (EventUser.filter(event__payment_dedline__isnull=True).

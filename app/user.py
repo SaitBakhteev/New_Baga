@@ -1,6 +1,7 @@
 import logging
 import os
 
+import asyncio
 from functools import reduce
 
 from aiogram import Router, F, BaseMiddleware, Bot
@@ -11,7 +12,7 @@ from typing import Callable, Dict, Any, Awaitable
 
 import app.database.requests as db_req  # импортирование модуля запросов к БД
 
-from app.schedule import update
+from app.schedule import message
 from datetime import datetime, timedelta, time, date, timezone
 
 import app.keyboards as kb
@@ -82,6 +83,11 @@ user_router.message.middleware(AdminMiddleware())
 user_router.callback_query.middleware(AdminMiddleware())
 
 
+# Фоновая задача для очистки пользовательского окна переписки
+async def delete_bkg(message: Message):
+    await message.bot.delete_message(message.chat.id, message.message_id)
+
+
 # Регистрация
 async def registration(event: Message | CallbackQuery):
     username = event.from_user.username
@@ -150,7 +156,7 @@ async def return_to_start(call: CallbackQuery, state: FSMContext, is_admin: bool
 # Вызов TUTORIAL через инлайн-кнопку или команду '/help'
 @user_router.message(Command('help'))
 @user_router.callback_query(F.data=='tutorial')
-async def tutorial(update: CallbackQuery | Message, state: FSMContext):
+async def tutorial(message, state: FSMContext):
     await state.clear()
     message = update.message if isinstance(update, CallbackQuery) else update
     await message.answer(VIDEO_TUTORIAL, parse_mode='HTML')#'', reply_markup=await kb.return_to_start_markup(False))
@@ -357,15 +363,22 @@ async def delete_template_finish(message: Message, state: FSMContext):
 
 @user_router.message(Command('event'))
 @user_router.callback_query(F.data=='show_trainings')
-async def show_trainings(update: Message | CallbackQuery, state: FSMContext, is_admin: bool):
+async def show_training_types(message: Message, state: FSMContext):
     await state.clear()
-    message = update.message if isinstance(update, CallbackQuery) else update
-    await message.delete()
-    events = await db_req.get_event()
-    user_id = update.from_user.id
-    event_user = await db_req.get_event_user(user_tg_id=user_id)
+    await message.answer('Выберите тип тренировки', reply_markup=kb.training_types_kb())
+    await state.set_state(st.ChooseEventFSM.training_type)
+
+
+async def show_trainings(message: Message, state: FSMContext):
+    data = await state.get_data()
+    training_type = data['training_type']
+    events = await db_req.get_event(training_type=training_type)
+    event_ids = [i['id'] for i in events]
+    event_user = await db_req.get_event_user(user_tg_id=message.chat.id, event_ids=event_ids)
+
     if not events:
         await message.answer('Запланированных тренировок пока нет.')
+        await state.clear()
     else:
         await message.answer(
             'Выберите тренировку.\n'
@@ -380,12 +393,12 @@ async def show_trainings(update: Message | CallbackQuery, state: FSMContext, is_
 
 # После выбора тренировки отображается текущий список заявишихся участников
 @user_router.callback_query(F.data.startswith('choose_event'))
-async def choose_event(update: CallbackQuery | Message, state: FSMContext,
+async def choose_event(message, state: FSMContext,
                        is_admin: bool):
     try:
         data = await state.get_data()
         events = data.get('events')
-        this_call_query = None # специальный флаг, определяющий работу этой функции
+        this_call_query = None  # специальный флаг, определяющий работу этой функции
 
         if isinstance(update, CallbackQuery):
             this_call_query = True if update.data.startswith('choose_event') else False
@@ -582,7 +595,7 @@ async def admin_panel(message: Message, state: FSMContext, is_admin: bool):
 # Видео-Инструкция для админа
 @user_router.message(Command('admin'))
 @user_router.callback_query(F.data=='admin_tutorial')
-async def admin_tutorial(update: CallbackQuery | Message, state: FSMContext):
+async def admin_tutorial(message, state: FSMContext):
     await state.clear()
     message = update.message if isinstance(update, CallbackQuery) else update
     await message.answer(VIDEO_ADMIN_TUTORIAL, parse_mode='HTML')
@@ -618,10 +631,29 @@ async def general_tut(message: Message, bot: Bot):
 @user_router.callback_query(F.data=='add_event')
 async def add_event(call: CallbackQuery, state: FSMContext):
     await state.clear()
-    templates = await db_req.get_templates()
-    await call.message.answer("Шаблоны для создания тренировки",
-                              reply_markup=await kb.input_template(templates=templates))
-    await state.set_state(st.CreateEventFSM.template)
+    await call.message.answer("Выберите тип создаваемой тренировки",
+                              reply_markup=kb.training_types_kb())
+    await state.set_state(st.CreateEventFSM.training_type)
+    asyncio.create_task(delete_bkg(call.message))
+
+
+@user_router.callback_query(F.data.startswith('training_type') and st.ChooseEventFSM.training_type)
+@user_router.callback_query(F.data.startswith('training_type') and st.CreateEventFSM.training_type)
+async def choose_training_type(call: CallbackQuery, state: FSMContext):
+    current_state = await state.get_state()
+    training_index = int(call.data.split(':')[1])
+    training_type = TRAINING_TYPES[training_index]
+    await state.update_data(training_type=training_type)
+    if current_state == st.ChooseEventFSM.training_type:
+        await state.update_data(training_type=training_type)
+        await show_trainings(call.message, state)
+    else:
+        templates = await db_req.get_templates()
+        await call.message.answer('Выберите шаблон',
+                                  reply_markup=kb.input_template(templates=templates))
+        await state.set_state(st.CreateEventFSM.template)
+
+    asyncio.create_task(delete_bkg(call.message))
 
 
 @user_router.message(st.CreateEventFSM.template)
@@ -636,19 +668,19 @@ async def input_template(message: Message, state: FSMContext):
 
             # Некоторые строки шаблона, значения которых должны соответствовать строгим форматам
             match index:
-                case 2:  # дата тренировки
+                case 1:  # дата тренировки
                     day, month, year = value.replace(" ", "").replace(",", ".").split(".")
                     event_date = date(year=int(year), month=int(month), day=int(day))
-                case 3:  # время тренировки и дальнейшее формирование datetime тренировки
+                case 2:  # время тренировки и дальнейшее формирование datetime тренировки
                     hour, minute = value.replace(" ", "").split(":")
                     event_time = time(hour=int(hour), minute=int(minute))
                     event_datetime = datetime.combine(date=event_date, time=event_time)
                     if (event_datetime < datetime.now() + timedelta(hours=13)
                             or event_datetime > datetime.now() + timedelta(days=90)):
                         raise ValueError("unreal date")
-                case 5:
+                case 4:
                     participants_count = int(value)
-                case 7:
+                case 6:
                     boss_val = None  # на всякий случай, поскольку дебаггер показал непонятки
                     if value.strip() != "" and value.strip() != "-":
                         boss_val = value.strip().replace('@', '')
@@ -683,6 +715,7 @@ async def input_template(message: Message, state: FSMContext):
             await state.set_state(st.CreateEventFSM.dedline_type)
         else:
             await add_dedline_and_finish(message, state)
+
     except ValueError as e:
         if str(e) == "month must be in 1..12":
                 error_message = "Некорректно введен месяц"
@@ -704,8 +737,9 @@ async def input_template(message: Message, state: FSMContext):
 
         await message.answer(f"{error_message}.\n"
                              f"Повторите действия, начиная со вставки шаблона.",
-                             reply_markup=await kb.input_template(text),
+                             reply_markup=kb.input_template(text),
                              parse_mode="HTML")
+        asyncio.create_task(delete_bkg(message))
 
 
 @user_router.message(Command('save'))
@@ -713,6 +747,7 @@ async def skip(message: Message, state: FSMContext):
     data = await state.get_data()
     await db_req.create_template(text=data['current_template'])
     await message.answer(f"Шаблон сохранен!")
+    asyncio.create_task(delete_bkg(message))
 
 
 @user_router.callback_query(F.data.startswith("dedline_"), st.CreateEventFSM.dedline_type)
@@ -722,7 +757,8 @@ async def add_dedline_and_finish(call: CallbackQuery | Message, state: FSMContex
         data = await state.get_data()
         event_text = data["event_text"]
         if 'is_update' not in data:  # если создается новая тренировка (там работает CallbackQuery)
-            dedline_hour = int(call.data.split("_")[1])
+            dedline_hour = int(call.data.split("_")[1]) if isinstance(call, CallbackQuery) \
+                else None
             now = datetime.now()
             data["created_at"] = now
             payment_dedline = now + timedelta(hours=dedline_hour) if dedline_hour else None
@@ -732,10 +768,11 @@ async def add_dedline_and_finish(call: CallbackQuery | Message, state: FSMContex
                                       f"{payment_dedline.strftime('%H:%M %d.%m.%Y')}\n")
             else:  # иначе для тренировки устанавливается индивидуальный для каждого участника посуточный дедлайн
                 data["event_text"] = (f"{event_text}\n"
-                                      f"<b><i>Срок оплаты</i></b>: в течение суток после запси на тренировку\n")
+                                      f"<b><i>Срок оплаты</i></b>: в течение суток после записи на тренировку\n")
             data["payment_dedline"] = payment_dedline
 
-            await call.message.answer(f"<b>Создана следующая тренировка</b>:\n\n"
+            await call_mess.answer(f"<b>Создана следующая тренировка</b>:\n\n"
+                                      f"<b>Тип тренировки</b>: {data['training_type']}\n"
                                       f"{data['event_text']}\n\n")
 
             # Два запроса в БД: запись новой тренировки и получение её данных
@@ -749,17 +786,18 @@ async def add_dedline_and_finish(call: CallbackQuery | Message, state: FSMContex
             notificate_datetime = payment_dedline.replace(tzinfo=None) - timedelta(hours=1)
             dedline_notifications.append((notificate_datetime, id))
             dedline_notifications.sort()
+
         else:
             event_text, end_fragment = str(data["event_text"]), str(data["end_fragment"])
             event_id = int(data["event_id"])
             data["event_text"] = f'{event_text.strip()}\n{end_fragment}'
             await db_req.update_event(event_id, data)
-            await call_mess.delete()
             await call_mess.answer('Тренировка отредактирована')
         await state.clear()
     except Exception as e:
         await call_mess.answer("Возникла ошибка! Повторите создание тренировки")
         logger.error(f"Ошибка при добавлении тренировки: {e}")
+    asyncio.create_task(delete_bkg(call_mess))
 
 #----------Конец по добавке тренировки --------------
 
@@ -920,7 +958,7 @@ async def drop_participant_middlware_state(message: Message, state: FSMContext, 
 
         user_id = next(item['user__id'] for i, item in enumerate(event_user) if i==index-1)
         await state.update_data(user_id=user_id)
-        await message.answer('Вы подтверждаете выаолнение данного действия?',
+        await message.answer('Вы подтверждаете выполнение данного действия?',
                              reply_markup=kb.drop_participant_kb)
         return
 
@@ -977,8 +1015,16 @@ async def chancel_training_state(message: Message, state: FSMContext, is_admin: 
 
 @user_router.message(Command('test'))
 async def test(message: Message):
-    text = await db_req.get_event_user_for_check_friend(event_id=52, friend_id=1055)
-    print(text)
+    this_path = os.path.abspath(__file__)
+    this_dir = os.path.dirname(this_path)
+    base_dir = os.path.dirname(this_dir)
+
+    with open(os.path.join(
+            base_dir, 'training_types.txt'), 'r', encoding='utf-8'
+    ) as f:
+        a = f.read()
+    for item in a.split('\n'):
+        await message.answer(item)
 #     print(f'dedlines = {dedlines}\n'
 #           f'dedline_notifications = {dedline_notifications}')
 #
