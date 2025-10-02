@@ -29,7 +29,8 @@ logger = logging.getLogger(__name__)
 
 # Удаление записей прошедших тренировок из БД
 async def delete_events():
-    await Event.filter(event_datetime__lt=datetime.now()).delete()
+    now = datetime.now()
+    await Event.filter(event_datetime__lt=now).delete()
 
 
 async def update(event_id=None, notify=False, bot: Bot = None):

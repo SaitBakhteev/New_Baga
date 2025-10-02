@@ -32,6 +32,7 @@ class Event(Model):  # модель создаваемых тренирвок
     event_text = fields.TextField(null=True)
     boss = fields.ForeignKeyField('models.User', related_name='boss', null=True, on_delete=fields.NO_ACTION)
     user = fields.ManyToManyField('models.User', related_name="participants", through='EventUser')
+    stars = fields.TextField(null=True)
 
     def __str__(self):
         return f'event_id = {self.id}'
@@ -57,3 +58,10 @@ class Template(Model):
     id = fields.IntField(primary_key=True)
     modified_at = fields.DatetimeField()
     text = fields.TextField()
+
+
+class Statistic(Model):
+    user = fields.ForeignKeyField('models.User', on_delete=fields.NO_ACTION)
+    training_type = fields.CharField(max_length=30)
+    visit_count = fields.IntField()
+    star_count = fields.IntField()
