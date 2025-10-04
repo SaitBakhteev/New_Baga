@@ -59,3 +59,4 @@ class DeleteFromTrainingFSM(StatesGroup):
 
 class ChooseEventFSM(StatesGroup):
     training_type = State()
+    admin_management = State()

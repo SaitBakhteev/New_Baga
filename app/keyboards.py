@@ -38,8 +38,8 @@ def return_to_start_markup(process_interrupt=True) -> InlineKeyboardMarkup:
     return keyboard.as_markup()
 
 
-# Просмотр доступных тренировок для дальнейшкей записи
-show_trainings_kb = InlineKeyboardButton(text='📅 Выбрать тренировку 🖍', callback_data='show_trainings')
+show_training_types_kb = InlineKeyboardButton(text='📅 Выбрать тренировку 🖍', callback_data='show_training_types')
+
 tutorial_kb = InlineKeyboardButton(text='💡 Инструкция по использованию бота📘', callback_data='tutorial')
 
 
@@ -132,7 +132,7 @@ async def admin_kb_markup(is_any_process=True) -> InlineKeyboardMarkup:
 
 async def start_menu(admin_perm=False) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardBuilder()
-    keyboard.add(show_trainings_kb)
+    keyboard.add(show_training_types_kb)
     keyboard.add(tutorial_kb)
     if admin_perm:
         keyboard.add(add_event_admin_kb)
