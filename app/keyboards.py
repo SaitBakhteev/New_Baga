@@ -38,6 +38,9 @@ def return_to_start_markup(process_interrupt=True) -> InlineKeyboardMarkup:
     return keyboard.as_markup()
 
 
+# Кнопка назад
+back_kb = InlineKeyboardButton(text='↩️Назад', callback_data='back')
+
 show_training_types_kb = InlineKeyboardButton(text='📅 Выбрать тренировку 🖍', callback_data='show_training_types')
 
 tutorial_kb = InlineKeyboardButton(text='💡 Инструкция по использованию бота📘', callback_data='tutorial')
@@ -184,7 +187,7 @@ def show_events_kb(event_user: list, *args) -> InlineKeyboardMarkup:
                     case 2: event_time = fragment
             text = tag + ' ' + event_date + ', ' + event_time + '; ' + gym
             keyboard.button(text=text, callback_data=f"choose_event:{arg['id']}")
-        keyboard.add(return_to_start)
+        keyboard.add(back_kb)
         keyboard.adjust(1)
         return keyboard.as_markup()
     except Exception as e:
@@ -270,7 +273,7 @@ def sign_up_for_training(
                     text='💠🤵🏻‍♂️ Администрирование тренировки',
                     callback_data=f'training_manage:{event_id}'
                 )
-        keyboard.add(return_to_start)
+        keyboard.add(back_kb)
         keyboard.adjust(1)
         return keyboard.as_markup()
     except Exception as e:
