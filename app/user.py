@@ -84,8 +84,12 @@ user_router.callback_query.middleware(AdminMiddleware())
 
 
 # Фоновая задача для очистки пользовательского окна переписки
-async def delete_bkg(message: Message):
-    await message.bot.delete_message(message.chat.id, message.message_id)
+async def delete_bkg(call_mess: Message | CallbackQuery):
+    try:
+        call_mess = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
+        await call_mess.bot.delete_message(call_mess.chat.id, call_mess.message_id)
+    except Exception:
+        return
 
 
 # Регистрация
@@ -126,21 +130,21 @@ async def registration_callback_query(call: CallbackQuery, state: FSMContext):
 
 # ----- ОБРАБОТКА /start -----------
 @user_router.message(CommandStart())
-async def cmd_start(message: CallbackQuery | Message, state: FSMContext, is_admin: bool):
+async def cmd_start(call_mess: CallbackQuery | Message, state: FSMContext, is_admin: bool):
     try:
-        if message.from_user.id not in user_cache:
-            await registration(message)
+        if call_mess.from_user.id not in user_cache:
+            await registration(call_mess)
             return
         await state.clear()
-        message = message.message if isinstance(message, CallbackQuery) else message
-        await message.answer(
+        call_mess = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
+        await call_mess.answer(
             f"Для работы с ботом воспользуйтесь командами меню, расположенными "
             f"слева внизу (если у вас на устройстве стандатная раскладка).\n↙️"
         )
-        if message.from_user.username == "radik313":
-            await message.answer("Эээйй!!! Щупряк!!")
-        if message.from_user.username == "Rinat_Tranzit":
-            await message.answer("Мансура на тебя нет!!")
+        if call_mess.from_user.username == "radik313":
+            await call_mess.answer("Эээйй!!! Щупряк!!")
+        if call_mess.from_user.username == "Rinat_Tranzit":
+            await call_mess.answer("Мансура на тебя нет!!")
     except Exception as e:
         logger.error(e)
         return
@@ -148,7 +152,14 @@ async def cmd_start(message: CallbackQuery | Message, state: FSMContext, is_admi
 
 @user_router.callback_query(F.data=='return_to_start')
 async def return_to_start(call: CallbackQuery, state: FSMContext, is_admin: bool):
-    await cmd_start(call, state, is_admin)
+    current_state = await state.get_state()
+    match current_state:
+        case st.AddFriendFSM.add_friend | st.DeleteFromTrainingFSM.delete_from_training | st.ChooseEventFSM.give_star:
+            await choose_event(call.message, state, is_admin)
+        # case st.DeleteFromTrainingFSM.delete_from_training: await choose_event(call.message, state, is_admin)
+    # await cmd_start(call, state, is_admin)
+    if current_state != st.DeleteFromTrainingFSM.delete_from_training:
+        asyncio.create_task(delete_bkg(call))
 
 
 @user_router.callback_query(F.data=='back')
@@ -160,16 +171,16 @@ async def back(call: CallbackQuery, state: FSMContext, is_admin: bool):
             await state.set_state(st.ChooseEventFSM.training_type)
             await show_events(call.message, state)
 
-    asyncio.create_task(delete_bkg(call.message))
+    asyncio.create_task(delete_bkg(call))
 
 ''' КНОПКИ ДЛЯ ВЫВОДА ИНСТРУКЦИЙ '''
 
 # Вызов TUTORIAL через инлайн-кнопку или команду '/help'
 @user_router.message(Command('help'))
 @user_router.callback_query(F.data=='tutorial')
-async def tutorial(update: Message | CallbackQuery, state: FSMContext):
+async def tutorial(call_mess: Message | CallbackQuery, state: FSMContext):
     await state.clear()
-    message = update.message if isinstance(update, CallbackQuery) else update
+    message = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
     await message.answer(VIDEO_TUTORIAL, parse_mode='HTML', reply_markup=kb.return_to_start_markup(False))
 
 
@@ -300,24 +311,24 @@ async def show_events(message: Message, state: FSMContext):
 
 # После выбора тренировки отображается текущий список заявишихся участников
 @user_router.callback_query(F.data.startswith('choose_event'))
-async def choose_event(update: Message | CallbackQuery, state: FSMContext,
+async def choose_event(call_mess: Message | CallbackQuery, state: FSMContext,
                        is_admin: bool):
     try:
         data = await state.get_data()
         events, training_type = data.get('events'), data['training_type']
         this_call_query = None  # специальный флаг, определяющий работу этой функции
 
-        if isinstance(update, CallbackQuery):
-            this_call_query = True if update.data.startswith('choose_event') else False
-        event_id = int(update.data.split(':')[1]) if this_call_query else data.get('event_id')
+        if isinstance(call_mess, CallbackQuery):
+            this_call_query = True if call_mess.data.startswith('choose_event') else False
+        event_id = int(call_mess.data.split(':')[1]) if this_call_query else data.get('event_id')
         event = next(item for item in events if item['id'] == event_id) if this_call_query else data.get('event')
         event_user = await db_req.get_event_user(event_id=event_id)
 
         text = await kb.show_text_about_event(event, event_user,
-                                              tg_id=update.from_user.id,
+                                              tg_id=call_mess.from_user.id,
                                               is_admin=is_admin)
         text = f'<b>Тип тренировки</b>: {training_type}\n' + text
-        call_id = update.from_user.id
+        call_id = call_mess.from_user.id
 
         await state.update_data(event_id=event_id, event=event, event_user=event_user)
 
@@ -355,16 +366,15 @@ async def choose_event(update: Message | CallbackQuery, state: FSMContext,
             friend=friend,
             event_id=event_id
         )
-        if isinstance(update, CallbackQuery):
-            await update.answer()
-            await update.message.answer(text, parse_mode='HTML', reply_markup=keyboard)
+        if isinstance(call_mess, CallbackQuery):
+            await call_mess.message.answer(text, parse_mode='HTML', reply_markup=keyboard)
         else:
-            await update.answer(text, parse_mode='HTML', reply_markup=keyboard)
+            await call_mess.answer(text, parse_mode='HTML', reply_markup=keyboard)
         await state.set_state(st.ChooseEventFSM.choose_event)
 
-        # Специальная переделка update наоборот (может это избыточно!)
-        update = update.message if this_call_query else update
-        asyncio.create_task(delete_bkg(update))
+        # Специальная переделка call_mess наоборот (может это избыточно!)
+        call_mess = call_mess.message if this_call_query else call_mess
+        asyncio.create_task(delete_bkg(call_mess))
     except Exception as e:
         logger.error(e)
 
@@ -424,14 +434,12 @@ async def delete_from_training_confirm(message: Message, state: FSMContext, is_a
         user_id, event_id = data.get('user_id'), data.get('event_id')
 
         await db_req.delete_event_user(user_id, event_id)
-
-        await message.delete()
         await message.answer('Вы удалились из записи на тренировку.')
+        asyncio.create_task(delete_bkg(message))
         await cmd_start(message, state, is_admin)
     else:
-        await message.delete()
         await message.answer('Удаление прервано')
-        await state.set_state(None)
+        await choose_event(message, state, is_admin)
 
 
 # Записать друга на тренировку
@@ -497,6 +505,10 @@ async def add_friend_confirm(call: CallbackQuery, state: FSMContext, is_admin: b
 
 
 ''' ДОСТУПНЫЕ АДМИНУ ФУНКЦИИ  '''
+
+# Функция, которая опередяет из БД учатников по веденным порядковым номерам
+def participant_definition():
+
 
 # -------------- Список админов ----------------
 @user_router.callback_query(F.data=='admin_list')
@@ -615,9 +627,9 @@ async def admin_panel(message: Message, state: FSMContext, is_admin: bool):
 # Видео-Инструкция для админа
 @user_router.message(Command('admin'))
 @user_router.callback_query(F.data=='admin_tutorial')
-async def admin_tutorial(update: Message | CallbackQuery, state: FSMContext):
+async def admin_tutorial(call_mess: Message | CallbackQuery, state: FSMContext):
     await state.clear()
-    message = update.message if isinstance(update, CallbackQuery) else update
+    message = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
     await message.answer(VIDEO_ADMIN_TUTORIAL, parse_mode='HTML')
 
 
@@ -654,7 +666,7 @@ async def add_event(call: CallbackQuery, state: FSMContext):
     await call.message.answer("Выберите тип создаваемой тренировки",
                               reply_markup=kb.training_types_kb())
     await state.set_state(st.CreateEventFSM.training_type)
-    asyncio.create_task(delete_bkg(call.message))
+    asyncio.create_task(delete_bkg(call))
 
 
 @user_router.callback_query(F.data.startswith('training_type'), st.ChooseEventFSM.training_type)
@@ -671,7 +683,7 @@ async def choose_training_type(call: CallbackQuery, state: FSMContext):
         await call.message.answer('Выберите шаблон',
                                   reply_markup=kb.input_template(templates=templates))
         await state.set_state(st.CreateEventFSM.template)
-    asyncio.create_task(delete_bkg(call.message))
+    asyncio.create_task(delete_bkg(call))
 
 
 @user_router.message(st.CreateEventFSM.template)
@@ -769,13 +781,13 @@ async def skip(message: Message, state: FSMContext):
 
 
 @user_router.callback_query(F.data.startswith("dedline_"), st.CreateEventFSM.dedline_type)
-async def add_dedline_and_finish(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
-    call_mess = call.message if isinstance(call, CallbackQuery) else call
+async def add_dedline_and_finish(call_mess: CallbackQuery | Message, state: FSMContext, is_admin: bool):
+    call_mess = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
     try:
         data = await state.get_data()
         event_text = data["event_text"]
         if 'is_update' not in data:  # если создается новая тренировка (там работает CallbackQuery)
-            dedline_hour = int(call.data.split("_")[1]) if isinstance(call, CallbackQuery) \
+            dedline_hour = int(call_mess.data.split("_")[1]) if isinstance(call_mess, CallbackQuery) \
                 else None
             now = datetime.now()
             data["created_at"] = now
@@ -813,7 +825,7 @@ async def add_dedline_and_finish(call: CallbackQuery | Message, state: FSMContex
             event = await db_req.get_event(id=event_id)
             await call_mess.answer('Тренировка отредактирована')
             await state.update_data(event=event[0])
-            await choose_event (call, state, is_admin)
+            await choose_event (call_mess, state, is_admin)
     except Exception as e:
         await call_mess.answer("Возникла ошибка! Повторите создание тренировки")
         logger.error(f"Ошибка при добавлении тренировки: {e}")
@@ -903,11 +915,10 @@ async def confirm_payment(message: Message, state: FSMContext, is_admin: bool):
         number_list = message.text.replace(' ', '').split(',')
         number_list = list(map(int, number_list))
 
-        # Если админ номера (в т.ч. 0), выходящие за пределы ОСНОВНОГО СПИСКА
+        # Если админ ввел номера (в т.ч. 0), выходящие за пределы ОСНОВНОГО СПИСКА
         if any(num > participants_count or num==0 for num in number_list):
             raise IndexError
         index_list =  list(map(lambda x: x-1, number_list))
-        print(f'index_list = {index_list}')
 
         # Формирование списка id объектов EventUser для обновления в БД значений поля 'payment_confirmed'
         if verify_type == 'change':  # Отменить верификацию оплаты ✖️
@@ -952,6 +963,27 @@ async def confirm_payment(message: Message, state: FSMContext, is_admin: bool):
     except Exception as e:
         logger.error(e)
 # ---------- Конец верификации оплаты ---------------
+
+
+# --------- Присвоить звезду. Начало -------------
+
+@user_router.callback_query(F.data=='give_star')
+async def give_star(call: CallbackQuery, state: FSMContext):
+    await state.set_state(st.ChooseEventFSM.give_star)
+    await call.message.answer('Введите через запятую порядковые номера игроков, которым хотите присвоить звезду',
+                              reply_markup=kb.return_to_start_markup())
+
+
+@user_router.message(st.ChooseEventFSM.give_star)
+async def give_star_confirm(message: Message, state: FSMContext):
+    try:
+        text = message.text.replace(' ', '').split(',')
+        await
+    except Exception:
+        await message.answer('Нарушен формат ввода, операция прервана.')
+        await choose_event(message, state, True)
+        asyncio.create_task(delete_bkg(message))
+# --------- Присвоить звезду. Конец -------------
 
 
 # ---------- Исключение участников или перемещение в конец очереди, отмена тренировки ---------------
@@ -1003,9 +1035,9 @@ async def drop_participant_middlware_state(message: Message, state: FSMContext, 
         pass
 
     await state.set_state(None)
-    await message.delete()
     await choose_event(message, state, is_admin)
     await message.answer(f'{text}\nОперация отклонена')
+    asyncio.create_task(delete_bkg(message))
 
 
 @user_router.callback_query(F.data.startswith('drop_paricipant'))

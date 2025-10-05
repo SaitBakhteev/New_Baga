@@ -285,6 +285,7 @@ admin_train_manag_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='💠 Отмена верификации 🔘', callback_data='verify_payment:change')],
     [InlineKeyboardButton(text='💠 Подтвердить оплату ✅', callback_data='verify_payment:confirm')],
     [InlineKeyboardButton(text='💠 Опровергнуть оплату ❌', callback_data='verify_payment:refute')],
+    [InlineKeyboardButton(text='💠 Присвоить звезду ⭐️', callback_data='give_star')],
     [InlineKeyboardButton(text='💠 Сдвинуть в конец очереди ⬇️', callback_data='drop_or_chancel:replace_to_end')],
     [InlineKeyboardButton(text='💠 Удалить участника 🚷', callback_data='drop_or_chancel:participant')],
     [InlineKeyboardButton(text='💠 Редактировать тренировку ✏️', callback_data=f'edit_event')],
