@@ -20,6 +20,8 @@ TRAINING_TYPES = ('🏐 Волейбол',
 DEDLINE_TYPE = [("12 часов", "12"), ("24 часа", "24"),
                 ("Индивидуальный дедлайн", "0")]
 
+SEASON_INDEX = [0]  # спец переменная, означающая начало летоисчисления сезона
+
 # config.py for MySQL
 
 # TORTOISE_ORM = {
@@ -98,3 +100,14 @@ TORTOISE_ORM = {
 #
 
 #
+
+# Спец функция для считывания индекса сезона и перезаписи его
+async def season_index(write_mode: bool=False):
+    with open('season_index.txt', 'r') as f:
+        global SEASON_INDEX
+        SEASON_INDEX[0] = int(f.read().strip())
+        if write_mode:
+            SEASON_INDEX[0] += 1
+            with open('season_index.txt', 'w') as f:
+                f.write(str(SEASON_INDEX[0]))
+    return SEASON_INDEX[0]

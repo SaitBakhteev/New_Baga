@@ -6,9 +6,7 @@ from tortoise.exceptions import DoesNotExist
 from app.database.models import User, Event, EventUser, Template
 from datetime import datetime, timedelta
 
-
 logger = logging.getLogger(__name__)
-
 
 # ----- ПОЛЬЗОВАТЕЛЬ -----------
 # Создание или получение пользователя

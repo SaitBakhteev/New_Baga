@@ -22,6 +22,7 @@ from app.tutorial import TUTORIAL, ADMIN_TUTORIAL, SIGN_UP_FOR_TRAINING_TUTORIAL
 
 from config import TRAINING_TYPES, DEDLINE_TYPE
 
+from config import SEASON_INDEX, season_index
 
 BOT_NAME = os.getenv('BOT_NAME')
 
@@ -507,7 +508,37 @@ async def add_friend_confirm(call: CallbackQuery, state: FSMContext, is_admin: b
 ''' ДОСТУПНЫЕ АДМИНУ ФУНКЦИИ  '''
 
 # Функция, которая опередяет из БД учатников по веденным порядковым номерам
-def participant_definition():
+async def participant_list_formation(call_mess: Message | CallbackQuery, state: FSMContext, is_admin: bool):
+    try:
+        data = await state.get_data()
+        event = data.get('event')
+
+        call_mess = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
+        participants_count = event['participants_count']
+
+        # Список порядковых номеров участников, которые введены админом для подтверждения оплаты
+        number_list = call_mess.text.replace(' ', '').split(',')
+        number_list = list(map(int, number_list))
+
+        # Если админ ввел номера (в т.ч. 0), выходящие за пределы ОСНОВНОГО СПИСКА
+        if any(num > participants_count or num == 0 for num in number_list):
+            raise IndexError
+        index_list = list(map(lambda x: x - 1, number_list))
+        return index_list
+    except ValueError:
+        await call_mess.answer('Нужно <i><u>через запятую</u></i> вводить только '
+                             '<b>целочисленные значения</b>. Повторите ввод.',
+                             parse_mode='HTML',
+                             reply_markup=kb.return_to_start_markup(process_interrupt=True))
+        raise
+    except IndexError:
+        await call_mess.answer(f'Допустимы только порядковые номера из '
+                             f'<u>ОСНОВНОГО СПИСКА</u>.\n'
+                             f'Повторите ввод.',
+                             parse_mode='HTML',
+                             reply_markup=kb.return_to_start_markup(process_interrupt=True))
+        asyncio.create_task(delete_bkg(call_mess))
+        raise
 
 
 # -------------- Список админов ----------------
@@ -909,16 +940,7 @@ async def confirm_payment(message: Message, state: FSMContext, is_admin: bool):
         data = await state.get_data()
         event, event_user, verify_type = (data.get('event'), data.get('event_user'),
                                           data.get('verify_type'))
-        participants_count = event['participants_count']
-
-        # Список порядковых номеров участников, которые введены админом для подтверждения оплаты
-        number_list = message.text.replace(' ', '').split(',')
-        number_list = list(map(int, number_list))
-
-        # Если админ ввел номера (в т.ч. 0), выходящие за пределы ОСНОВНОГО СПИСКА
-        if any(num > participants_count or num==0 for num in number_list):
-            raise IndexError
-        index_list =  list(map(lambda x: x-1, number_list))
+        index_list = participant_list_formation(message, state, is_admin)
 
         # Формирование списка id объектов EventUser для обновления в БД значений поля 'payment_confirmed'
         if verify_type == 'change':  # Отменить верификацию оплаты ✖️
@@ -943,23 +965,10 @@ async def confirm_payment(message: Message, state: FSMContext, is_admin: bool):
         else:
             report = '🛑 Статусы <b>не обновлены</b>. Причины описаны в <b>/admin</b>.'
 
-        await message.delete()
-        await choose_event(message, state, is_admin)
         await message.answer(report, parse_mode='HTML')
+        await choose_event(message, state, is_admin)
+        asyncio.create_task(delete_bkg(message))
 
-
-    except ValueError:
-        await message.answer('Нужно <i><u>через запятую</u></i> вводить только '
-                             '<b>целочисленные значения</b>. Повторите ввод.',
-                             parse_mode='HTML',
-                             reply_markup=kb.return_to_start_markup(process_interrupt=True))
-        return
-    except IndexError:
-        await message.answer(f'Допустимы только порядковые номера из '
-                             f'<u>ОСНОВНОГО СПИСКА</u>.\n'
-                             f'Повторите ввод.',
-                             parse_mode='HTML',
-                             reply_markup=kb.return_to_start_markup(process_interrupt=True))
     except Exception as e:
         logger.error(e)
 # ---------- Конец верификации оплаты ---------------
@@ -975,14 +984,12 @@ async def give_star(call: CallbackQuery, state: FSMContext):
 
 
 @user_router.message(st.ChooseEventFSM.give_star)
-async def give_star_confirm(message: Message, state: FSMContext):
+async def give_star_confirm(message: Message, state: FSMContext, is_admin: bool):
     try:
-        text = message.text.replace(' ', '').split(',')
-        await
+        await participant_list_formation(message, state, is_admin)
+        await message.answer('Суперстар')
     except Exception:
-        await message.answer('Нарушен формат ввода, операция прервана.')
-        await choose_event(message, state, True)
-        asyncio.create_task(delete_bkg(message))
+        return
 # --------- Присвоить звезду. Конец -------------
 
 
@@ -1075,9 +1082,5 @@ async def chancel_training_state(message: Message, state: FSMContext, is_admin: 
 
 @user_router.message(Command('test'))
 async def test(message: Message):
-    await message.answer(
-        'test',reply_markup=kb.sign_up_for_training(
-            True, True, True,
-            event_id=2
-        )
-    )
+    await season_index(True)
+    print(f'SEASON_INDEX = {SEASON_INDEX[0]}')

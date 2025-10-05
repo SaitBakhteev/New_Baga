@@ -62,7 +62,11 @@ class Template(Model):
 
 
 class Statistic(Model):
+    season_index = fields.IntField(default=0)  # спец поле, указывающее начало летоисчисления каждого сезона
+    created_at = fields.DatetimeField(auto_now_add=True, timezone=timezone('Europe/Moscow'))
+    modifed_at = fields.DatetimeField(auto_now_add=True, timezone=timezone('Europe/Moscow'))
     user = fields.ForeignKeyField('models.User', on_delete=fields.NO_ACTION)
     training_type = fields.CharField(max_length=30)
     visit_count = fields.IntField()
     star_count = fields.IntField()
+
