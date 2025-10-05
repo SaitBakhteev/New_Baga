@@ -30,7 +30,26 @@ logger = logging.getLogger(__name__)
 # Удаление записей прошедших тренировок из БД
 async def delete_events():
     now = datetime.now()
-    await Event.filter(event_datetime__lt=now).delete()
+
+    # Сначала смотрим какие тренировки неактуальны уже
+    events = await (EventUser.filter().prefetch_related('event','user').all().
+              values('event__id',
+                     'event__training_type',
+                     'event__participants_count',
+                     'event__stars', 'user_id',
+                     'created_at'))
+
+    print(events)
+
+    dt = [{'id': 21, 'user__tg_name': 'Eldar', 'training_type': '🏀 Баскетбол'},
+     {'id': 21, 'user__tg_name': 'Рустем', 'training_type': '🏀 Баскетбол'},
+     {'id': 21, 'user__tg_name': 'Vlad', 'training_type': '🏀 Баскетбол'},
+     {'id': 21, 'user__tg_name': 'Булат', 'training_type': '🏀 Баскетбол'},
+     {'id': 21, 'user__tg_name': 'Саит', 'training_type': '🏀 Баскетбол'}]
+    # for item in events:
+
+
+    # await Event.filter(event_datetime__lt=now).delete()
 
 
 async def message(event_id=None, notify=False, bot: Bot = None):
@@ -95,3 +114,4 @@ async def message(event_id=None, notify=False, bot: Bot = None):
         logger.info(f'DBConnectionError: {e}')
     except Exception as e:
         logger.error(f'on_schedule_update: {e}')
+

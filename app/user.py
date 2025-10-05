@@ -12,7 +12,7 @@ from typing import Callable, Dict, Any, Awaitable
 
 import app.database.requests as db_req  # импортирование модуля запросов к БД
 
-from app.schedule import message
+from app.schedule import message, delete_events
 from datetime import datetime, timedelta, time, date, timezone
 
 import app.keyboards as kb
@@ -524,6 +524,7 @@ async def participant_list_formation(call_mess: Message | CallbackQuery, state: 
         if any(num > participants_count or num == 0 for num in number_list):
             raise IndexError
         index_list = list(map(lambda x: x - 1, number_list))
+        asyncio.create_task(delete_bkg(call_mess))
         return index_list
     except ValueError:
         await call_mess.answer('Нужно <i><u>через запятую</u></i> вводить только '
@@ -537,7 +538,6 @@ async def participant_list_formation(call_mess: Message | CallbackQuery, state: 
                              f'Повторите ввод.',
                              parse_mode='HTML',
                              reply_markup=kb.return_to_start_markup(process_interrupt=True))
-        asyncio.create_task(delete_bkg(call_mess))
         raise
 
 
@@ -986,7 +986,7 @@ async def give_star(call: CallbackQuery, state: FSMContext):
 @user_router.message(st.ChooseEventFSM.give_star)
 async def give_star_confirm(message: Message, state: FSMContext, is_admin: bool):
     try:
-        await participant_list_formation(message, state, is_admin)
+        index_list = await participant_list_formation(message, state, is_admin)
         await message.answer('Суперстар')
     except Exception:
         return
@@ -1082,5 +1082,7 @@ async def chancel_training_state(message: Message, state: FSMContext, is_admin: 
 
 @user_router.message(Command('test'))
 async def test(message: Message):
-    await season_index(True)
-    print(f'SEASON_INDEX = {SEASON_INDEX[0]}')
+    await delete_events()
+
+    # await season_index(True)
+    # print(f'SEASON_INDEX = {SEASON_INDEX[0]}')
