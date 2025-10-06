@@ -21,8 +21,9 @@ import logging
 from aiogram import Bot
 from tortoise.exceptions import DoesNotExist, DBConnectionError
 from datetime import date, datetime, timedelta
-from app.database.models import Event, EventUser
-
+from app.database.models import Event, EventUser, Statistic
+from app.user import training_manage
+from config import SEASON_INDEX
 
 logger = logging.getLogger(__name__)
 
@@ -30,16 +31,35 @@ logger = logging.getLogger(__name__)
 # Удаление записей прошедших тренировок из БД
 async def delete_events():
     now = datetime.now()
-
-    # Сначала смотрим какие тренировки неактуальны уже
-    events = await (EventUser.filter().prefetch_related('event','user').all().
-              values('event__id',
-                     'event__training_type',
-                     'event__participants_count',
-                     'event__stars', 'user_id',
-                     'created_at'))
-
+    last_dt = datetime(2025, 6, 15)
+    await Event.filter(id=21).update(event_datetime=last_dt)
+    events = await  EventUser.filter(event__event_datetime__lt=now).prefetch_related('event','user').all()
     print(events)
+
+    ''' Определяем, все комбинации юзер-тип тренировки,-индекс сезона уже есть в БД '''
+    update_list = []
+    for item in events:
+        if (tpl := (item.event.training_type, item.user.id)) not in update_list:
+            update_list.append(tpl)
+
+    update_stat_objs = await Statistic.filter(training_type='Футбол', user_id__in=lstr)
+
+    # statistics =  await Statistic.filter(event__datetime__lt=now).prefetch_related('event').all()
+
+
+    #
+
+    # events[0].text = "Chnget"
+    #
+    # # Сначала смотрим какие тренировки неактуальны уже
+    # events = await (EventUser.filter().prefetch_related('event','user').all().
+    #           values('event__id',
+    #                  'event__training_type',
+    #                  'event__participants_count',
+    #                  'event__stars', 'user_id',
+    #                  'created_at'))
+
+    print(update_list)
 
     dt = [{'id': 21, 'user__tg_name': 'Eldar', 'training_type': '🏀 Баскетбол'},
      {'id': 21, 'user__tg_name': 'Рустем', 'training_type': '🏀 Баскетбол'},

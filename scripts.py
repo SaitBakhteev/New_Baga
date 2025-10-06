@@ -1,6 +1,5 @@
 from datetime import datetime, time
 import time
-from os import truncate
 
 data = [
     {'event__id': 21, 'event__training_type': '🏀 Баскетбол', 'event__participants_count': 3,
@@ -52,30 +51,88 @@ data = [
      'user_id': 33, 'created_at': datetime(2025, 10, 5, 9, 21, 25, 445852)}
 ]
 
-start = time.time()
+# Формируем множество звезд
+stars = {
+    (
+        item['event__training_type'],
+        tuple(map(lambda x: int(x), item['event__stars'].replace(' ', '').split(','))),
+        item['event__id']
+    )
+    for item in data if item['event__stars'] is not None
+}
+print(f'stars = {stars}')
 
-event_ids_list = []
-''' Формируется множество из event_id, и затем по нему вызывается цикл '''
-for i in {item['event__id'] for item in data if item['event__id']==21}:
-    ''' Растасовываем словари event по отдельным спискам '''
-    lst=[item_ for i_, item_ in enumerate(data) if item_['event__id'] == i]
-    ''' Сортируем участников по времени добавления и отсекаем резерв '''
-    last_index = lst[0]['event__participants_count']  # крацний индекс основного списка для отсечения резерва
-    sorted_lst = sorted(lst, key=lambda x: x['created_at'])[:last_index]
+# Формируем список списков, растасованных по event_id
+general_list = []
+for event_id in {item['event__id'] for item in data}:
+    lst = sorted([_item for _item in data if _item['event__id'] == event_id], key=lambda x: x['created_at'])
 
-    for _i in range(len(sorted_lst)):
-        print(f'до сортировки: {lst[_i]['created_at'].strftime('%d.%m.%Y  %H:%M')};   '
-              f'после сортировки: {sorted_lst[_i]['created_at'].strftime('%d.%m.%Y  %H:%M')}')
+    ''' Находим крайний индекс основного списка участников тренировки по первому элементу'''
+    last_index = lst[0]['event__participants_count']
+    general_list.append(lst[:last_index])
 
-    print(f'усеченно-отсортированный список: : {sorted_lst}')
-    for _i in sorted_lst:
-        print(_i)
+for item in general_list:
+    for _item in item:
+        print(f'event_id: {_item["event__id"]}; created_at: {_item["created_at"]}; '
+              f'уяастники: {_item["event__participants_count"]}')
+
+a = {(5,6)}
 
 
-ds = [1,2,55,23,2,55,23,1,2,6]
-ds_1 = [12,55,23,2,5,2,6]
-print(set(ds) - set(ds_1))
-# print (f'время = {time.time() - start}')
 #
-# [{'id': 21, 'training_type': '🏀 Баскетбол', 'participants_count': 3, 'stars': '3, 33', 'user__id': 15, 'created_at': datetime(2025, 2, 7, 13, 28, 16, 964619)}, {'id': 21, 'training_type': '🏀 Баскетбол', 'participants_count': 3, 'stars': '3, 33', 'user__id': 33, 'created_at': datetime(2025, 6, 2, 16, 55, 14, 363460)}, {'id': 21, 'training_type': '🏀 Баскетбол', 'participants_count': 3, 'stars': '3, 33', 'user__id': 32, 'created_at': datetime(2025, 5, 8, 23, 14, 16, 772303)}]
-# [{'id': 21, 'training_type': '🏀 Баскетбол', 'participants_count': 3, 'stars': '3, 33', 'user__id': 15, 'created_at': datetime(2025, 2, 7, 13, 28, 16, 964619)}, {'id': 21, 'training_type': '🏀 Баскетбол', 'participants_count': 3, 'stars': '3, 33', 'user__id': 32, 'created_at': datetime(2025, 5, 8, 23, 14, 16, 772303)}, {'id': 21, 'training_type': '🏀 Баскетбол', 'participants_count': 3, 'stars': '3, 33', 'user__id': 33, 'created_at': datetime(2025, 6, 2, 16, 55, 14, 363460)}]
+#
+# star_dict = []  # список словарей звезд тренировок
+# for event_id in data:
+#
+#     if event_id['event__stars'] is not None:
+#         if len(event_id['event__stars']) >0:
+#             _stars = tuple(map(lambda x: int(x), event_id['event__stars'].replace(' ', '').split(',')))
+#
+#             dct = {'training_type': event_id['event__training_type'],
+#     'stars':event_id['event__stars'] , 'event':}
+#
+#
+# training_types = {(item['event__training_type'], item['event__id'],
+#                    tuple(map(lambda x: int(x), item['event__stars'].replace(' ','').split(','))))
+#                   for item in data if item['event__id']>1}
+# # star_list = {iv}
+# # print(training_types)
+# a='1,2,23'
+# print(a.split(','))
+#
+#
+# statistics = [{'user_id': 23, 'season_index': 0, 'training_type': '🏸 Бадминтон'},
+#               {'user_id': 33, 'season_index': 0, 'training_type': '🏀 Баскетбол'}]
+#
+# # sort_lst = sorted(data, key=lambda k: k['event__id'])
+# # init_lst = [item['event__id'] for item in data]
+# # sort_lst = [item['event__id'] for item in sort_general_lst]
+# # #
+# # print(f'training_types = {training_types}')
+# # #
+# # #
+# # # event_ids_list = []
+# # # ''' Формируется множество из event_id, и затем по нему вызывается цикл '''
+# # # for i in {item['event__id'] for item in data if item['event__id']==21}:
+# # #     ''' Растасовываем словари event по отдельным спискам '''
+# # #     lst=[item_ for i_, item_ in enumerate(data) if item_['event__id'] == i]
+# # #     ''' Сортируем участников по времени добавления и отсекаем резерв '''
+# # #     last_index = lst[0]['event__participants_count']  # крацний индекс основного списка для отсечения резерва
+# # #     sorted_lst = sorted(lst, key=lambda x: x['created_at'])[:last_index]
+# # #
+# # #     for _i in range(len(sorted_lst)):
+# # #         print(f'до сортировки: {lst[_i]['created_at'].strftime('%d.%m.%Y  %H:%M')};   '
+# # #               f'после сортировки: {sorted_lst[_i]['created_at'].strftime('%d.%m.%Y  %H:%M')}')
+# # #
+# # #     print(f'усеченно-отсортированный список: : {sorted_lst}')
+# # #     for _i in sorted_lst:
+# # #         print(_i)
+# # #
+# # #
+# # # ds = [1,2,55,23,2,55,23,1,2,6]
+# # # ds_1 = [12,55,23,2,5,2,6]
+# # # print(set(ds) - set(ds_1))
+# # # # print (f'время = {time.time() - start}')
+# # # #
+# # # # [{'id': 21, 'training_type': '🏀 Баскетбол', 'participants_count': 3, 'stars': '3, 33', 'user__id': 15, 'created_at': datetime(2025, 2, 7, 13, 28, 16, 964619)}, {'id': 21, 'training_type': '🏀 Баскетбол', 'participants_count': 3, 'stars': '3, 33', 'user__id': 33, 'created_at': datetime(2025, 6, 2, 16, 55, 14, 363460)}, {'id': 21, 'training_type': '🏀 Баскетбол', 'participants_count': 3, 'stars': '3, 33', 'user__id': 32, 'created_at': datetime(2025, 5, 8, 23, 14, 16, 772303)}]
+# # # # [{'id': 21, 'training_type': '🏀 Баскетбол', 'participants_count': 3, 'stars': '3, 33', 'user__id': 15, 'created_at': datetime(2025, 2, 7, 13, 28, 16, 964619)}, {'id': 21, 'training_type': '🏀 Баскетбол', 'participants_count': 3, 'stars': '3, 33', 'user__id': 32, 'created_at': datetime(2025, 5, 8, 23, 14, 16, 772303)}, {'id': 21, 'training_type': '🏀 Баскетбол', 'participants_count': 3, 'stars': '3, 33', 'user__id': 33, 'created_at': datetime(2025, 6, 2, 16, 55, 14, 363460)}]

@@ -1084,5 +1084,6 @@ async def chancel_training_state(message: Message, state: FSMContext, is_admin: 
 async def test(message: Message):
     await delete_events()
 
+
     # await season_index(True)
     # print(f'SEASON_INDEX = {SEASON_INDEX[0]}')
