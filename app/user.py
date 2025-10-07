@@ -173,7 +173,8 @@ async def return_to_start(call: CallbackQuery, state: FSMContext, is_admin: bool
     current_state = await state.get_state()
     match current_state:
         case st.AddFriendFSM.add_friend | st.DeleteFromTrainingFSM.delete_from_training | st.ChooseEventFSM.give_star:
-            await choose_event(call.message, state, is_admin)
+            await state.set_state(None)
+            await choose_event(call, state, is_admin)
         case st.CreateEventFSM.dedline_type | st.EditAdminFSM.edit_admin | st.DeleteTemplateFSM.delete_template:
             await state.clear()
             await admin_panel(call, state, is_admin)
@@ -207,8 +208,7 @@ async def back(call: CallbackQuery, state: FSMContext, is_admin: bool):
 async def tutorial(call_mess: Message | CallbackQuery, state: FSMContext):
     await state.clear()
     message = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
-    await message.answer(VIDEO_TUTORIAL, parse_mode='HTML',
-                         reply_markup=kb.back_kb_markup)
+    await message.answer(VIDEO_TUTORIAL, parse_mode='HTML')
 
 
 async def load_video(message: Message, bot: Bot, file_name: str):
@@ -322,7 +322,8 @@ async def show_events(message: Message, state: FSMContext):
     event_user = await db_req.get_event_user(user_tg_id=message.chat.id, event_ids=event_ids)
 
     if not events:
-        await message.answer('Запланированных тренировок пока нет.')
+        await message.answer('Запланированных тренировок пока нет.',
+                             reply_markup=kb.back_kb_markup)
         await state.clear()
     else:
         await message.answer(
@@ -367,7 +368,8 @@ async def choose_event(call_mess: Message | CallbackQuery, state: FSMContext,
                        is_admin: bool):
     try:
         trn_info = await training_info(call_mess, state, is_admin)
-        event, events, event_id, event_user = trn_info['event'], trn_info['events'], trn_info['event_id'], trn_info['event_user']
+        event, events, event_id, event_user = (
+            trn_info['event'], trn_info['events'], trn_info['event_id'], trn_info['event_user'])
         this_call_query = None  # специальный флаг, определяющий работу этой функции
         if isinstance(call_mess, CallbackQuery):
             this_call_query = True if call_mess.data.startswith('choose_event') else False
@@ -380,6 +382,9 @@ async def choose_event(call_mess: Message | CallbackQuery, state: FSMContext,
         availible_pay, paid_check, payment_confirmed = False, None, None
         signed_up_for_training =True if any(item['user__tg_id'] == call_id for item in event_user)\
             else False
+        # print(f'event_user  = {event_user}\n'
+        #       f'signed_up_for_training = {signed_up_for_training}\n'
+        #       f'call_id = {call_id}')
 
         availible_notify_by_payment = None
 
@@ -569,7 +574,7 @@ async def participant_list_formation(call_mess: Message | CallbackQuery, state: 
             raise IndexError
         index_list = list(map(lambda x: x - 1, number_list))
         asyncio.create_task(delete_bkg(call_mess))
-        return index_list
+        return {'index_list': index_list, 'number_list': number_list}
     except ValueError:
         await call_mess.answer('Нужно <i><u>через запятую</u></i> вводить только '
                              '<b>целочисленные значения</b>. Повторите ввод.',
@@ -862,7 +867,7 @@ async def skip(message: Message, state: FSMContext):
 
 @user_router.callback_query(F.data.startswith("dedline_"), st.CreateEventFSM.dedline_type)
 async def add_dedline_and_finish(call_mess: CallbackQuery | Message, state: FSMContext, is_admin: bool):
-    call_mess = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
+    call_mess = call_mess if isinstance(call_mess, CallbackQuery) else call_mess.message
     try:
         data = await state.get_data()
         event_text = data["event_text"]
@@ -881,15 +886,15 @@ async def add_dedline_and_finish(call_mess: CallbackQuery | Message, state: FSMC
                                       f"<b><i>Срок оплаты</i></b>: в течение суток после записи на тренировку\n")
             data["payment_dedline"] = payment_dedline
 
-            await call_mess.answer(f"<b>Создана следующая тренировка</b>:\n\n"
-                                      f"<b>Тип тренировки</b>: {data['training_type']}\n"
-                                      f"{data['event_text']}\n\n")
+            if isinstance(call_mess, CallbackQuery):
+                await call_mess.message.answer(f"<b>Создана следующая тренировка</b>:\n\n"
+                                               f"<b>Тип тренировки</b>: {data['training_type']}\n"
+                                               f"{data['event_text']}\n\n")
 
             # Два запроса в БД: запись новой тренировки и получение её данных
             await db_req.create_event(data)
             last_event = await db_req.get_event(for_schedule=True, last_record=True)
             payment_dedline, id = last_event['payment_dedline'], last_event['id']
-
             # Обновление списка дедлайнов
             dedlines.append((payment_dedline.replace(tzinfo=None), id))
             dedlines.sort()
@@ -993,7 +998,8 @@ async def confirm_payment(message: Message, state: FSMContext, is_admin: bool):
         data = await state.get_data()
         event, event_user, verify_type = (data.get('event'), data.get('event_user'),
                                           data.get('verify_type'))
-        index_list = await participant_list_formation(message, state, is_admin)
+        prtcp_lst_form = await participant_list_formation(message, state, is_admin)
+        index_list, number_list = prtcp_lst_form['index_list'], prtcp_lst_form['number_list']
 
         # Формирование списка id объектов EventUser для обновления в БД значений поля 'payment_confirmed'
         if verify_type == 'change':  # Отменить верификацию оплаты ✖️
@@ -1135,7 +1141,13 @@ async def chancel_training_state(message: Message, state: FSMContext, is_admin: 
 
 @user_router.message(Command('test'))
 async def test(message: Message):
-    await delete_events()
+    for i, item in enumerate(dedlines):
+        print(f'dedl_{i}: {item}')
+    print('\n')
+
+    for i, item in enumerate(dedline_notifications):
+        print(f'not_{i}: {item}')
+
 
 
     # await season_index(True)
