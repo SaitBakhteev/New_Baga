@@ -15,7 +15,7 @@ from tortoise.exceptions import DBConnectionError, OperationalError
 from app.user import user_router, user_cache, dedlines, dedline_notifications
 from app.database.requests import get_all_users, get_event
 
-from config import TOKEN, TORTOISE_ORM
+from config import TOKEN, TORTOISE_ORM, season_index
 from app.schedule import delete_events, message
 
 logger = logging.getLogger(__name__)
@@ -120,15 +120,14 @@ async def startup(dispatcher: Dispatcher):
         users = await get_all_users()
         for user_ in users:
             user_cache[user_.tg_id] = user_
-        print(user_cache)
         events = await get_event(for_schedule=True)
         for item in events:
             payment_dedline = item['payment_dedline']
             dedlines.append((payment_dedline.replace(tzinfo=None), item['id']))
         for item in dedlines:
             dedline_notifications.append((item[0] - timedelta(hours=1), item[1]))
-        print(f'dedlines = {dedlines}\n'
-              f'dedline_notifications = {dedline_notifications}')
+
+        await season_index()  # загрузка текущего индекса летоичсчисления сезона
         scheduler = AsyncIOScheduler()
         scheduler.add_job(delete_events, CronTrigger(hour=23, minute=58))
         scheduler.add_job(message, CronTrigger(hour=0, minute=0))

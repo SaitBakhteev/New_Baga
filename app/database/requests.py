@@ -6,9 +6,7 @@ from tortoise.exceptions import DoesNotExist
 from app.database.models import User, Event, EventUser, Template
 from datetime import datetime, timedelta
 
-
 logger = logging.getLogger(__name__)
-
 
 # ----- ПОЛЬЗОВАТЕЛЬ -----------
 # Создание или получение пользователя
@@ -97,12 +95,19 @@ async def get_event(id=None, for_telegramm=False,
                           first().values('id', 'payment_dedline')) if last_record \
                 else await (Event.filter(payment_dedline__gt=reper_datetime).order_by('payment_dedline').
                             values('id', 'payment_dedline'))
-        elif training_type:
-            return await (Event.filter(training_type=training_type).order_by('id').
-                          values(
-                'id', 'payment_dedline', 'event_datetime','event_text','participants_count'
-            )
-            )
+        elif training_type or id:
+            if training_type:
+                return await (Event.filter(training_type=training_type).order_by('id').
+                              values(
+                    'id', 'payment_dedline', 'event_datetime','event_text','participants_count'
+                )
+                )
+            else:
+                return await (Event.filter(id=id).values(
+                    'id', 'payment_dedline', 'event_datetime','event_text','participants_count'
+                )
+                )
+
         else:
             return await Event.get(id=id) if id else \
                 await (

@@ -38,8 +38,11 @@ def return_to_start_markup(process_interrupt=True) -> InlineKeyboardMarkup:
     return keyboard.as_markup()
 
 
-# Просмотр доступных тренировок для дальнейшкей записи
-show_trainings_kb = InlineKeyboardButton(text='📅 Выбрать тренировку 🖍', callback_data='show_trainings')
+# Кнопка назад
+back_kb = InlineKeyboardButton(text='↩️Назад', callback_data='back')
+
+show_training_types_kb = InlineKeyboardButton(text='📅 Выбрать тренировку 🖍', callback_data='show_training_types')
+
 tutorial_kb = InlineKeyboardButton(text='💡 Инструкция по использованию бота📘', callback_data='tutorial')
 
 
@@ -132,7 +135,7 @@ async def admin_kb_markup(is_any_process=True) -> InlineKeyboardMarkup:
 
 async def start_menu(admin_perm=False) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardBuilder()
-    keyboard.add(show_trainings_kb)
+    keyboard.add(show_training_types_kb)
     keyboard.add(tutorial_kb)
     if admin_perm:
         keyboard.add(add_event_admin_kb)
@@ -184,7 +187,7 @@ def show_events_kb(event_user: list, *args) -> InlineKeyboardMarkup:
                     case 2: event_time = fragment
             text = tag + ' ' + event_date + ', ' + event_time + '; ' + gym
             keyboard.button(text=text, callback_data=f"choose_event:{arg['id']}")
-        keyboard.add(return_to_start)
+        keyboard.add(back_kb)
         keyboard.adjust(1)
         return keyboard.as_markup()
     except Exception as e:
@@ -229,7 +232,7 @@ async def show_text_about_event(event: dict, event_user: list,
 
 
 # Кнопки под списком участников тренировки
-async def sign_up_for_training(
+def sign_up_for_training(
         signed_up_for_training: bool,
         availible_pay: bool,
         admin_permissions=False, payment_confirmed=False,
@@ -264,19 +267,30 @@ async def sign_up_for_training(
         keyboard.button(text='🤜🏽Записать друга🤛🏽', callback_data='add_friend')
 
         if admin_permissions:
-            keyboard.button(text='💠 Отмена верификации 🔘', callback_data='verify_payment:change')
-            keyboard.button(text='💠 Подтвердить оплату ✅', callback_data='verify_payment:confirm')
-            keyboard.button(text='💠 Опровергнуть оплату ❌', callback_data='verify_payment:refute')
-            keyboard.button(text='💠 Сдвинуть в конец очереди ⬇️',
-                            callback_data='drop_or_chancel:replace_to_end')
-            keyboard.button(text='💠 Удалить участника 🚷', callback_data='drop_or_chancel:participant')
-            keyboard.button(text='💠 Редактировать тренировку ✏️', callback_data=f'edit_event')
-            keyboard.button(text='💠 🚫 ОТМЕНИТЬ ТРЕНИРОВКУ 💥', callback_data='drop_or_chancel:chancel_training')
-        keyboard.add(return_to_start)
+            if 'event_id' in kwargs:
+                event_id = int(kwargs['event_id'])
+                keyboard.button(
+                    text='💠🤵🏻‍♂️ Администрирование тренировки',
+                    callback_data=f'training_manage:{event_id}'
+                )
+        keyboard.add(back_kb)
         keyboard.adjust(1)
         return keyboard.as_markup()
     except Exception as e:
         logging.error(e)
+
+
+# Кнопки администрирования тренировки
+admin_train_manag_kb = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='💠 Отмена верификации 🔘', callback_data='verify_payment:change')],
+    [InlineKeyboardButton(text='💠 Подтвердить оплату ✅', callback_data='verify_payment:confirm')],
+    [InlineKeyboardButton(text='💠 Опровергнуть оплату ❌', callback_data='verify_payment:refute')],
+    [InlineKeyboardButton(text='💠 Присвоить звезду ⭐️', callback_data='give_star')],
+    [InlineKeyboardButton(text='💠 Сдвинуть в конец очереди ⬇️', callback_data='drop_or_chancel:replace_to_end')],
+    [InlineKeyboardButton(text='💠 Удалить участника 🚷', callback_data='drop_or_chancel:participant')],
+    [InlineKeyboardButton(text='💠 Редактировать тренировку ✏️', callback_data=f'edit_event')],
+    [InlineKeyboardButton(text='💠 🚫 ОТМЕНИТЬ ТРЕНИРОВКУ 💥', callback_data='drop_or_chancel:chancel_training')],
+])
 
 
 # Клавиатура подтверждения удаления или перемещения в конец очереди участника
