@@ -40,11 +40,13 @@ def return_to_start_markup(process_interrupt=True) -> InlineKeyboardMarkup:
 
 # Кнопка назад
 back_kb = InlineKeyboardButton(text='↩️Назад', callback_data='back')
+back_kb_markup = InlineKeyboardMarkup(inline_keyboard=[[back_kb]])
 
 show_training_types_kb = InlineKeyboardButton(text='📅 Выбрать тренировку 🖍', callback_data='show_training_types')
 
 tutorial_kb = InlineKeyboardButton(text='💡 Инструкция по использованию бота📘', callback_data='tutorial')
 
+process_interrupt_kb = InlineKeyboardButton(text='⛔️ Прервать процесс', callback_data='process_interrupt')
 
 ''' КНОПКИ СТАРТОВОГО МЕНЮ АДМИН ПАНЕЛИ '''
 add_event_admin_kb = InlineKeyboardButton(text='💠 Создать тренировку 🗓', callback_data='add_event')
@@ -101,6 +103,7 @@ def input_template(current_template: str = None,
     else:
         keyboard.button(text="Сохранить шаблон", callback_data='save_template')
 
+    keyboard.add(process_interrupt_kb)
     keyboard.adjust(1)
     return keyboard.as_markup()
 
@@ -111,14 +114,16 @@ async def admin_dedline_type(*dedline_type) -> InlineKeyboardMarkup:
     for dedline in dedline_type:
         keyboard.add(InlineKeyboardButton(text=dedline[0], callback_data=f"dedline_{dedline[1]}"))
     keyboard.adjust(2)
+    keyboard.add(process_interrupt_kb)
+    keyboard.adjust(1)
     return keyboard.as_markup()
 
 
-async def edit_admins() -> InlineKeyboardMarkup:
+def edit_admins() -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardBuilder()
     keyboard.button(text='Добавить админа', callback_data='edit_admin:add')
     keyboard.button(text='Удалить админа', callback_data='edit_admin:delete')
-    keyboard.add(return_to_start)
+    keyboard.add(back_kb)
     keyboard.adjust(1)
     return keyboard.as_markup()
 
@@ -290,6 +295,7 @@ admin_train_manag_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='💠 Удалить участника 🚷', callback_data='drop_or_chancel:participant')],
     [InlineKeyboardButton(text='💠 Редактировать тренировку ✏️', callback_data=f'edit_event')],
     [InlineKeyboardButton(text='💠 🚫 ОТМЕНИТЬ ТРЕНИРОВКУ 💥', callback_data='drop_or_chancel:chancel_training')],
+    [back_kb],
 ])
 
 
@@ -317,10 +323,12 @@ async def insert_template_on_edit_admin(template: str) -> InlineKeyboardMarkup:
 
 
 # Выбор типа тренировки
-def training_types_kb() -> InlineKeyboardMarkup:
+def training_types_kb(**kwargs) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardBuilder()
     for i, item in enumerate(TRAINING_TYPES):
         keyboard.add(InlineKeyboardButton(text=item, callback_data=f'training_type:{i}'))
+    if 'without_back' not in kwargs:
+        keyboard.add(back_kb)
     keyboard.adjust(1)
     return keyboard.as_markup()
 

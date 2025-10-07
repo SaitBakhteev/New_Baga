@@ -46,6 +46,7 @@ class WrightBugsFSM(StatesGroup):
     wright_bug = State()
 
 class EditAdminFSM(StatesGroup):
+    show_list = State()
     edit_admin = State()
 
 
