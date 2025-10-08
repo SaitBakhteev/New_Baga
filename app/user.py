@@ -310,7 +310,7 @@ async def on_off_notify(call: CallbackQuery, state: FSMContext):
 @user_router.message(Command('event'))
 @user_router.callback_query(F.data=='show_training_types')
 async def show_training_types(message: Message, state: FSMContext):
-    await state.clear()
+    # await state.clear()
     await message.answer('Выберите тип тренировки', reply_markup=kb.training_types_kb(without_back=True))
     await state.set_state(st.ChooseEventFSM.training_type)
 
@@ -337,18 +337,16 @@ async def show_events(message: Message, state: FSMContext):
         )
         await state.update_data(events=events)
 
-async def training_info(call_mess: Message | CallbackQuery, state: FSMContext, is_admin: bool):
+async def training_info(call_mess: Message | CallbackQuery, is_admin: bool, **kwargs):
     try:
-        data = await state.get_data()
-        events, training_type = data.get('events'), data['training_type']
+        events, training_type = kwargs['events'], kwargs['training_type']
         this_call_query = None  # специальный флаг, определяющий работу этой функции
 
         if isinstance(call_mess, CallbackQuery):
             this_call_query = True if call_mess.data.startswith('choose_event') else False
-        event_id = int(call_mess.data.split(':')[1]) if this_call_query else data.get('event_id')
-        event = next(item for item in events if item['id'] == event_id) if this_call_query else data.get('event')
+        event_id = int(call_mess.data.split(':')[1]) if this_call_query else kwargs['event_id']
+        event = next(item for item in events if item['id'] == event_id) if this_call_query else kwargs['event']
         event_user = await db_req.get_event_user(event_id=event_id)
-
         text = await kb.show_text_about_event(event, event_user,
                                               tg_id=call_mess.from_user.id,
                                               is_admin=is_admin)
@@ -360,7 +358,7 @@ async def training_info(call_mess: Message | CallbackQuery, state: FSMContext, i
             'event_user': event_user,
             'text': text}
     except Exception as e:
-        logger.error('Error on /training_text')
+        logger.error(f'Error on /training_text: {e}')
         pass
 
 # После выбора тренировки отображается текущий список заявишихся участников
@@ -368,15 +366,31 @@ async def training_info(call_mess: Message | CallbackQuery, state: FSMContext, i
 async def choose_event(call_mess: Message | CallbackQuery, state: FSMContext,
                        is_admin: bool):
     try:
-        trn_info = await training_info(call_mess, state, is_admin)
+        data = await state.get_data()
+        events, training_type = data['events'], data['training_type']
+
+        # Дурацкий с event_id, но пока ничего лучше не получилось. Тупая перестраховкас условиями
+        if 'event_id' in data and 'event' in data:
+            event_id, event, events, event_user = data['event_id'], data['event'], data['events'], data['event_user']
+            trn_info = await training_info(call_mess, is_admin,
+                                           training_type=training_type,
+                                           events=events,
+                                           event_id=event_id,
+                                           event=event,
+                                           event_user=event_user)
+        else:
+            if isinstance(call_mess, CallbackQuery):
+                trn_info = await training_info(call_mess, is_admin,
+                                               training_type=training_type,
+                                               events=events)
+
         event, events, event_id, event_user = (
-            trn_info['event'], trn_info['events'], trn_info['event_id'], trn_info['event_user'])
+            trn_info['event'], trn_info['events'], trn_info['event_id'], trn_info['event_user']
+        )
         this_call_query = None  # специальный флаг, определяющий работу этой функции
         if isinstance(call_mess, CallbackQuery):
             this_call_query = True if call_mess.data.startswith('choose_event') else False
-
         call_id = call_mess.from_user.id
-
         await state.update_data(event_id=event_id, event=event, event_user=event_user)
 
         # Определение параметров отображения инлайн-клавиатуры
@@ -427,7 +441,7 @@ async def choose_event(call_mess: Message | CallbackQuery, state: FSMContext,
         call_mess = call_mess.message if this_call_query else call_mess
         asyncio.create_task(delete_bkg(call_mess))
     except Exception as e:
-        logger.error(e)
+        logger.error(f'Ошибка в choose_event: {e}')
 
 
 # Записаться на тренировку
@@ -923,14 +937,20 @@ async def add_dedline_and_finish(call: CallbackQuery | Message, state: FSMContex
 @user_router.callback_query(F.data.startswith("training_manage"))
 async def training_manage(call: CallbackQuery, state: FSMContext):
     try:
+        data = await state.get_data()
+        events, event_id, event, training_type = data['events'], data['event_id'], data['event'], data['training_type']
         await state.set_state(st.ChooseEventFSM.admin_management)
-        trn_info = await training_info(call, state, True)
+        trn_info = await training_info(call, True, events=events,
+                                       event_id=event_id,
+                                       event=event,
+                                       training_type=training_type)
         await call.message.answer(trn_info['text'],
                                   parse_mode="HTML",
                                   reply_markup=kb.admin_train_manag_kb)
         asyncio.create_task(delete_bkg(call))
     except Exception:
         pass
+
 
 # --------- Редактирование тренировки -----------
 @user_router.callback_query(F.data == 'edit_event')
@@ -1041,7 +1061,7 @@ async def confirm_payment(message: Message, state: FSMContext, is_admin: bool):
 async def give_star(call: CallbackQuery, state: FSMContext, is_admin: bool):
     data = await state.get_data()
     event = data['event']
-    if event['stars'] is not None:
+    if event['stars'] is None:
         await state.set_state(st.ChooseEventFSM.give_star)
         await call.message.answer(
             '‼️ <b>ВНИМАНИЕ</b> ‼️\n'
@@ -1050,7 +1070,14 @@ async def give_star(call: CallbackQuery, state: FSMContext, is_admin: bool):
             reply_markup=kb.return_to_start_markup(), parse_mode='HTML'
         )
     else:
-        await call.message.answer('Вы уже зафиксировали звёзд на данную тренировку 🛑')
+        user_id_lst = [int(i)  for i in event['stars'].replace(' ', '').split(',')]
+        stars_txt = ""
+        for k in user_cache:
+            if user_cache[k].id in user_id_lst:
+                stars_txt += f"<b><i>{user_cache[k].tg_username}</i></b>\n"
+        await call.message.answer('СТОП🛑. Вы уже на данную тренировку зафиксировали звёзд со '
+                                  'следующими никнеймами:\n'
+                                  f'{stars_txt}', parse_mode='HTML')
         await state.set_state(None)
         await choose_event(call, state, is_admin)
 
@@ -1061,29 +1088,39 @@ async def give_star_input(message: Message, state: FSMContext, is_admin: bool):
         data = await state.get_data()
         event, event_user, verify_type = (data.get('event'), data.get('event_user'),
                                           data.get('verify_type'))
-        print(f'evenmt_user : {event_user}')
         prtcp_lst_form = await participant_list_formation(message, state, is_admin)
         index_list, number_list = prtcp_lst_form['index_list'], prtcp_lst_form['number_list']
         star_ids_list = [event_user[i]['user__id'] for i in index_list]
-
-        await state.update_data(star_ids_list=star_ids_list)
+        # Поеобразуем спискок id звезд в строку
+        stars = ",".join(str(x) for x in star_ids_list) if star_ids_list else None
+        await state.update_data(stars=stars)
         await state.set_state(st.ChooseEventFSM.confirm_give_star)
+        await message.answer('⚠️ Если Вы убеждены, что это окончательный список звезд, '
+                             'отправьте в сообщении боту слово <i>да</i>',
+                             reply_markup=kb.return_to_start_markup(), parse_mode='HTML')
     except Exception as e:
         logger.error(f'Ошибка в присвоении звезды: {e}')
+
 
 @user_router.message(st.ChooseEventFSM.confirm_give_star)
 async def confirm_give_star(message: Message, state: FSMContext, is_admin: bool):
     data = await state.get_data()
-    star_ids_list = data['star_ids_list']
+    event_id, event, stars = data['event_id'], data['event'], data['stars']
+    text = message.text
+    if text == 'да':
+        if stars:
+            answer = 'Звезды тренировки добавлены успешно 🤩'
+            await db_req.update_event(event_id=event_id, stars=stars, data=None)
+            event['stars'] = stars
+            await state.update_data(event=event)
+        else:
+            answer = 'Вы никого не указали из звезд 🤷🏻‍♂️'
+    else:
+        answer = 'Отправлено невалидное сообщение. Операция отменена ⛔️'
+    await message.answer(answer)
+    # await state.set_state(None)
+    await choose_event(message, state, is_admin)
 
-
-@user_router.message(st.ChooseEventFSM.give_star)
-async def give_star_confirm(message: Message, state: FSMContext, is_admin: bool):
-    try:
-        index_list = await participant_list_formation(message, state, is_admin)
-        await message.answer('Суперстар')
-    except Exception:
-        return
 # --------- Присвоить звезду. Конец -------------
 
 
@@ -1168,17 +1205,15 @@ async def chancel_training_state(message: Message, state: FSMContext, is_admin: 
         await db_req.delete_event(event_id)
         await message.answer('Тренировка удалена.')
     else:
-        await message.delete()
         await message.answer('Удаление тренировки отменено.')
         await state.set_state(None)
+    asyncio.create_task(delete_bkg(message))
 
 ''' ----------- КОНЕЦ АДМИНСКИХ ФУНКЦИЙ  ------------ '''
 
 @user_router.message(Command('test'))
 async def test(message: Message):
-    print(f'dedlines = {dedlines}')
-    print(f'dedline_notifications = {dedline_notifications}')
-    # await test_stat()
+    await test_stat()
 
 
 

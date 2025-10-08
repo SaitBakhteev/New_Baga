@@ -231,13 +231,16 @@ async def update_admin_and_get(tg_username: str, admin_permissions: bool):
         logger.error(f'update_admin_and_get: {e}')
 
 
-async def update_event(event_id: int, data):
-    await Event.filter(id=event_id).update(
-        event_datetime=data['event_datetime'],
-        participants_count=data['participants_count'],
-        event_text=data['event_text'],
-        boss_id=data['boss_id']
-    )
+async def update_event(event_id: int, data, **kwargs):
+    if 'stars' not in kwargs:
+        await Event.filter(id=event_id).update(
+            event_datetime=data['event_datetime'],
+            participants_count=data['participants_count'],
+            event_text=data['event_text'],
+            boss_id=data['boss_id']
+        )
+    else:  # вносим звёзд в event
+        await Event.filter(id=event_id).update(stars=kwargs['stars'])
 
 
 # Запрос к БД для обновления записей EventUser при нажатии пользователем кнопки '✔️ Я оплатил'

@@ -55,6 +55,10 @@ data = [
     {'event__id': 24, 'event__training_type': '🏸 Бадминтон', 'event__participants_count': 12, 'event__stars': None,
      'user_id': 33, 'created_at': datetime(2025, 10, 5, 9, 21, 25, 445852)}
 ]
+lst = [1,2,3]
+stroka = ",".join(str(x) for x in lst)
+print(stroka)
+
 # _slr = "1,  2   ,  3  "
 # lst = _slr.replace(' ','').split(',')
 # print(f'lst={lst}')
@@ -85,12 +89,12 @@ data = [
 #     for _item in item:
 #         print(f'event_id: {_item["event__id"]}; created_at: {_item["created_at"]}; '
 #               f'уяастники: {_item["event__participants_count"]}')
-
-lst = [1,2,1,5,6,5,6,8,8,9,4,5]
-ss = set()
-ss.add(9)
-ss.add(89)
-print(ss)
+#
+# lst = [1,2,1,5,6,5,6,8,8,9,4,5]
+# ss = set()
+# ss.add(9)
+# ss.add(89)
+# print(ss)
 
 #
 # star_dict = []  # список словарей звезд тренировок
