@@ -27,85 +27,114 @@ from config import SEASON_INDEX
 
 logger = logging.getLogger(__name__)
 
+async def test_stat():
+    try:
+        # await Statistic.all().delete()
+        # await Event.all().delete()
+        await EventUser.create(user_id=10, event_id=72)
+        await EventUser.create(user_id=15, event_id=72)
+        await EventUser.create(user_id=16, event_id=72)
+        await EventUser.create(user_id=17, event_id=72)
+        await EventUser.create(user_id=18, event_id=72)
+
+        # await delete_events()
+    except Exception as e:
+        print(f'Ошибка теста: {e}')
+
 
 # Удаление записей прошедших тренировок из БД
 async def delete_events():
-    now = datetime.now()
-    last_dt = datetime(2025, 6, 15)  # заглушка
-    # await EventUser.filter(id=22).update(created_at=last_dt)
-    # await Event.filter(id=45).update(event_datetime=last_dt)
-    user_events = await  EventUser.filter(event__event_datetime__lt=now).prefetch_related('event','user').all()
+    try:
 
 
-    '''Формируем сеты текущих юзеров и типов тренировок'''
-    users, training_types = {item.user.id for item in user_events}, {item.event.training_type for item in user_events}
-    print(f'users = {users}\n'
-          f'training_types = {training_types}\n')
+        now = datetime.now()
+        last_dt = datetime(2025, 6, 15)  # заглушка
+        # await EventUser.filter(id=22).update(created_at=last_dt)
+        # await Event.filter(id=45).update(event_datetime=last_dt)
+        event_user = await  EventUser.filter(
+            event__event_datetime__gt=last_dt).prefetch_related('event','user'
+                                                                ).all()
+        '''Загружаем из БД все содержимое прошедших треней'''
 
-    '''Подгружаем с БД статистики согласно вышеприведенным сетам'''
-    statistics = await Statistic.filter(user__id__in=users, training_type__in=training_types).prefetch_related('user').all()
+        # Если есть прошедшие тренировки, то двигаемся дальше
+        if event_user:
+            users = set
+            for _user in event_user:
+                print(f'{_user.user.tg_username}; user_id = {_user.user.id}')
+            users, training_types = ({item.user.id for item in event_user if item.user.id},
+                                     {item.event.training_type for item in event_user})
+            print(46)
+            '''Формируем сеты текущих юзеров и типов тренировок'''
+            print(f'users = {users}\n'
+                  f'training_types = {training_types}\n')
 
-    print(statistics)
-    # exist_stat
-    general_list, list_type_user_idx = [], []
-    for event_id in {item.event.id for item in user_events}:
-        lst = sorted([_item for _item in user_events if _item.event.id == event_id], key=lambda x: x.created_at)
-        ''' Находим крайний индекс основного списка участников тренировки по первому элементу'''
-        last_index = lst[0].event.participants_count
-        general_list.append(lst[:last_index])
-        ''' Формируем список таплов (тип_трени, юзер, индекс_сезона) по прошедшему дню. '''
-        for _item in lst[:last_index]:
-            current_tpl = (_item.training_type, _item.user.id, SEASON_INDEX[0])
-            list_type_user_idx.append(current_tpl)
-        ''' Формируем список '''
+            statistics = await (Statistic.filter(user__id__in=users,
+                                                 training_type__in=training_types,
+                                                 season_index=SEASON_INDEX[0])
+                                .prefetch_related('user').all())
+            '''Подгружаем с БД статистики согласно вышеприведенным сетам'''
 
-        # for stat in statistics:
-        #     stat.user.id
+            # Инициируем список на обновление и создание статистики
+            stat_upd_lst, stat_cre_lst = [], []
+            print(59)
+            # Инициируем список списков на добавление звезд в формате [[<event_id>, (<юзер_1>, <юзер_2>...)]]
+            # star_list = []
+            for event_id in {item.event.id for item in event_user}:
+                # Определяем текущий user_id и считываем его звезд
+                current_event = next(filter(lambda x: x.event.id==event_id, event_user), None)
+                # если есть звезды этой тренировки, то начинаем обработку
+                stars_of_event = ()  # но сначала ставим заглушку
+                if current_event.event.stars:
+                    # Для читаемости кода сначала формируем текстовый список user_id
+                    stars_text_lst = current_event.event.stars.replace(' ', '').split(',')
+                    # Затем уже преобразуем в int и формируем кортеж звезд
+                    stars_of_event = tuple(map(lambda x: int(x), stars_text_lst))
+                print(72)
+                lst = sorted([_item for _item in event_user if _item.event.id == event_id], key=lambda x: x.created_at)
+                '''Фомируем список QuerySet по данной трени, отсортированный по временам записи участников  '''
 
+                last_index = lst[0].event.participants_count
+                ''' Находим крайний индекс основного списка участников тренировки по первому элементу'''
+                # general_list.append(lst[:last_index])
+                '''Теперь идем по сформированному списку'''
+                for _event_user in lst[:last_index]:
+                    user_id, _train_type = _event_user.user.id, _event_user.event.training_type
+                    for _i, stat in enumerate(statistics):
+                        # Если комбинация "юзер-тип_трени-индекс_сезона" встретилась в статистике, то пускаем на обновление
+                        if (stat.user.id == user_id and stat.training_type == _train_type and
+                            stat.season_index == SEASON_INDEX[0]):
+                            stat.visit_count += 1
+                            stat.modifed_at = now
+                            if user_id in stars_of_event:
+                                stat.star_count += 1
+                            # Если обновляемый объект не присутствует в списке на обновление, то добавляем его
+                            if stat not in stat_upd_lst:
+                                stat_upd_lst.append(stat)
+                            break
+                        # Если ранее такая комбинация "юзер - тип_трени - индекс_сезона не встречалась"
+                        else:
+                            #Проверяем, не иниицировали ли мы ранее создаваемый объект
+                            current_create_obj = next(
+                                filter(lambda x: x.user.id==user_id and x.training_type==_train_type,
+                                       stat_cre_lst),
+                                None
+                            )
+                            if current_create_obj is None:
+                                '''Если ранее этот объект статистики отсутствовал, то добавляем его'''
+                                new_stat_object = Statistic(user=_event_user.user, training_type=_train_type, visit_count=1,
+                                                            created_at=now, star_count=0, modifed_at=now)
+                                stat_cre_lst.append(new_stat_object)
+                            else:
+                                current_create_obj.visit_count += 1
+                            if user_id in stars_of_event:  # если новый у нового объекта есть звезды
+                                current_create_obj.star_count += 1
+            if stat_upd_lst:
+                await Statistic.bulk_update(stat_upd_lst, ['modifed_at', 'star_count', 'visit_count'])
+            if stat_cre_lst:
+                await Statistic.bulk_create(stat_cre_lst)
 
-
-    ''' Формируем словарь звезд по видам спорта '''
-    stars = dict()
-
-    print(f'главный список = {general_list}')
-
-    # for star in {item.event.id for item in user_events}:
-    #     _stars = [_item.event.stars.replace(' ', '').split(',') for _item in user_events]
-    #
-    ''' Определяем, все комбинации юзер-тип тренировки,-индекс сезона уже есть в БД '''
-    update_list = []
-    for item in user_events:
-        if (tpl := (item.event.training_type, item.user.id)) not in update_list:
-            update_list.append(tpl)
-
-    # update_stat_objs = await Statistic.filter(training_type='Футбол', user_id__in=lstr)
-
-    # statistics =  await Statistic.filter(event__datetime__lt=now).prefetch_related('event').all()
-
-
-    #
-
-    # user_events[0].text = "Chnget"
-    #
-    # # Сначала смотрим какие тренировки неактуальны уже
-    # user_events = await (EventUser.filter().prefetch_related('event','user').all().
-    #           values('event__id',
-    #                  'event__training_type',
-    #                  'event__participants_count',
-    #                  'event__stars', 'user_id',
-    #                  'created_at'))
-
-    print(update_list)
-
-    dt = [{'id': 21, 'user__tg_name': 'Eldar', 'training_type': '🏀 Баскетбол'},
-     {'id': 21, 'user__tg_name': 'Рустем', 'training_type': '🏀 Баскетбол'},
-     {'id': 21, 'user__tg_name': 'Vlad', 'training_type': '🏀 Баскетбол'},
-     {'id': 21, 'user__tg_name': 'Булат', 'training_type': '🏀 Баскетбол'},
-     {'id': 21, 'user__tg_name': 'Саит', 'training_type': '🏀 Баскетбол'}]
-    # for item in user_events:
-
-
-    # await Event.filter(event_datetime__lt=now).delete()
+    except Exception as e:
+        logger.info(f'Ошибка в delete_events: {e}')
 
 
 async def message(event_id=None, notify=False, bot: Bot = None):

@@ -1,11 +1,11 @@
 from datetime import datetime
-
-dr = '16:30:52'
-print(dr.split(':'))
-
-from datetime import datetime, time
-import time
-
+#
+# dr = '16:30:52'
+# print(dr.split(':'))
+#
+# from datetime import datetime, time
+# import time
+#
 data = [
     {'event__id': 21, 'event__training_type': '🏀 Баскетбол', 'event__participants_count': 3,
      'event__stars': '3, 33', 'user_id': 15,
@@ -55,38 +55,43 @@ data = [
     {'event__id': 24, 'event__training_type': '🏸 Бадминтон', 'event__participants_count': 12, 'event__stars': None,
      'user_id': 33, 'created_at': datetime(2025, 10, 5, 9, 21, 25, 445852)}
 ]
-
-# Формируем множество звезд
-stars = {
-    (
-        item['event__training_type'],
-        tuple(map(lambda x: int(x), item['event__stars'].replace(' ', '').split(','))),
-        item['event__id']
-    )
-    for item in data if item['event__stars'] is not None
-}
-print(f'stars = {stars}')
-
-# Формируем список списков, растасованных по event_id
-general_list = []
-for event_id in {item['event__id'] for item in data}:
-    lst = sorted([_item for _item in data if _item['event__id'] == event_id], key=lambda x: x['created_at'])
-
-    ''' Находим крайний индекс основного списка участников тренировки по первому элементу'''
-    last_index = lst[0]['event__participants_count']
-    general_list.append(lst[:last_index])
-
-for item in general_list:
-    for _item in item:
-        print(f'event_id: {_item["event__id"]}; created_at: {_item["created_at"]}; '
-              f'уяастники: {_item["event__participants_count"]}')
-
-a = {(5,6)}
-
-lst = [1,2,1,5,6,5,6,8,8,9,4,5,]
-print(lst.count(100))
-
+# _slr = "1,  2   ,  3  "
+# lst = _slr.replace(' ','').split(',')
+# print(f'lst={lst}')
+# tpl = tuple(map(lambda x: int(x), lst))
+# print(f'tpl={tpl}')
 #
+# # Формируем множество звезд
+# stars = {
+#     (
+#         item['event__training_type'],
+#         tuple(map(lambda x: int(x), item['event__stars'].replace(' ', '').split(','))),
+#         item['event__id']
+#     )
+#     for item in data if item['event__stars'] is not None
+# }
+# print(f'stars = {stars}')
+#
+# # Формируем список списков, растасованных по event_id
+# general_list = []
+# for event_id in {item['event__id'] for item in data}:
+#     lst = sorted([_item for _item in data if _item['event__id'] == event_id], key=lambda x: x['created_at'])
+#
+#     ''' Находим крайний индекс основного списка участников тренировки по первому элементу'''
+#     last_index = lst[0]['event__participants_count']
+#     general_list.append(lst[:last_index])
+#
+# for item in general_list:
+#     for _item in item:
+#         print(f'event_id: {_item["event__id"]}; created_at: {_item["created_at"]}; '
+#               f'уяастники: {_item["event__participants_count"]}')
+
+lst = [1,2,1,5,6,5,6,8,8,9,4,5]
+ss = set()
+ss.add(9)
+ss.add(89)
+print(ss)
+
 #
 # star_dict = []  # список словарей звезд тренировок
 # for event_id in data:

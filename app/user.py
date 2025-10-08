@@ -12,7 +12,7 @@ from typing import Callable, Dict, Any, Awaitable
 
 import app.database.requests as db_req  # импортирование модуля запросов к БД
 
-from app.schedule import message, delete_events
+from app.schedule import message, delete_events, test_stat
 from datetime import datetime, timedelta, time, date, timezone
 
 import app.keyboards as kb
@@ -172,7 +172,8 @@ async def process_interrupt(call: CallbackQuery, state: FSMContext,  is_admin: b
 async def return_to_start(call: CallbackQuery, state: FSMContext, is_admin: bool):
     current_state = await state.get_state()
     match current_state:
-        case st.AddFriendFSM.add_friend | st.DeleteFromTrainingFSM.delete_from_training | st.ChooseEventFSM.give_star:
+        case (st.AddFriendFSM.add_friend | st.DeleteFromTrainingFSM.delete_from_training |
+              st.ChooseEventFSM.give_star | st.ChooseEventFSM.give_star):
             await state.set_state(None)
             await choose_event(call, state, is_admin)
         case st.CreateEventFSM.dedline_type | st.EditAdminFSM.edit_admin | st.DeleteTemplateFSM.delete_template:
@@ -866,13 +867,13 @@ async def skip(message: Message, state: FSMContext):
 
 
 @user_router.callback_query(F.data.startswith("dedline_"), st.CreateEventFSM.dedline_type)
-async def add_dedline_and_finish(call_mess: CallbackQuery | Message, state: FSMContext, is_admin: bool):
-    call_mess = call_mess if isinstance(call_mess, CallbackQuery) else call_mess.message
+async def add_dedline_and_finish(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
+    show_mess = call.message if isinstance(call, CallbackQuery) else call
     try:
         data = await state.get_data()
         event_text = data["event_text"]
         if 'is_update' not in data:  # если создается новая тренировка (там работает CallbackQuery)
-            dedline_hour = int(call_mess.data.split("_")[1]) if isinstance(call_mess, CallbackQuery) \
+            dedline_hour = int(call.data.split("_")[1]) if isinstance(call, CallbackQuery) \
                 else None
             now = datetime.now()
             data["created_at"] = now
@@ -886,21 +887,22 @@ async def add_dedline_and_finish(call_mess: CallbackQuery | Message, state: FSMC
                                       f"<b><i>Срок оплаты</i></b>: в течение суток после записи на тренировку\n")
             data["payment_dedline"] = payment_dedline
 
-            if isinstance(call_mess, CallbackQuery):
-                await call_mess.message.answer(f"<b>Создана следующая тренировка</b>:\n\n"
-                                               f"<b>Тип тренировки</b>: {data['training_type']}\n"
-                                               f"{data['event_text']}\n\n")
+            await show_mess.answer(f"<b>Создана следующая тренировка</b>:\n\n"
+                                           f"<b>Тип тренировки</b>: {data['training_type']}\n"
+                                           f"{data['event_text']}\n\n")
 
             # Два запроса в БД: запись новой тренировки и получение её данных
             await db_req.create_event(data)
-            last_event = await db_req.get_event(for_schedule=True, last_record=True)
-            payment_dedline, id = last_event['payment_dedline'], last_event['id']
-            # Обновление списка дедлайнов
-            dedlines.append((payment_dedline.replace(tzinfo=None), id))
-            dedlines.sort()
-            notificate_datetime = payment_dedline.replace(tzinfo=None) - timedelta(hours=1)
-            dedline_notifications.append((notificate_datetime, id))
-            dedline_notifications.sort()
+            if call.data != 'dedline_0':
+                last_event = await db_req.get_event(for_schedule=True, last_record=True)
+                payment_dedline, id = last_event['payment_dedline'], last_event['id']
+
+                # Обновление списка дедлайнов
+                dedlines.append((payment_dedline.replace(tzinfo=None), id))
+                dedlines.sort()
+                notificate_datetime = payment_dedline.replace(tzinfo=None) - timedelta(hours=1)
+                dedline_notifications.append((notificate_datetime, id))
+                dedline_notifications.sort()
             await state.clear()
         else:
             event_text, end_fragment = str(data["event_text"]), str(data["end_fragment"])
@@ -908,13 +910,13 @@ async def add_dedline_and_finish(call_mess: CallbackQuery | Message, state: FSMC
             data["event_text"] = f'{event_text.strip()}\n{end_fragment}'
             await db_req.update_event(event_id, data)
             event = await db_req.get_event(id=event_id)
-            await call_mess.answer('Тренировка отредактирована')
+            await show_mess.answer('Тренировка отредактирована')
             await state.update_data(event=event[0])
-            await choose_event (call_mess, state, is_admin)
+            await choose_event (show_mess, state, is_admin)
     except Exception as e:
-        await call_mess.answer("Возникла ошибка! Повторите создание тренировки")
+        await show_mess.answer("Возникла ошибка! Повторите создание тренировки")
         logger.error(f"Ошибка при добавлении тренировки: {e}")
-    asyncio.create_task(delete_bkg(call_mess))
+    asyncio.create_task(delete_bkg(show_mess))
 
 #----------Конец по добавке тренировки --------------
 
@@ -1036,10 +1038,43 @@ async def confirm_payment(message: Message, state: FSMContext, is_admin: bool):
 # --------- Присвоить звезду. Начало -------------
 
 @user_router.callback_query(F.data=='give_star')
-async def give_star(call: CallbackQuery, state: FSMContext):
-    await state.set_state(st.ChooseEventFSM.give_star)
-    await call.message.answer('Введите через запятую порядковые номера игроков, которым хотите присвоить звезду',
-                              reply_markup=kb.return_to_start_markup())
+async def give_star(call: CallbackQuery, state: FSMContext, is_admin: bool):
+    data = await state.get_data()
+    event = data['event']
+    if event['stars'] is not None:
+        await state.set_state(st.ChooseEventFSM.give_star)
+        await call.message.answer(
+            '‼️ <b>ВНИМАНИЕ</b> ‼️\n'
+            'Зафиксировать звёзд можно только <b>ОДИН РАЗ (!!!)</b> \n'
+            'Введите через запятую порядковые номера игроков, которым хотите присвоить звезду',
+            reply_markup=kb.return_to_start_markup(), parse_mode='HTML'
+        )
+    else:
+        await call.message.answer('Вы уже зафиксировали звёзд на данную тренировку 🛑')
+        await state.set_state(None)
+        await choose_event(call, state, is_admin)
+
+
+@user_router.message(st.ChooseEventFSM.give_star)
+async def give_star_input(message: Message, state: FSMContext, is_admin: bool):
+    try:
+        data = await state.get_data()
+        event, event_user, verify_type = (data.get('event'), data.get('event_user'),
+                                          data.get('verify_type'))
+        print(f'evenmt_user : {event_user}')
+        prtcp_lst_form = await participant_list_formation(message, state, is_admin)
+        index_list, number_list = prtcp_lst_form['index_list'], prtcp_lst_form['number_list']
+        star_ids_list = [event_user[i]['user__id'] for i in index_list]
+
+        await state.update_data(star_ids_list=star_ids_list)
+        await state.set_state(st.ChooseEventFSM.confirm_give_star)
+    except Exception as e:
+        logger.error(f'Ошибка в присвоении звезды: {e}')
+
+@user_router.message(st.ChooseEventFSM.confirm_give_star)
+async def confirm_give_star(message: Message, state: FSMContext, is_admin: bool):
+    data = await state.get_data()
+    star_ids_list = data['star_ids_list']
 
 
 @user_router.message(st.ChooseEventFSM.give_star)
@@ -1141,12 +1176,9 @@ async def chancel_training_state(message: Message, state: FSMContext, is_admin: 
 
 @user_router.message(Command('test'))
 async def test(message: Message):
-    for i, item in enumerate(dedlines):
-        print(f'dedl_{i}: {item}')
-    print('\n')
-
-    for i, item in enumerate(dedline_notifications):
-        print(f'not_{i}: {item}')
+    print(f'dedlines = {dedlines}')
+    print(f'dedline_notifications = {dedline_notifications}')
+    # await test_stat()
 
 
 

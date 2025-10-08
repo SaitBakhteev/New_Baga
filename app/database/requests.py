@@ -84,7 +84,7 @@ async def get_event(id=None, for_telegramm=False,
     try:
         if for_telegramm:
             return await (
-                Event.get(id=id).values('payment_dedline',
+                Event.get(id=id).values('payment_dedline', 'stars',
                                         'event_datetime', 'event_text',
                                         'participants_count')
             )
@@ -92,19 +92,19 @@ async def get_event(id=None, for_telegramm=False,
             # Добавлять времена планировщику имеет смысл не менее, чем за час до наступдения дедлайна
             reper_datetime = datetime.now() + timedelta(hours=1)
             return await (Event.filter(payment_dedline__gt=reper_datetime).order_by('-id').
-                          first().values('id', 'payment_dedline')) if last_record \
+                          first().values('id', 'payment_dedline', 'stars')) if last_record \
                 else await (Event.filter(payment_dedline__gt=reper_datetime).order_by('payment_dedline').
-                            values('id', 'payment_dedline'))
+                            values('id', 'payment_dedline', 'stars'))
         elif training_type or id:
             if training_type:
                 return await (Event.filter(training_type=training_type).order_by('id').
                               values(
-                    'id', 'payment_dedline', 'event_datetime','event_text','participants_count'
+                    'id', 'payment_dedline', 'event_datetime','event_text','participants_count', 'stars'
                 )
                 )
             else:
                 return await (Event.filter(id=id).values(
-                    'id', 'payment_dedline', 'event_datetime','event_text','participants_count'
+                    'id', 'payment_dedline', 'event_datetime','event_text','participants_count', 'stars'
                 )
                 )
 
@@ -113,7 +113,7 @@ async def get_event(id=None, for_telegramm=False,
                 await (
                     Event.all().order_by('id').
                     values('id', 'payment_dedline', 'event_datetime',
-                           'event_text','participants_count')
+                           'event_text','participants_count', 'stars')
                 )
     except DoesNotExist:
         return
