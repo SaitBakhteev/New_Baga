@@ -55,9 +55,10 @@ data = [
     {'event__id': 24, 'event__training_type': '🏸 Бадминтон', 'event__participants_count': 12, 'event__stars': None,
      'user_id': 33, 'created_at': datetime(2025, 10, 5, 9, 21, 25, 445852)}
 ]
-lst = [1,2,3]
-stroka = ",".join(str(x) for x in lst)
-print(stroka)
+
+a = '⛔️'
+print(3*a)
+
 
 # _slr = "1,  2   ,  3  "
 # lst = _slr.replace(' ','').split(',')

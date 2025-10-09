@@ -16,7 +16,7 @@ from app.user import user_router, user_cache, dedlines, dedline_notifications
 from app.database.requests import get_all_users, get_event
 
 from config import TOKEN, TORTOISE_ORM, season_index
-from app.schedule import delete_events, message
+from app.schedule import delete_events, message, stat_raiting
 
 logger = logging.getLogger(__name__)
 
@@ -126,6 +126,7 @@ async def startup(dispatcher: Dispatcher):
             dedlines.append((payment_dedline.replace(tzinfo=None), item['id']))
         for item in dedlines:
             dedline_notifications.append((item[0] - timedelta(hours=1), item[1]))
+        await stat_raiting()  # загрузка статистики для рейтинга текущего сезона
 
         await season_index()  # загрузка текущего индекса летоичсчисления сезона
         scheduler = AsyncIOScheduler()

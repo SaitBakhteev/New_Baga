@@ -65,3 +65,7 @@ class ChooseEventFSM(StatesGroup):
     admin_management = State()
     give_star = State()
     confirm_give_star = State()
+
+
+class ShowRaitingFSM(StatesGroup):
+    raiting = State()

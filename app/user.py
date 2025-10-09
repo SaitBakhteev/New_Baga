@@ -12,17 +12,16 @@ from typing import Callable, Dict, Any, Awaitable
 
 import app.database.requests as db_req  # импортирование модуля запросов к БД
 
-from app.schedule import message, delete_events, test_stat
+from .schedule import message, delete_events, test_stat, stars_dict_getter
 from datetime import datetime, timedelta, time, date, timezone
 
 import app.keyboards as kb
 import app.states as st
 
-from app.tutorial import TUTORIAL, ADMIN_TUTORIAL, SIGN_UP_FOR_TRAINING_TUTORIAL, MARKS_DESCRIPTION, VIDEO_TUTORIAL, VIDEO_ADMIN_TUTORIAL
-
+from app.tutorial import (TUTORIAL, ADMIN_TUTORIAL, SIGN_UP_FOR_TRAINING_TUTORIAL,
+                          MARKS_DESCRIPTION, VIDEO_TUTORIAL, VIDEO_ADMIN_TUTORIAL)
 from config import TRAINING_TYPES, DEDLINE_TYPE
 
-from config import SEASON_INDEX, season_index
 
 BOT_NAME = os.getenv('BOT_NAME')
 
@@ -289,6 +288,36 @@ async def send_bugs_message(message: Message, state: FSMContext, is_admin:bool):
     await state.clear()
 
 
+# Просмотр рейтинга
+@user_router.message(Command('rait'))
+async def choose_raiting(message: Message, state: FSMContext):
+    await message.answer('Выберите рейтинг по видам спорта', reply_markup=kb.training_types_kb())
+    await state.set_state(st.ShowRaitingFSM.raiting)
+
+
+@user_router.callback_query(F.data.startswith('training_type'), st.ShowRaitingFSM.raiting)
+async def show_raiting(call: CallbackQuery, state: FSMContext, is_admin: bool):
+    training_index = int(call.data.split(':')[1])
+    training_type = TRAINING_TYPES[training_index]
+    stars_dict = stars_dict_getter()
+    print(f'stars_dict show_raiting: {stars_dict}')
+    if training_type in stars_dict:
+        text = ''
+        for i, item in enumerate(stars_dict[training_type]):
+            stars = item.star_count * '⭐️' if item.star_count > 0 else ''
+            name = item.user.tg_name
+            username = item.user.tg_username if is_admin else ''
+            if call.from_user.id == item.user.tg_id:
+                username = f'<b>{username}</b>'
+            text += f'{i+1}. {stars}{name} @{username}\n'
+        await call.message.answer(f'Текущий рейтинг по дисциплине <b>"{training_type}"</b>:\n'
+                                  f'{text}',
+                                  parse_mode='HTML')
+    else:
+        await call.message.answer(f'По дисциплине <b>"{training_type}"</b> в этом сезоне тренировки пока не проводились',
+                                  parse_mode='HTML')
+
+
 # Включение/выключение получения уведомлений
 @user_router.message(Command('ntf'))
 async def ntf(message: Message, state: FSMContext):
@@ -397,9 +426,6 @@ async def choose_event(call_mess: Message | CallbackQuery, state: FSMContext,
         availible_pay, paid_check, payment_confirmed = False, None, None
         signed_up_for_training =True if any(item['user__tg_id'] == call_id for item in event_user)\
             else False
-        # print(f'event_user  = {event_user}\n'
-        #       f'signed_up_for_training = {signed_up_for_training}\n'
-        #       f'call_id = {call_id}')
 
         availible_notify_by_payment = None
 
@@ -778,6 +804,8 @@ async def choose_training_type(call: CallbackQuery, state: FSMContext):
     await state.update_data(training_type=training_type)
     if current_state == st.ChooseEventFSM.training_type:
         await show_events(call.message, state)
+    elif current_state == st.ShowRaitingFSM.raiting:
+        await call.message.answer('Рейтинг')
     else:
         templates = await db_req.get_templates()
         await call.message.answer('Выберите шаблон',
@@ -1213,7 +1241,7 @@ async def chancel_training_state(message: Message, state: FSMContext, is_admin: 
 
 @user_router.message(Command('test'))
 async def test(message: Message):
-    await test_stat()
+    print(f'user_cache = {stars_dict_getter()}')
 
 
 

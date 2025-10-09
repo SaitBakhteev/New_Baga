@@ -204,6 +204,11 @@ async def show_text_about_event(event: dict, event_user: list,
                                 tg_id: int,
                                 is_admin: bool=False) -> str:
     text, participants_count = event['event_text'], int(event['participants_count'])
+    if event['stars'] is not None:
+        stars_text = event['stars'].replace(' ', '').split(',')  # переводим текстовый набор user_id в список
+        star_tpl = tuple(map(lambda x: int(x), stars_text))  # преобразуем в кортеж целых чисел значений user_id
+    else:
+        star_tpl = None
     text += '\n\n<b>ОСНОВНОЙ СПИСОК</b>\n'
     for i, item in enumerate(event_user):
         if i + 1 <= participants_count:
@@ -223,11 +228,12 @@ async def show_text_about_event(event: dict, event_user: list,
             username = f"@{item['user__tg_username']}" if item['user__tg_username'] else ""
         else:
             username = ''
+        star = "⭐️" if star_tpl is not None and item['user__id'] in star_tpl else ''
 
         # Чтобы пользователь видел себя выделенным шрифтом в списке на тренировку
         name = f'<b><i>{name}</i></b>' if item['user__tg_id'] == tg_id else name
 
-        text+=f"{i+1}. {name} {username}  {tag}\n"
+        text+=f"{star}{i+1}. {name} {username}  {tag}\n"
         if i + 1 == participants_count:
             text += "\n 📌📌 <b><i>Резерв</i></b>: \n"
 
