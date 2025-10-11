@@ -15,6 +15,7 @@
 
 2. Удаляются неактуальные тренировки
 """
+import logging
 
 from aiogram import Bot
 from tortoise.exceptions import DoesNotExist, DBConnectionError
@@ -22,9 +23,13 @@ from tortoise import transactions
 from datetime import date, datetime, timedelta
 from app.database.models import Event, EventUser, Statistic
 
-from config import logger, SEASON_INDEX
+from config import setup_logger, SEASON_INDEX
+
+
+logger, stream_logger = setup_logger(__name__), logging.getLogger(__name__)
 
 stars_dict = dict()  # словарь рейтинга звезд, распределенный по типам тренировок
+
 
 # специальный геттер во избедание проблемы обнуления stars_dict при импорте
 def stars_dict_getter():
@@ -35,19 +40,7 @@ async def test_stat():
     try:
         # await Statistic.all().delete()
         # await Event.all().delete()
-        await EventUser.create(user_id=23, event_id=69)
-        await EventUser.create(user_id=24, event_id=69)
-        await EventUser.create(user_id=25, event_id=69)
-        await EventUser.create(user_id=26, event_id=69)
-        await EventUser.create(user_id=27, event_id=69)
-        #
-        # await EventUser.create(user_id=10, event_id=64)
-        # await EventUser.create(user_id=15, event_id=64)
-        # await EventUser.create(user_id=19, event_id=64)
-        # await EventUser.create(user_id=22, event_id=64)
-        # await EventUser.create(user_id=29, event_id=64)
-
-        # await delete_events()
+        await delete_events()
     except Exception as e:
         print(f'Ошибка теста: {e}')
 
@@ -130,11 +123,22 @@ async def stat_raiting():
 # Удаление записей прошедших тренировок из БД
 async def delete_events():
     try:
-        now = datetime.now()
+        now = datetime.now() - timedelta(hours=1)
         last_dt = datetime(2025, 6, 15)  # заглушка
-        event_user = await  EventUser.filter(
-            event__event_datetime__gt=last_dt).prefetch_related('event','user'
-                                                                ).all()
+        last_event = await Event.all().order_by('-id').first()
+        print(f'last_event = {last_event}')
+
+
+        event_user = await  (EventUser.filter(
+            event__event_datetime__gt=now).prefetch_related('event','user').all()
+                             )
+        print(f'event_user = {event_user}')
+
+
+
+        # event_user = await  EventUser.filter(
+        #     event__event_datetime__gt=last_dt).prefetch_related('event','user'
+        #                                                         ).all()
         '''Загружаем из БД все содержимое прошедших треней'''
 
         # Если есть прошедшие тренировки, то двигаемся дальше
@@ -151,15 +155,16 @@ async def delete_events():
             stat_upd_lst, stat_cre_lst = data['stat_upd_lst'], data['stat_cre_lst']
 
             # Обертываем в единую транзакцию
-            with transactions.in_transaction():
+            async with transactions.in_transaction():
                 if stat_upd_lst:
                     await Statistic.bulk_update(stat_upd_lst, ['modifed_at', 'star_count', 'visit_count'])
                 if stat_cre_lst:
                     await Statistic.bulk_create(stat_cre_lst)
             await stat_raiting()
-
+        await Event.all().delete()
     except Exception as e:
         await logger.info(f'Ошибка в delete_events: {e}')
+        stream_logger.info(f'Ошибка в delete_events: {e}')
 
 
 async def message(event_id=None, notify=False, bot: Bot = None):
@@ -220,9 +225,12 @@ async def message(event_id=None, notify=False, bot: Bot = None):
 
     except DoesNotExist as e:
         await logger.info(f'DoesNotExist: {e}')
+        stream_logger.info(f'DoesNotExist: {e}')
     except DBConnectionError as e:
         await logger.info(f'DBConnectionError: {e}')
+        stream_logger.info(f'DBConnectionError: {e}')
     except Exception as e:
         await logger.error(f'on_schedule_update: {e}')
+        stream_logger.error(f'on_schedule_update: {e}')
 
 # stars_dict_getter()

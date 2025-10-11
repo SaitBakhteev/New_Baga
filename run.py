@@ -1,4 +1,8 @@
+import os
+import sys
+
 import asyncio
+import logging
 from datetime import timedelta
 
 from aiogram import Bot, Dispatcher
@@ -14,10 +18,15 @@ from tortoise.exceptions import DBConnectionError, OperationalError
 from app.user import user_router, user_cache, dedlines, dedline_notifications
 from app.database.requests import get_all_users, get_event
 
-from config import sync_logger, TOKEN, TORTOISE_ORM, season_index
+from config import setup_base_logger, TOKEN, TORTOISE_ORM, season_index
 from app.schedule import delete_events, message, stat_raiting
 
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+
+
+setup_base_logger()  # запускаем настройки для стандартного логера
+
+stream_logger = logging.getLogger(__name__)
 
 async def connect_to_db():
     retries = 5
@@ -30,16 +39,16 @@ async def connect_to_db():
 
             # Проверка подключения
             await connections.get("default").execute_query("SELECT 1")
-            sync_logger.info("Successfully connected to database")
+            stream_logger.info("Successfully connected to database")
             return True
 
         except (DBConnectionError, OperationalError) as e:
             print(f"Database connection failed (attempt {attempt + 1}/{retries}): {e}")
             if attempt < retries - 1:
-                sync_logger.error(f"Retrying in {delay} seconds...; "
+                stream_logger.error(f"Retrying in {delay} seconds...; "
                              f"Error_message: {e}")
                 await asyncio.sleep(delay)
-        sync_logger.error("Failed to connect to database after multiple attempts")
+        stream_logger.error("Failed to connect to database after multiple attempts")
         return False
 
 
@@ -109,11 +118,18 @@ async def startup(dispatcher: Dispatcher):
         await replanner_creator(scheduler)
         await replanner_creator(scheduler, True)
         scheduler.start()
-        sync_logger.info("Starting Bot...")
+        stream_logger.info("Starting Bot...")
+
+        stream_logger.info(f"=== Запуск бота ===")
+        stream_logger.info(f"PID: {os.getpid()}")
+        stream_logger.info(f"Python: {sys.executable}")
+        stream_logger.info(f"Аргументы: {sys.argv}")
+        stream_logger.info(f"Текущая директория: {os.getcwd()}")
+        stream_logger.info(f"Модуль: {__file__}")
     except RuntimeError as e:
-        sync_logger.error(f"On startup: {e}")
+        stream_logger.error(f"On startup: {e}")
     except Exception as e:
-        sync_logger.error(f"ERROR_on_Starting Bot...: {e}")
+        stream_logger.error(f"ERROR_on_Starting Bot...: {e}")
 
 
 async def shutdown(dispatcher: Dispatcher):

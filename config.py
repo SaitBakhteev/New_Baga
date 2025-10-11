@@ -1,5 +1,6 @@
 import logging
 import os
+
 from dotenv import load_dotenv
 
 from aiologger import Logger
@@ -29,68 +30,38 @@ DEDLINE_TYPE = [("12 часов", "12"), ("24 часа", "24"),
 
 SEASON_INDEX = [0]  # спец переменная, означающая начало летоисчисления сезона
 
-FORMATTER = logging.Formatter('{asctime} - {name} - {levelname} - {message}',
-                              style='{')
-
 
 # Функция для Настройки асинхронного логирования
-def setup_logger():
-    info_handler = AsyncFileHandler('logs/general.log')
-    info_handler.level = logging.INFO
-
-    error_handler = AsyncFileHandler('logs/error.log')
-    error_handler.level = logging.ERROR
-
-    crirical_handler = AsyncFileHandler('logs/bot.log')
-    crirical_handler.level = logging.CRITICAL
-
-    # Из-за несовместимости асинхронного стрим-хендлера с windows, применяем синхронный
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(FORMATTER)
-
-    for i in [info_handler, error_handler, crirical_handler, stream_handler]:
-        i.formatter  = FORMATTER
-
-    logger = Logger()
-    # Добавляем все обработчики
-    logger.add_handler(info_handler)
-    logger.add_handler(error_handler)
-    logger.add_handler(crirical_handler)
-    logger.add_handler(stream_handler)
-
+def setup_logger(module):
+    logger = Logger(name=module)
+    logger.propagate = False
+    for i in [('general', logging.INFO), ('error', logging.ERROR), ('bot', logging.CRITICAL)]:
+        handler = AsyncFileHandler(f'logs/{i[0]}.log')
+        handler.level = i[1]
+        handler.formatter = Formatter('{asctime} - {name} - {levelname} - {message}', style='{')
+        logger.add_handler(handler)
     return logger
 
-logger = setup_logger()
 
-
-# Синхронный стрим-логер
-stream_loger = logging.getLogger(__name__)
-
-
-# Дополнительный синхронный логер
-def setup_sync_logger():
-    sync_logger = logging.getLogger(__name__)  # отдельный специальный логгер
-    info_file_handler = logging.FileHandler('logs/general.log')
-    info_file_handler.setLevel('INFO')
-    info_file_handler.setFormatter(FORMATTER)
-
-    error_file_handler = logging.FileHandler('logs/error.log')
-    error_file_handler.setLevel('ERROR')
-    error_file_handler.setFormatter(FORMATTER)
-
-    # Нестандартное логирование, для записи жалоб на работу бота от пользователей
-    msg_handler = logging.FileHandler('logs/bot.log')
-    msg_handler.setLevel('CRITICAL')
-    msg_handler.setFormatter(FORMATTER)
-
-    logging.basicConfig(format=logging.BASIC_FORMAT,
-                        level=logging.INFO,
-                        handlers=[info_file_handler, error_file_handler, msg_handler,
-                                  logging.StreamHandler()])
-
+# Дополнительный логер для синхронных функций для отлова в файлы
+def setup_sync_logger(module):
+    sync_logger = logging.getLogger(name=module)  # отдельный специальный логгер
+    for i in [('general.log', 'INFO'), ('error.log', 'ERROR'), ('bot.log', 'CRITICAL')]:
+        handler = logging.FileHandler(f'logs/{i[0]}')
+        handler.setFormatter(logging.Formatter('{asctime} - {name} - {levelname} - {message}', style='{'))
+        handler.setLevel(i[1])
+        sync_logger.addHandler(handler)
     return sync_logger
 
-sync_logger = setup_sync_logger()
+
+# Конфигурация настроек базового логера для всего проекта
+def setup_base_logger():
+    logger = logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[logging.StreamHandler()]
+    )
+    return logger
 
 
 # config.py for MySQL
