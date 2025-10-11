@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from datetime import timedelta
 
 from aiogram import Bot, Dispatcher
@@ -15,37 +14,10 @@ from tortoise.exceptions import DBConnectionError, OperationalError
 from app.user import user_router, user_cache, dedlines, dedline_notifications
 from app.database.requests import get_all_users, get_event
 
-from config import TOKEN, TORTOISE_ORM, season_index
+from config import sync_logger, TOKEN, TORTOISE_ORM, season_index
 from app.schedule import delete_events, message, stat_raiting
 
-logger = logging.getLogger(__name__)
-
-# Общий для всех обработчиков формат вывода сообщений в лог-файлы
-FORMATTER = logging.Formatter('{asctime} - {name} - {levelname} - {message}',
-                              style='{')
-
-info_file_handler = logging.FileHandler('logs/general.log')
-info_file_handler.setLevel('INFO')
-info_file_handler.setFormatter(FORMATTER)
-
-error_file_handler = logging.FileHandler('logs/error.log')
-error_file_handler.setLevel('ERROR')
-error_file_handler.setFormatter(FORMATTER)
-
-# Нестандартное логирование, для записи жалоб на работу бота от пользователей
-msg_handler = logging.FileHandler('logs/bot.log')
-msg_handler.setLevel('CRITICAL')
-msg_formatter = logging.Formatter('{asctime}:{username} -- {message}',
-                                  style='{')
-msg_handler.setFormatter(msg_formatter)
-
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-
-logging.basicConfig(format=logging.BASIC_FORMAT,
-                    level=logging.INFO,
-                    handlers=[info_file_handler, error_file_handler, msg_handler,
-                              logging.StreamHandler()])
-
 
 async def connect_to_db():
     retries = 5
@@ -58,16 +30,16 @@ async def connect_to_db():
 
             # Проверка подключения
             await connections.get("default").execute_query("SELECT 1")
-            logger.info("Successfully connected to database")
+            sync_logger.info("Successfully connected to database")
             return True
 
         except (DBConnectionError, OperationalError) as e:
             print(f"Database connection failed (attempt {attempt + 1}/{retries}): {e}")
             if attempt < retries - 1:
-                logger.error(f"Retrying in {delay} seconds...; "
+                sync_logger.error(f"Retrying in {delay} seconds...; "
                              f"Error_message: {e}")
                 await asyncio.sleep(delay)
-        logger.error("Failed to connect to database after multiple attempts")
+        sync_logger.error("Failed to connect to database after multiple attempts")
         return False
 
 
@@ -137,11 +109,11 @@ async def startup(dispatcher: Dispatcher):
         await replanner_creator(scheduler)
         await replanner_creator(scheduler, True)
         scheduler.start()
-        logger.info("Starting Bot...")
+        sync_logger.info("Starting Bot...")
     except RuntimeError as e:
-        logger.error(f"On startup: {e}")
+        sync_logger.error(f"On startup: {e}")
     except Exception as e:
-        logger.error(f"ERROR_on_Starting Bot...: {e}")
+        sync_logger.error(f"ERROR_on_Starting Bot...: {e}")
 
 
 async def shutdown(dispatcher: Dispatcher):
@@ -159,7 +131,6 @@ async def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
     try:
         asyncio.run(main())
     except KeyboardInterrupt:

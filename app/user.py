@@ -1,31 +1,27 @@
-import logging
 import os
 
 import asyncio
 from functools import reduce
+from typing import Callable, Dict, Any, Awaitable
+from datetime import datetime, timedelta, time, date, timezone
 
 from aiogram import Router, F, BaseMiddleware, Bot
 from aiogram.types import Message, CallbackQuery, TelegramObject, BufferedInputFile
 from aiogram.filters import CommandStart, Command, StateFilter
 from aiogram.fsm.context import FSMContext
-from typing import Callable, Dict, Any, Awaitable
 
 import app.database.requests as db_req  # импортирование модуля запросов к БД
-
 from .schedule import message, delete_events, test_stat, stars_dict_getter
-from datetime import datetime, timedelta, time, date, timezone
 
 import app.keyboards as kb
 import app.states as st
-
 from app.tutorial import (TUTORIAL, ADMIN_TUTORIAL, SIGN_UP_FOR_TRAINING_TUTORIAL,
                           MARKS_DESCRIPTION, VIDEO_TUTORIAL, VIDEO_ADMIN_TUTORIAL)
-from config import TRAINING_TYPES, DEDLINE_TYPE
+from config import logger, TRAINING_TYPES, DEDLINE_TYPE
 
 
 BOT_NAME = os.getenv('BOT_NAME')
 
-logger = logging.getLogger(__name__)
 user_router = Router()
 
 # Кэш список пользователей и дедлайнов
@@ -74,7 +70,7 @@ class AdminMiddleware(BaseMiddleware):
             else:
                 data["is_admin"] = False
         # data["is_admin"] = False
-        logger.info(f'event.from_user.username={event.from_user.username}')
+        await logger.info(f'event.from_user.username={event.from_user.username}')
         # Передаем управление следующему обработчику
         # print(f'user_cache[e] = {user_cache[tg_id]}')
         return await handler(event, data)
@@ -146,7 +142,7 @@ async def cmd_start(call_mess: CallbackQuery | Message, state: FSMContext, is_ad
         if call_mess.from_user.username == "Rinat_Tranzit":
             await call_mess.answer("Мансура на тебя нет!!")
     except Exception as e:
-        logger.error(e)
+        await logger.error(e)
         return
 
 
@@ -276,14 +272,14 @@ async def send_bugs_message(message: Message, state: FSMContext, is_admin:bool):
     try:
         text = message.text
         if '0' not in text:
-            logger.critical(text, extra={'username': message.from_user.username})
+            await logger.critical(text, extra={'username': message.from_user.username})
             await message.answer('Благодарим Вас за обратную связь.')
         else:
             raise Exception
     except Exception as e:
         await message.answer('Извините возникла ошибка.\n'
                              'Возможно причина в отстуствии имени аккаунта телеграмм.')
-        logger.error('Error on /bugs')
+        await logger.error('Error on /bugs')
         pass
     await state.clear()
 
@@ -387,7 +383,7 @@ async def training_info(call_mess: Message | CallbackQuery, is_admin: bool, **kw
             'event_user': event_user,
             'text': text}
     except Exception as e:
-        logger.error(f'Error on /training_text: {e}')
+        await logger.error(f'Error on /training_text: {e}')
         pass
 
 # После выбора тренировки отображается текущий список заявишихся участников
@@ -467,7 +463,7 @@ async def choose_event(call_mess: Message | CallbackQuery, state: FSMContext,
         call_mess = call_mess.message if this_call_query else call_mess
         asyncio.create_task(delete_bkg(call_mess))
     except Exception as e:
-        logger.error(f'Ошибка в choose_event: {e}')
+        await logger.error(f'Ошибка в choose_event: {e}')
 
 
 # Записаться на тренировку
@@ -484,7 +480,7 @@ async def sign_up_for_training(call: CallbackQuery, state: FSMContext, is_admin:
         await choose_event(call, state, is_admin)
         await state.set_state(st.ChooseEventFSM.sign_up_for_training)
     except Exception as e:
-        logger.error(e)
+        await logger.error(e)
 
 
 # Оповестить бот об оплате кнопкой '✔️ Тренировка оплачена'
@@ -504,7 +500,7 @@ async def payment_notify(call: CallbackQuery, state: FSMContext, is_admin: bool)
                                       'Вы уже оплатили. Поэтому для возврата денежных средств обратитесь '
                                       'к админу тренировки.')
     except Exception as e:
-        logger.error(e)
+        await logger.error(e)
 
 
 # Удалиться из тренировки
@@ -578,7 +574,7 @@ async def add_friend(message: Message, state: FSMContext):
             message_text = '☝🏽Вы не можете добавить себя вместо друга'
         await message.answer(message_text, parse_mode='HTML', reply_markup=kb.return_to_start_markup())
     except Exception as e:
-        logger.error(f'Add+friend: {e}')
+        await logger.error(f'Add+friend: {e}')
 
 
 @user_router.callback_query(F.data.startswith('add_friend') and st.AddFriendFSM.add_friend_confirm)
@@ -648,7 +644,7 @@ async def admin_list(call_mess: CallbackQuery | Message, state: FSMContext):
         else:
             await call_mess.answer('Кроме Вас больше нет админов', reply_markup=kb.edit_admins())
     except Exception as e:
-        logger.error(f'Error_on admin_list: {e}\n'
+        await logger.error(f'Error_on admin_list: {e}\n'
                      f'user_cache = {user_cache}')
         await call_mess.answer('Возникла неизвестная ошибка.')
         await state.clear()
@@ -670,7 +666,7 @@ async def edit_admin(call: CallbackQuery, state: FSMContext):
                              reply_markup=kb.return_to_start_markup(), parse_mode='HTML')
         await state.set_state(st.EditAdminFSM.edit_admin)
     except Exception as e:
-        logger.error(f'Ошибка при редактировании списка админов: {e}')
+        await logger.error(f'Ошибка при редактировании списка админов: {e}')
         await call.message.answer('Неизвестная ошибка.')
         await state.clear()
         await admin_panel(call, state, True)
@@ -687,7 +683,7 @@ async def finish_edit_admin(message: Message, state: FSMContext):
         user_cache[tg_id] = user
         await message.answer('Статус изменен.')
     except Exception as e:
-        logger.error(e)
+        await logger.error(e)
         await message.answer('Данный пользователь не зарегистрирован в боте.')
         pass
     await state.clear()
@@ -714,7 +710,7 @@ async def delete_template(call: CallbackQuery, state: FSMContext):
         else:
             await call.message.answer(f'У Вас нет сохраненных шаблонов.')
     except Exception as e:
-        logger.error(f'ошибка в delete_template: {e}')
+        await logger.error(f'ошибка в delete_template: {e}')
         await admin_panel(message, state, True)
         asyncio.create_task(delete_bkg(call))
 
@@ -732,7 +728,7 @@ async def delete_template_finish(message: Message, state: FSMContext):
         text = 'Значение id шаблона должно быть в формате целого числа. Операция отменена'
         pass
     except Exception as e:
-        logger.error(f'unknown error on delete_template_finish: {e}')
+        await logger.error(f'unknown error on delete_template_finish: {e}')
         text = 'Возникла неизвестная ошибка. Операция отклонена'
         pass
     await message.answer(text)
@@ -957,7 +953,7 @@ async def add_dedline_and_finish(call: CallbackQuery | Message, state: FSMContex
             await choose_event (show_mess, state, is_admin)
     except Exception as e:
         await show_mess.answer("Возникла ошибка! Повторите создание тренировки")
-        logger.error(f"Ошибка при добавлении тренировки: {e}")
+        await logger.error(f"Ошибка при добавлении тренировки: {e}")
     asyncio.create_task(delete_bkg(show_mess))
 
 #----------Конец по добавке тренировки --------------
@@ -1039,7 +1035,7 @@ async def payment_verification(call: CallbackQuery, state: FSMContext):
         await call.message.answer(text, parse_mode='HTML', reply_markup=kb.return_to_start_markup())
         await state.set_state(st.UpdateEventUserFSM.payment_confirmed)
     except Exception as e:
-        logger.error(e)
+        await logger.error(e)
 
 
 @user_router.message(st.UpdateEventUserFSM.payment_confirmed)
@@ -1079,7 +1075,7 @@ async def confirm_payment(message: Message, state: FSMContext, is_admin: bool):
         asyncio.create_task(delete_bkg(message))
 
     except Exception as e:
-        logger.error(e)
+        await logger.error(e)
 # ---------- Конец верификации оплаты ---------------
 
 
@@ -1127,7 +1123,7 @@ async def give_star_input(message: Message, state: FSMContext, is_admin: bool):
                              'отправьте в сообщении боту слово <i>да</i>',
                              reply_markup=kb.return_to_start_markup(), parse_mode='HTML')
     except Exception as e:
-        logger.error(f'Ошибка в присвоении звезды: {e}')
+        await logger.error(f'Ошибка в присвоении звезды: {e}')
 
 
 @user_router.message(st.ChooseEventFSM.confirm_give_star)
@@ -1196,7 +1192,7 @@ async def drop_participant_middlware_state(message: Message, state: FSMContext, 
 
         pass
     except Exception as e:
-        logger.error(e)
+        await logger.error(e)
         text = 'Возникла неизвестная ошибка.'
         pass
 

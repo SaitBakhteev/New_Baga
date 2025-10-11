@@ -1,14 +1,8 @@
-import logging
-
-from aiogram.types import (
-    InlineKeyboardMarkup,
-    InlineKeyboardButton,
-)
+import asyncio
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from config import TRAINING_TYPES
-
-logger = logging.getLogger(__name__)
+from config import logger, sync_logger, TRAINING_TYPES
 
 
 # Кнока включения/выключения уведомлений
@@ -171,7 +165,7 @@ async def keyboard_builder(prefix: str, lst: list,
         keyboard.adjust(1)
         return keyboard.as_markup()
     except Exception as e:
-        logger.error(f"err = {e}")
+        await logger.error(f"err = {e}")
 
 
 # Инлайн-клавиатура для отображения всех запланированных тренировок
@@ -196,7 +190,7 @@ def show_events_kb(event_user: list, *args) -> InlineKeyboardMarkup:
         keyboard.adjust(1)
         return keyboard.as_markup()
     except Exception as e:
-        logger.error(f'err = {e}')
+        sync_logger.error(f'Ошибка строка 193 = {e}')
 
 
 # Фрмирование текста по тренировке со списком участников
@@ -288,7 +282,7 @@ def sign_up_for_training(
         keyboard.adjust(1)
         return keyboard.as_markup()
     except Exception as e:
-        logging.error(e)
+        sync_logger.error(f'Ошибка в siggn_up_for_training: {e}')
 
 
 # Кнопки администрирования тренировки

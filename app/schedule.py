@@ -16,17 +16,13 @@
 2. Удаляются неактуальные тренировки
 """
 
-import logging
-
 from aiogram import Bot
 from tortoise.exceptions import DoesNotExist, DBConnectionError
 from tortoise import transactions
 from datetime import date, datetime, timedelta
 from app.database.models import Event, EventUser, Statistic
 
-from config import SEASON_INDEX
-
-logger = logging.getLogger(__name__)
+from config import logger, SEASON_INDEX
 
 stars_dict = dict()  # словарь рейтинга звезд, распределенный по типам тренировок
 
@@ -163,7 +159,7 @@ async def delete_events():
             await stat_raiting()
 
     except Exception as e:
-        logger.info(f'Ошибка в delete_events: {e}')
+        await logger.info(f'Ошибка в delete_events: {e}')
 
 
 async def message(event_id=None, notify=False, bot: Bot = None):
@@ -223,10 +219,10 @@ async def message(event_id=None, notify=False, bot: Bot = None):
                             continue
 
     except DoesNotExist as e:
-        logger.info(f'DoesNotExist: {e}')
+        await logger.info(f'DoesNotExist: {e}')
     except DBConnectionError as e:
-        logger.info(f'DBConnectionError: {e}')
+        await logger.info(f'DBConnectionError: {e}')
     except Exception as e:
-        logger.error(f'on_schedule_update: {e}')
+        await logger.error(f'on_schedule_update: {e}')
 
 # stars_dict_getter()

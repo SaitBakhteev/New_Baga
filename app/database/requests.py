@@ -1,12 +1,9 @@
-import uuid
-from uuid import uuid1
-import logging
 from tortoise.exceptions import DoesNotExist
-
-from app.database.models import User, Event, EventUser, Template
 from datetime import datetime, timedelta
 
-logger = logging.getLogger(__name__)
+from app.database.models import User, Event, EventUser, Template
+from app.schedule import logger
+
 
 # ----- ПОЛЬЗОВАТЕЛЬ -----------
 # Создание или получение пользователя
@@ -24,7 +21,7 @@ async def get_or_create_user(from_user, for_telegramm=False, create_user=False):
             return
         return user
     except Exception as e:
-        logger.error(f"User is not created; {e}")
+        await logger.error(f"User is not created; {e}")
         return
 
 
@@ -37,7 +34,7 @@ async def get_user_by_username(tg_username: str):
         boss = await User.filter(tg_username=tg_username).get()
         return boss.id
     except DoesNotExist as e:
-        logger.error(f"get_user_by_username: {e}")
+        await logger.error(f"get_user_by_username: {e}")
         return None
 
 
@@ -157,9 +154,9 @@ async def get_event_user(event_id=None, user_tg_id=None,
                                  'paid_check',
                                  'friend',))
     except DoesNotExist:
-        logger.error('get_event_user: User DoesNotExist')
+        await logger.error('get_event_user: User DoesNotExist')
     except Exception as e:
-        logger.error(f'get_event_user: {e}')
+        await logger.error(f'get_event_user: {e}')
 
 
 # Запрос для проверки можно ли добавить друга
@@ -186,9 +183,9 @@ async def delete_event_user(user_id: int, event_id: int):
     try:
         await EventUser.filter(user_id=user_id, event_id=event_id).delete()
     except DoesNotExist as e:
-        logger.error(f'delete_event_user: {e}')
+        await logger.error(f'delete_event_user: {e}')
     except Exception as e:
-        logger.error(f'delete_event_user_other error: {e}')
+        await logger.error(f'delete_event_user_other error: {e}')
 
 
 async def delete_template(template_id: int):
@@ -197,7 +194,7 @@ async def delete_template(template_id: int):
         await template.delete()
         return 'OK'
     except DoesNotExist as e:
-        logger.error(f'delete_template: {e}')
+        await logger.error(f'delete_template: {e}')
         return 'Error'
 
 """ Обновление времени записи на тренировку для участников,
@@ -213,22 +210,22 @@ async def update_user_receive_notificcations(tg_id: int):
         await user.save()
         return receive_notifications
     except DoesNotExist as e:
-        logger.error(f'ошибка при обновлении поля получения уведомлений: {e}')
+        await logger.error(f'ошибка при обновлении поля получения уведомлений: {e}')
         return None
 
 
 async def update_admin_and_get(tg_username: str, admin_permissions: bool):
     try:
         user = await User.get_or_none(tg_username=tg_username)
-        logger.info(f'USER: {user.tg_name}')
+        await logger.info(f'USER: {user.tg_name}')
         user_id = user.id
         user.admin_permissions = admin_permissions
         await User.filter(id=user_id).update(admin_permissions=admin_permissions)
         return (user, user.tg_id)
     except DoesNotExist as e:
-        logger.error(f'update_admin_and_get: User does not exist')
+        await logger.error(f'update_admin_and_get: User does not exist')
     except Exception as e:
-        logger.error(f'update_admin_and_get: {e}')
+        await logger.error(f'update_admin_and_get: {e}')
 
 
 async def update_event(event_id: int, data, **kwargs):
@@ -262,9 +259,9 @@ async def update_event_user(user_id: int, event_id: int,
                                    event_id=event_id).
                    update(paid_check=None, payment_confirmed=None))
     except DoesNotExist:
-        logger.error(f'update_event_user: Does Not exist')
+        await logger.error(f'update_event_user: Does Not exist')
     except Exception as e:
-        logger.error(f'update_event_user: {e}')
+        await logger.error(f'update_event_user: {e}')
 
 
 # Запрос к БД для обновления записей EventUser при проверке админом оплаты
