@@ -8,7 +8,9 @@ from config import setup_logger
 from app.database.models import User, Event, EventUser, Template
 
 
-logger, stream_logger = setup_logger(__name__), logging.getLogger(__name__)
+logger = setup_logger(__name__)
+
+# stream_logger = logging.getLogger(__name__)
 
 # ----- ПОЛЬЗОВАТЕЛЬ -----------
 # Создание или получение пользователя
@@ -19,15 +21,16 @@ async def get_or_create_user(from_user, for_telegramm=False, create_user=False):
 
         user = await User.get_or_none(tg_id=from_user.id)
         if create_user:
+            full_name = f'{from_user.first_name} {from_user.last_name}'
             await User.create(
                 tg_id=from_user.id, tg_username=from_user.username,
-                tg_name=from_user.first_name, created_at=datetime.now()
+                tg_name=full_name, created_at=datetime.now()
             )
             return
         return user
     except Exception as e:
         await logger.error(f"User is not created; {e}")
-        stream_logger.error(f"User is not created; {e}")
+        # stream_logger.error(f"User is not created; {e}")
         return
 
 
@@ -41,7 +44,7 @@ async def get_user_by_username(tg_username: str):
         return boss.id
     except DoesNotExist as e:
         await logger.error(f"get_user_by_username: {e}")
-        stream_logger.error(f"get_user_by_username: {e}")
+        # stream_logger.error(f"get_user_by_username: {e}")
         return None
 
 
@@ -162,10 +165,10 @@ async def get_event_user(event_id=None, user_tg_id=None,
                                  'friend',))
     except DoesNotExist:
         await logger.error('get_event_user: User DoesNotExist')
-        stream_logger.error('get_event_user: User DoesNotExist')
+        # stream_logger.error('get_event_user: User DoesNotExist')
     except Exception as e:
         await logger.error(f'get_event_user: {e}')
-        stream_logger.error(f'get_event_user: {e}')
+        # stream_logger.error(f'get_event_user: {e}')
 
 
 # Запрос для проверки можно ли добавить друга
@@ -193,10 +196,10 @@ async def delete_event_user(user_id: int, event_id: int):
         await EventUser.filter(user_id=user_id, event_id=event_id).delete()
     except DoesNotExist as e:
         await logger.error(f'delete_event_user: {e}')
-        stream_logger.error(f'delete_event_user: {e}')
+        # stream_logger.error(f'delete_event_user: {e}')
     except Exception as e:
         await logger.error(f'delete_event_user_other error: {e}')
-        stream_logger.error(f'delete_event_user_other error: {e}')
+        # stream_logger.error(f'delete_event_user_other error: {e}')
 
 
 async def delete_template(template_id: int):
@@ -206,12 +209,26 @@ async def delete_template(template_id: int):
         return 'OK'
     except DoesNotExist as e:
         await logger.error(f'delete_template: {e}')
-        stream_logger.error(f'delete_template: {e}')
+        # stream_logger.error(f'delete_template: {e}')
 
 
 """ Обновление времени записи на тренировку для участников,
 которые не выполнинли условия по оплате. Данное обновление
 выполняется за один запрос к БД """
+
+
+# Запрос на редактирование профиля
+async def update_user(**kwargs):
+    try:
+        if 'new_username' in kwargs:
+            await User.filter(id=kwargs['user_id']).update(tg_username=kwargs['new_username'])
+        elif 'tg_name' in kwargs:
+            tg_name, id = kwargs['tg_name'], kwargs['user_id']
+            await User.filter(id=id).update(tg_name=tg_name)
+    except Exception as e:
+        await logger.error(f'Ошибка в update_user: {e}')
+        # stream_logger.error(f'update_user: {e}')
+
 
 # Обновление поля включения или отключения уведомлений
 async def update_user_receive_notificcations(tg_id: int):
@@ -223,7 +240,7 @@ async def update_user_receive_notificcations(tg_id: int):
         return receive_notifications
     except DoesNotExist as e:
         await logger.error(f'ошибка при обновлении поля получения уведомлений: {e}')
-        stream_logger.error(f'ошибка при обновлении поля получения уведомлений: {e}')
+        # stream_logger.error(f'ошибка при обновлении поля получения уведомлений: {e}')
         return None
 
 
@@ -231,17 +248,17 @@ async def update_admin_and_get(tg_username: str, admin_permissions: bool):
     try:
         user = await User.get_or_none(tg_username=tg_username)
         await logger.info(f'USER: {user.tg_name}')
-        stream_logger.error(f'USER: {user.tg_name}')
+        # stream_logger.error(f'USER: {user.tg_name}')
         user_id = user.id
         user.admin_permissions = admin_permissions
         await User.filter(id=user_id).update(admin_permissions=admin_permissions)
         return (user, user.tg_id)
     except DoesNotExist as e:
         await logger.error(f'update_admin_and_get: User does not exist')
-        stream_logger.error(f'update_admin_and_get: User does not exist')
+        # stream_logger.error(f'update_admin_and_get: User does not exist')
     except Exception as e:
         await logger.error(f'update_admin_and_get: {e}')
-        stream_logger.error(f'update_admin_and_get: {e}')
+        # stream_logger.error(f'update_admin_and_get: {e}')
 
 
 async def update_event(event_id: int, data, **kwargs):
@@ -276,10 +293,10 @@ async def update_event_user(user_id: int, event_id: int,
                    update(paid_check=None, payment_confirmed=None))
     except DoesNotExist:
         await logger.error(f'update_event_user: Does Not exist')
-        stream_logger.error(f'update_event_user: Does Not exist')
+        # stream_logger.error(f'update_event_user: Does Not exist')
     except Exception as e:
         await logger.error(f'update_event_user: {e}')
-        stream_logger.error(f'update_event_user: {e}')
+        # stream_logger.error(f'update_event_user: {e}')
 
 
 # Запрос к БД для обновления записей EventUser при проверке админом оплаты

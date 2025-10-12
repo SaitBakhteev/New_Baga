@@ -38,9 +38,7 @@ def stars_dict_getter():
 
 async def test_stat():
     try:
-        # await Statistic.all().delete()
-        # await Event.all().delete()
-        await delete_events()
+        await delete_events(test=True)
     except Exception as e:
         print(f'Ошибка теста: {e}')
 
@@ -121,24 +119,12 @@ async def stat_raiting():
     print(f'stars_dict внутри stat_raiting {stars_dict}')
 
 # Удаление записей прошедших тренировок из БД
-async def delete_events():
+async def delete_events(test=None):
     try:
-        now = datetime.now() - timedelta(hours=1)
-        last_dt = datetime(2025, 6, 15)  # заглушка
-        last_event = await Event.all().order_by('-id').first()
-        print(f'last_event = {last_event}')
-
-
-        event_user = await  (EventUser.filter(
-            event__event_datetime__gt=now).prefetch_related('event','user').all()
-                             )
-        print(f'event_user = {event_user}')
-
-
-
-        # event_user = await  EventUser.filter(
-        #     event__event_datetime__gt=last_dt).prefetch_related('event','user'
-        #                                                         ).all()
+        now = datetime.now() if test is None else datetime.now() + timedelta(days=45)
+        event_user = await  EventUser.filter(
+            event__event_datetime__lt=now).prefetch_related('event','user'
+                                                                ).all()
         '''Загружаем из БД все содержимое прошедших треней'''
 
         # Если есть прошедшие тренировки, то двигаемся дальше
@@ -161,10 +147,10 @@ async def delete_events():
                 if stat_cre_lst:
                     await Statistic.bulk_create(stat_cre_lst)
             await stat_raiting()
-        await Event.all().delete()
+        await Event.filter(event_datetime__lt=now).delete()
     except Exception as e:
-        await logger.info(f'Ошибка в delete_events: {e}')
-        stream_logger.info(f'Ошибка в delete_events: {e}')
+        await logger.error(f'Ошибка в delete_events: {e}')
+        stream_logger.error(f'Ошибка в delete_events: {e}')
 
 
 async def message(event_id=None, notify=False, bot: Bot = None):

@@ -50,6 +50,12 @@ class EditAdminFSM(StatesGroup):
     edit_admin = State()
 
 
+class EditProfileFSM(StatesGroup):
+    show_current_info = State()
+    edit_tg_name = State()
+    edit_tg_username = State()
+
+
 class DeleteTemplateFSM(StatesGroup):
     delete_template = State()
 

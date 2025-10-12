@@ -1,6 +1,3 @@
-import os
-import sys
-
 import asyncio
 import logging
 from datetime import timedelta
@@ -120,12 +117,6 @@ async def startup(dispatcher: Dispatcher):
         scheduler.start()
         stream_logger.info("Starting Bot...")
 
-        stream_logger.info(f"=== Запуск бота ===")
-        stream_logger.info(f"PID: {os.getpid()}")
-        stream_logger.info(f"Python: {sys.executable}")
-        stream_logger.info(f"Аргументы: {sys.argv}")
-        stream_logger.info(f"Текущая директория: {os.getcwd()}")
-        stream_logger.info(f"Модуль: {__file__}")
     except RuntimeError as e:
         stream_logger.error(f"On startup: {e}")
     except Exception as e:

@@ -15,7 +15,7 @@ class User(Model):
     id = fields.IntField(primary_key=True)
     tg_id = fields.BigIntField(unique=True)
     tg_username = fields.CharField(max_length=64, null=True)
-    tg_name = fields.CharField(max_length=64, null=True)
+    tg_name = fields.CharField(max_length=150, null=True)
     created_at = fields.DatetimeField(auto_now_add=True, timezone=timezone('Europe/Moscow'))
     admin_permissions = fields.BooleanField(default=False)
     receive_notifications = fields.BooleanField(default=False)  # получать или не получать уведомления
