@@ -19,6 +19,7 @@ DB_USER = os.getenv("DB_USER")
 DB_PASS = os.getenv("DB_PASS")
 DB_NAME = os.getenv("DB_NAME")
 
+NUMBERS = ('0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣')  # марки для чисел рейтинга
 
 TRAINING_TYPES = ('🏐 Волейбол',
                   '🏀 Баскетбол',

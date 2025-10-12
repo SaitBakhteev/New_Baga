@@ -18,7 +18,7 @@ import app.keyboards as kb
 import app.states as st
 from app.tutorial import (TUTORIAL, ADMIN_TUTORIAL, SIGN_UP_FOR_TRAINING_TUTORIAL,
                           MARKS_DESCRIPTION, GENERAL_TUTORIAL, VIDEO_ADMIN_TUTORIAL)
-from config import setup_logger, TRAINING_TYPES, DEDLINE_TYPE, SEASON_INDEX
+from config import setup_logger, TRAINING_TYPES, DEDLINE_TYPE, SEASON_INDEX, NUMBERS
 
 logger = setup_logger(__name__)
 
@@ -218,7 +218,7 @@ async def prof(call_mess: CallbackQuery | Message, state: FSMContext):
     tg_id = call_mess.from_user.id if isinstance(call_mess, CallbackQuery) else call_mess.chat.id
     tg_name, tg_username = user_cache[tg_id].tg_name, user_cache[tg_id].tg_username
     await state.set_state(st.EditProfileFSM.show_current_info)
-    await call_mess.answer(f'На данный момент Вы зарегистрированы в боте как <b>Имя</b>: <i>{tg_name}</i>',
+    await call_mess.answer(f'На данный момент Вы зарегистрированы в боте как <b><i>{tg_name}</i></b>',
                            reply_markup=kb.profile_edit_kb, parse_mode='HTML')
 
 
@@ -392,12 +392,19 @@ async def show_raiting(call: CallbackQuery, state: FSMContext, is_admin: bool):
     if training_type in stars_dict:
         text = ''
         for i, item in enumerate(stars_dict[training_type]):
-            stars = item.star_count * '⭐️' if item.star_count > 0 else ''
+            if item.star_count > 0:
+                stars = ''
+                for _i, _num in enumerate(str(item.star_count)):
+                    # Здесь преобразуем цифру числа звезд в индекс
+                    idx = int(_num)
+                    stars += f'{NUMBERS[idx]}'
+            else:
+                stars = ''
             visit_count = f'<i>Число посещенных тренировок</i>: {item.visit_count}'
             name = item.user.tg_name
             username = '@' + item.user.tg_username if is_admin else ''
             if call.from_user.id == item.user.tg_id:
-                text += f'<b>{i+1}</b>. {stars} <b><i>{name} {username}</i></b>\n{visit_count}\n'
+                text += f'<b>{i+1}</b>. ⭐️{stars} <b><i>{name} {username}</i></b>\n{visit_count}\n'
             else:
                 text += f'<b>{i+1}</b>. {stars} {name} {username}\n{visit_count}\n'
         await call.message.answer(f'Текущий рейтинг по дисциплине <b>"{training_type}"</b>:\n\n'
