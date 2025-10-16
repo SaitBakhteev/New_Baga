@@ -12,15 +12,17 @@ from aiogram.filters import CommandStart, Command, StateFilter
 from aiogram.fsm.context import FSMContext
 
 import app.database.requests as db_req  # импортирование модуля запросов к БД
-from .schedule import message, delete_events, test_stat, stars_dict_getter
+from .schedule import delete_events, test_stat, stars_dict_getter
 
 import app.keyboards as kb
 import app.states as st
 from app.tutorial import (TUTORIAL, ADMIN_TUTORIAL, SIGN_UP_FOR_TRAINING_TUTORIAL,
                           MARKS_DESCRIPTION, GENERAL_TUTORIAL, VIDEO_ADMIN_TUTORIAL)
-from config import setup_logger, TRAINING_TYPES, DEDLINE_TYPE, SEASON_INDEX, NUMBERS
+from config import setup_logger, TRAINING_TYPES, DEDLINE_TYPE, SCAN_TIMES
 
 logger = setup_logger(__name__)
+
+# stream_logger = logging.getLogger(__name__)
 
 BOT_NAME = os.getenv('BOT_NAME')
 
@@ -398,15 +400,16 @@ async def show_raiting(call: CallbackQuery, state: FSMContext, is_admin: bool):
                     # Здесь преобразуем цифру числа звезд в индекс
                     idx = int(_num)
                     stars += f'{NUMBERS[idx]}'
+                    stars = f'⭐️{stars}'
             else:
                 stars = ''
-            visit_count = f'<i>Число посещенных тренировок</i>: {item.visit_count}'
+            visit_count = f'🏃🏽‍♂️{item.visit_count}'
             name = item.user.tg_name
             username = '@' + item.user.tg_username if is_admin else ''
             if call.from_user.id == item.user.tg_id:
-                text += f'<b>{i+1}</b>. ⭐️{stars} <b><i>{name} {username}</i></b>\n{visit_count}\n'
+                text += f'<b>{i+1}</b>. {stars} <b><i>{name} {username}</i></b> {visit_count}\n'
             else:
-                text += f'<b>{i+1}</b>. {stars} {name} {username}\n{visit_count}\n'
+                text += f'<b>{i+1}</b>. {stars} {name} {username} {visit_count}\n'
         await call.message.answer(f'Текущий рейтинг по дисциплине <b>"{training_type}"</b>:\n\n'
                                   f'{text}',
                                   parse_mode='HTML', reply_markup=kb.back_kb_markup)
@@ -890,12 +893,12 @@ async def general_tut(message: Message, bot: Bot):
 
 @user_router.message(Command('adm_trs'))  # сдвинуть участников, удалить тренровку
 async def general_tut(message: Message, bot: Bot):
-    await load_video(message, bot, 'transfer')    
+    await load_video(message, bot, 'transfer')
 
 
 @user_router.message(Command('adm_edt'))  # редактировать тренровку
 async def general_tut(message: Message, bot: Bot):
-    await load_video(message, bot, 'edit_event')    
+    await load_video(message, bot, 'edit_event')
 
 
 # СОЗДАНИЕ ТРЕНИРОВКИ
@@ -947,7 +950,7 @@ async def input_template(message: Message, state: FSMContext):
                     hour, minute = value.replace(" ", "").split(":")
                     event_time = time(hour=int(hour), minute=int(minute))
                     event_datetime = datetime.combine(date=event_date, time=event_time)
-                    if (event_datetime < datetime.now() + timedelta(hours=13)
+                    if (event_datetime < datetime.now()
                             or event_datetime > datetime.now() + timedelta(days=90)):
                         raise ValueError("unreal date")
                 case 4:
@@ -992,8 +995,8 @@ async def input_template(message: Message, state: FSMContext):
         if str(e) == "month must be in 1..12":
                 error_message = "Некорректно введен месяц"
         elif str(e) == "unreal date":
-            error_message = ("Тренировка не может быть запланирована менее, чем за <u>13 часов</u> "
-                             "и более, чем за <u>90 дней</u>.")
+            error_message = ("Тренировка не может быть запланирована прошедним днем "
+                             "и более, чем за <u>90 дней вперед</u>.")
         elif str(e) == "minute must be in 0..59":
             error_message = ("Некорректное значение минут")
         elif str(e) == "hour must be in 0..23":
@@ -1033,7 +1036,34 @@ async def add_dedline_and_finish(call: CallbackQuery | Message, state: FSMContex
                 else None
             now = datetime.now()
             data["created_at"] = now
-            payment_dedline = now + timedelta(hours=dedline_hour) if dedline_hour else None
+
+            # payment_dedline = now + timedelta(hours=dedline_hour) if dedline_hour else None
+            # #payment_dedline = now + timedelta(minutes=2) if dedline_hour else None
+
+            ''' Ищем время дедлайна согласно точкам сканирования бота '''
+            # now = datetime.now()
+            now = datetime(2025, 10,13,23,45)
+            dedline = now + timedelta(days=1)
+            print(f'dedline = {dedline}')
+
+            # Присваиваем сегодняшний день начальному значению реперного дня
+            payment_dedline = datetime(dedline.year, dedline.month, dedline.day)
+
+            day = 0
+            while payment_dedline < dedline:
+                stop = False
+                for i in SCAN_TIMES:
+                    payment_dedline = (
+                            datetime(dedline.year, dedline.month, dedline.day) +
+                            timedelta(hours=i.hour) + timedelta(days=day)
+                    )
+                    if payment_dedline > dedline:
+                        break
+                        stop = True
+                    if not stop:
+                        day += 1
+                    print(f'payment_dedline = {payment_dedline}')
+
             if payment_dedline:  # если для тренировки устанавалиеватся общий дедлайн
                 data["event_text"] = (f"{event_text}\n"
                                       f"<b><i>Срок оплаты</i></b>: до "
@@ -1041,7 +1071,7 @@ async def add_dedline_and_finish(call: CallbackQuery | Message, state: FSMContex
             else:  # иначе для тренировки устанавливается индивидуальный для каждого участника посуточный дедлайн
                 data["event_text"] = (f"{event_text}\n"
                                       f"<b><i>Срок оплаты</i></b>: в течение суток после записи на тренировку\n")
-            data["payment_dedline"] = payment_dedline
+            data["payment_dedline"] = dedline  # сюда все таки вставляем реальный дедлайн
 
             await show_mess.answer(f"<b>Создана следующая тренировка</b>:\n\n"
                                            f"<b>Тип тренировки</b>: {data['training_type']}\n"
@@ -1049,7 +1079,7 @@ async def add_dedline_and_finish(call: CallbackQuery | Message, state: FSMContex
 
             # Два запроса в БД: запись новой тренировки и получение её данных
             await db_req.create_event(data)
-            if call.data != 'dedline_0':
+            if call.data != 'dedline_0' and call.data != 'dedline_-1':
                 last_event = await db_req.get_event(for_schedule=True, last_record=True)
                 payment_dedline, id = last_event['payment_dedline'], last_event['id']
 
@@ -1361,8 +1391,9 @@ async def chancel_training_state(message: Message, state: FSMContext, is_admin: 
 @user_router.message(Command('test'))
 async def test(message: Message):
     try:
-        # print(f'SEASON_INDEX = {SEASON_INDEX}')
-        await test_stat()
+        await message.answer('Это тест')
+        await logger.critical(f'dedlines = {dedlines}')
+        await logger.critical(f'dedline_notifications = {dedline_notifications}')
     except Exception as e:
         await logger.error(e)
         # stream_logger.error(e)

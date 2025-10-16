@@ -1,6 +1,7 @@
 import logging
 import os
 
+from datetime import timedelta, datetime, time
 from dotenv import load_dotenv
 
 from aiologger import Logger
@@ -26,10 +27,24 @@ TRAINING_TYPES = ('🏐 Волейбол',
                   '⚽️ Футбол',
                   '🏸 Бадминтон')
 
-DEDLINE_TYPE = [("12 часов", "12"), ("24 часа", "24"),
-                ("Индивидуальный дедлайн", "0")]
+DEDLINE_TYPE = [
+    # ("12 часов", "12"), ("24 часа", "24"),
+    # ("Индивидуальный дедлайн", "0"),
+    ("Автодедлайн", "-1")
+]
 
 SEASON_INDEX = [0]  # спец переменная, означающая начало летоисчисления сезона
+
+DAYS = ('Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс')
+
+SCAN_TIMES = (
+    time(1,7),
+    time(6,0),
+    time(10, 0),
+    time(14, 0),
+    time(18, 0),
+    time(22, 0),
+)
 
 
 # Функция для Настройки асинхронного логирования
@@ -57,12 +72,34 @@ def setup_sync_logger(module):
 
 # Конфигурация настроек базового логера для всего проекта
 def setup_base_logger():
-    logger = logging.basicConfig(
+    # Форматтер для всех хендлеров
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    # Хендлер для INFO и выше (general.log)
+    info_handler = logging.FileHandler('logs/general.log')
+    info_handler.setLevel(logging.INFO)
+    info_handler.setFormatter(formatter)
+
+    # Хендлер для ERROR и выше (error.log)
+    error_handler = logging.FileHandler('logs/error.log')
+    error_handler.setLevel(logging.ERROR)
+    error_handler.setFormatter(formatter)
+
+    # Хендлер для CRITICAL (bot.log)
+    critical_handler = logging.FileHandler('logs/bot.log')
+    critical_handler.setLevel(logging.CRITICAL)
+    critical_handler.setFormatter(formatter)
+
+    # Хендлер для консоли
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(logging.INFO)
+    stream_handler.setFormatter(formatter)
+
+    # Настраиваем корневой логгер
+    logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[logging.StreamHandler()]
+        handlers=[info_handler, error_handler, critical_handler, stream_handler]
     )
-    return logger
 
 
 # config.py for MySQL
@@ -139,13 +176,15 @@ TORTOISE_ORM = {
         },
     },
 }
+
+
 #
 #
 
 #
 
 # Спец функция для считывания индекса сезона и перезаписи его
-async def season_index(write_mode: bool=False):
+async def season_index(write_mode: bool = False):
     with open('season_index.txt', 'r') as f:
         global SEASON_INDEX
         SEASON_INDEX[0] = int(f.read().strip())

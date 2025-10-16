@@ -2,7 +2,7 @@ import logging
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from config import setup_logger, setup_sync_logger, TRAINING_TYPES
+from config import setup_logger, setup_sync_logger, TRAINING_TYPES, DAYS
 
 logger, sync_logger = setup_logger(__name__), setup_sync_logger(__name__)
 
@@ -202,7 +202,10 @@ def show_events_kb(event_user: list, *args) -> InlineKeyboardMarkup:
                     case 0: gym = fragment
                     case 1: event_date = fragment
                     case 2: event_time = fragment
-            text = tag + ' ' + event_date + ', ' + event_time + '; ' + gym
+            # Добавляем день недели к кнопкам
+            day_idx = arg['event_datetime'].weekday()
+            day = DAYS[day_idx]
+            text = tag + ' (' + day + ') ' + event_date + ', ' + event_time + '; ' + gym
             keyboard.button(text=text, callback_data=f"choose_event:{arg['id']}")
         keyboard.add(back_kb)
         keyboard.adjust(1)
@@ -217,6 +220,16 @@ async def show_text_about_event(event: dict, event_user: list,
                                 tg_id: int,
                                 is_admin: bool=False) -> str:
     text, participants_count = event['event_text'], int(event['participants_count'])
+        # Находим границы фрагмента по дате трени
+    idx_0, idx_end = text.find('<b>Дата тренировки</b>:'), text.find('<b>Длительность</b>')
+    ev_dt_info = text[idx_0:idx_end]
+    # Находим день недели по индексу от datetime
+    day_idx = event['event_datetime'].weekday()
+    day = DAYS[day_idx]
+    # Присваиваем фрагмент инфы по трени временной переменной и вставляем в новый фрагмент день недели
+    new_info = ev_dt_info.replace('\n',f' ({day})\n')
+    text = text.replace(ev_dt_info, new_info)
+
     if event['stars'] is not None:
         stars_text = event['stars'].replace(' ', '').split(',')  # переводим текстовый набор user_id в список
         star_tpl = tuple(map(lambda x: int(x), stars_text))  # преобразуем в кортеж целых чисел значений user_id
@@ -244,7 +257,7 @@ async def show_text_about_event(event: dict, event_user: list,
         star = "⭐️" if star_tpl is not None and item['user__id'] in star_tpl else ''
 
         # Чтобы пользователь видел себя выделенным шрифтом в списке на тренировку
-        name = f"<b><i>{name}</i></b>" if item['user__tg_id'] == tg_id else name
+        name = f'<b><i>{name}</i></b>' if item['user__tg_id'] == tg_id else name
 
         text+=f"{star}{i+1}. {name} {username}  {tag}\n"
         if i + 1 == participants_count:

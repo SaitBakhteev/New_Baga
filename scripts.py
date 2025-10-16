@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import timedelta, datetime, time
 #
 # dr = '16:30:52'
 # print(dr.split(':'))
@@ -56,8 +56,13 @@ data = [
      'user_id': 33, 'created_at': datetime(2025, 10, 5, 9, 21, 25, 445852)}
 ]
 
-a = '⛔️'
-print(3*a)
+NUMBERS = ('0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣')  # марки для чисел рейтинга
+a=6396
+txt = ''
+for i, item in enumerate(str(a)):
+    idx = int(item)
+    txt += NUMBERS[idx]
+print(txt)
 
 
 # _slr = "1,  2   ,  3  "
@@ -154,3 +159,37 @@ print(3*a)
 # # # # [{'id': 21, 'training_type': '🏀 Баскетбол', 'participants_count': 3, 'stars': '3, 33', 'user__id': 15, 'created_at': datetime(2025, 2, 7, 13, 28, 16, 964619)}, {'id': 21, 'training_type': '🏀 Баскетбол', 'participants_count': 3, 'stars': '3, 33', 'user__id': 33, 'created_at': datetime(2025, 6, 2, 16, 55, 14, 363460)}, {'id': 21, 'training_type': '🏀 Баскетбол', 'participants_count': 3, 'stars': '3, 33', 'user__id': 32, 'created_at': datetime(2025, 5, 8, 23, 14, 16, 772303)}]
 # # # # [{'id': 21, 'training_type': '🏀 Баскетбол', 'participants_count': 3, 'stars': '3, 33', 'user__id': 15, 'created_at': datetime(2025, 2, 7, 13, 28, 16, 964619)}, {'id': 21, 'training_type': '🏀 Баскетбол', 'participants_count': 3, 'stars': '3, 33', 'user__id': 32, 'created_at': datetime(2025, 5, 8, 23, 14, 16, 772303)}, {'id': 21, 'training_type': '🏀 Баскетбол', 'participants_count': 3, 'stars': '3, 33', 'user__id': 33, 'created_at': datetime(2025, 6, 2, 16, 55, 14, 363460)}]
 
+DAYS = ('Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб')
+for i in range(7):
+    day = 14 + i
+    idx = datetime(2025,10,day).weekday()
+
+
+
+SCAN_TIMES = (
+    time(10),
+    time(13),
+    time(16),
+    time(19),
+    time(22),
+)
+
+# now = datetime.now()
+now = datetime(2025, 10, 1, 23,59)
+
+while
+dedline = now  + timedelta(days=1)
+print(f'dedline = {dedline}')
+
+# Присваиваем сегодняшний день начальному значению реперного дня
+reper_dt = datetime(dedline.year, dedline.month, dedline.day)
+print(f'начало {reper_dt}')
+day = 0
+while reper_dt < dedline:
+    for i in SCAN_TIMES:
+        reper_dt = datetime(dedline.year, dedline.month, dedline.day) + timedelta(hours=i.hour) + timedelta(days=day)
+        if reper_dt > dedline:
+            break
+        print(f'текущий = {reper_dt}')
+    day += 1
+print(reper_dt)

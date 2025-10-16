@@ -15,15 +15,20 @@ from tortoise.exceptions import DBConnectionError, OperationalError
 from app.user import user_router, user_cache, dedlines, dedline_notifications
 from app.database.requests import get_all_users, get_event
 
-from config import setup_base_logger, TOKEN, TORTOISE_ORM, season_index
+from config import (
+    TOKEN, TORTOISE_ORM, SCAN_TIMES,
+    season_index, setup_logger, setup_base_logger,
+)
 from app.schedule import delete_events, message, stat_raiting
 
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
-
 setup_base_logger()  # запускаем настройки для стандартного логера
 
 stream_logger = logging.getLogger(__name__)
+
+logger = setup_logger(__name__)
+
 
 async def connect_to_db():
     retries = 5
@@ -43,7 +48,7 @@ async def connect_to_db():
             print(f"Database connection failed (attempt {attempt + 1}/{retries}): {e}")
             if attempt < retries - 1:
                 stream_logger.error(f"Retrying in {delay} seconds...; "
-                             f"Error_message: {e}")
+                                    f"Error_message: {e}")
                 await asyncio.sleep(delay)
         stream_logger.error("Failed to connect to database after multiple attempts")
         return False
@@ -51,26 +56,36 @@ async def connect_to_db():
 
 # Специальные функции перепланировщики
 async def replanner_creator(scheduler, notify=False):
-    if notify is False:  # создатель перепланировщика по дедлайну
-        if dedlines:
-            scheduler.add_job(replanner, CronTrigger(hour=dedlines[0][0].hour,
-                                                     minute=dedlines[0][0].minute,
-                                                     day=dedlines[0][0].day,
-                                                     month=dedlines[0][0].month),
-                              args=[scheduler], id="replanner")
-        else:
-            scheduler.add_job(replanner, CronTrigger(hour=9, minute=24),
-                              args=[scheduler], id="replanner", )
-    else:  # создатель перепланировщика по уведомлениям
-        if dedline_notifications:
-            scheduler.add_job(notify_replanner, CronTrigger(hour=dedline_notifications[0][0].hour,
-                                                     minute=dedline_notifications[0][0].minute,
-                                                     day=dedline_notifications[0][0].day,
-                                                     month=dedline_notifications[0][0].month),
-                              args=[scheduler], id="notify_replanner")
-        else:
-            scheduler.add_job(notify_replanner, CronTrigger(hour=9, minute=24),
-                              args=[scheduler], id="notify_replanner", )
+    max_attempts = 3
+    for attempt in range(max_attempts):
+        try:
+
+            if notify is False:  # создатель перепланировщика по дедлайну
+                if dedlines:
+                    scheduler.add_job(replanner, CronTrigger(hour=dedlines[0][0].hour,
+                                                             minute=dedlines[0][0].minute,
+                                                             day=dedlines[0][0].day,
+                                                             month=dedlines[0][0].month),
+                                      args=[scheduler], id="replanner")
+                else:
+                    scheduler.add_job(replanner, CronTrigger(hour=9, minute=24),
+                                      args=[scheduler], id="replanner", )
+            else:  # создатель перепланировщика по уведомлениям
+                if dedline_notifications:
+                    scheduler.add_job(notify_replanner, CronTrigger(hour=dedline_notifications[0][0].hour,
+                                                                    minute=dedline_notifications[0][0].minute,
+                                                                    day=dedline_notifications[0][0].day,
+                                                                    month=dedline_notifications[0][0].month),
+                                      args=[scheduler], id="notify_replanner")
+                else:
+                    scheduler.add_job(notify_replanner, CronTrigger(hour=9, minute=24),
+                                      args=[scheduler], id="notify_replanner", )
+            return
+        except Exception as e:
+            await logger.error(f'Ошибка (попытка {attempt + 1}): {e}')
+            if attempt < max_attempts - 1:
+                await asyncio.sleep(5)
+    await logger.critical('Не удалось создать планировщик после 3 попыток')
 
 
 async def replanner(scheduler):  # перепланировщик для исполняемых функций
@@ -93,7 +108,7 @@ async def startup(dispatcher: Dispatcher):
     try:
         if not await connect_to_db():
             raise RuntimeError
-        
+
         # Формирование user_cache и dedlines
         users = await get_all_users()
         for user_ in users:
@@ -101,21 +116,44 @@ async def startup(dispatcher: Dispatcher):
         events = await get_event(for_schedule=True)
         for item in events:
             payment_dedline = item['payment_dedline']
+            # local_dedline = payment_dedline.astimezone()  # ← автоматически в часовой пояс системы
             dedlines.append((payment_dedline.replace(tzinfo=None), item['id']))
+            # dedlines.append((local_dedline.replace(tzinfo=None), item['id']))
         for item in dedlines:
             dedline_notifications.append((item[0] - timedelta(hours=1), item[1]))
         await stat_raiting()  # загрузка статистики для рейтинга текущего сезона
 
         await season_index()  # загрузка текущего индекса летоичсчисления сезона
         scheduler = AsyncIOScheduler()
-        scheduler.add_job(delete_events, CronTrigger(hour=23, minute=58))
-        scheduler.add_job(message, CronTrigger(hour=0, minute=0))
-        scheduler.add_job(delete_events, CronTrigger(hour=11, minute=58))
-        scheduler.add_job(message, CronTrigger(hour=12, minute=0))
+        scheduler.add_job(delete_events, CronTrigger(hour=3, minute=00), id="work_by_stats_and_delete_events")
+        for scan_time in SCAN_TIMES:
+            scheduler.add_job(message, CronTrigger(hour=scan_time.hour, minute=scan_time.minute), id=f"scan_by_{scan_time.hour}")
         await replanner_creator(scheduler)
         await replanner_creator(scheduler, True)
         scheduler.start()
         stream_logger.info("Starting Bot...")
+        await logger.info(f'dedlines = {dedlines}')
+        await logger.info(f'dedline_notifications = {dedline_notifications}')
+
+        # ЗАПИСЫВАЕМ В ЛОГИ ВСЕ ЗАДАНИЯ
+        try:
+            logger.info("=== ЗАПЛАНИРОВАННЫЕ ЗАДАНИЯ ===")
+            jobs = scheduler.get_jobs()
+            if not jobs:
+                logger.info("Нет активных заданий")
+            else:
+                for job in jobs:
+                    logger.info(f"• {job.id}: {job.trigger} (next: {job.next_run_time})")
+
+            logger.info(f"dedlines: {len(dedlines)}")
+            logger.info(f"dedline_notifications: {len(dedline_notifications)}")
+            if dedlines:
+                logger.info(f"Ближайший дедлайн: {dedlines[0]}")
+            if dedline_notifications:
+                logger.info(f"Ближайшее уведомление: {dedline_notifications[0]}")
+        except Exception as e:
+            await logger.error(f'Ошибка при попытке === ЗАПЛАНИРОВАННЫЕ ЗАДАНИЯ ===: {e}')
+
 
     except RuntimeError as e:
         stream_logger.error(f"On startup: {e}")

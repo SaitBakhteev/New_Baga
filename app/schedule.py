@@ -25,7 +25,6 @@ from app.database.models import Event, EventUser, Statistic
 
 from config import setup_logger, SEASON_INDEX
 
-
 logger, stream_logger = setup_logger(__name__), logging.getLogger(__name__)
 
 stars_dict = dict()  # словарь рейтинга звезд, распределенный по типам тренировок
@@ -118,13 +117,14 @@ async def stat_raiting():
         stars_dict[k] = sorted(stars_dict[k], key=lambda item: item.star_count, reverse=True)
     print(f'stars_dict внутри stat_raiting {stars_dict}')
 
+
 # Удаление записей прошедших тренировок из БД
 async def delete_events(test=None):
     try:
         now = datetime.now() if test is None else datetime.now() + timedelta(days=45)
         event_user = await  EventUser.filter(
-            event__event_datetime__lt=now).prefetch_related('event','user'
-                                                                ).all()
+            event__event_datetime__lt=now).prefetch_related('event', 'user'
+                                                            ).all()
         '''Загружаем из БД все содержимое прошедших треней'''
 
         # Если есть прошедшие тренировки, то двигаемся дальше
@@ -148,15 +148,18 @@ async def delete_events(test=None):
                     await Statistic.bulk_create(stat_cre_lst)
             await stat_raiting()
         await Event.filter(event_datetime__lt=now).delete()
+        await logger.critical('Работа по статистике и удалению нектуальных тренировок прошла успешно')
     except Exception as e:
-        await logger.error(f'Ошибка в delete_events: {e}')
-        stream_logger.error(f'Ошибка в delete_events: {e}')
+        await logger.info(f'Ошибка в delete_events: {e}')
+        stream_logger.info(f'Ошибка в delete_events: {e}')
 
 
+# Сканирование по игрокам
 async def message(event_id=None, notify=False, bot: Bot = None):
     try:
+        now = datetime.now()
         # Получение из БД всех объектов EventUser
-        event_user = await (EventUser.filter(event__payment_dedline__isnull=True).
+        event_user = await (EventUser.filter(event__payment_dedline__lte=now).
                             select_related('event', 'user').order_by('event_id')) \
             if event_id is None else await ((EventUser.all().select_related('event', 'user').
                                              filter(event_id=event_id).order_by('created_at')))
@@ -164,9 +167,13 @@ async def message(event_id=None, notify=False, bot: Bot = None):
             print(f'schedule = {event_user[0].event.event_text}')
 
             # Установка порогового значения даты, определяющая дедлайн оплаты
-            now = datetime.now()
-            dedline_date = now - timedelta(days=1) if event_id is None \
-                else event_user[0].event.payment_dedline.replace(tzinfo=None)
+            # now = datetime.now()
+            # dedline_date = now - timedelta(days=1) if event_id is None \
+            #     else event_user[0].event.payment_dedline.replace(tzinfo=None)
+            # dedline_date = now
+            # Это тупо для теста
+            # dedline_date = now - timedelta(minutes=0) #if event_id# is None \
+            # else event_user[0].event.payment_dedline.replace(tzinfo=None)
 
             # Распределение объектов event_user по ключам 'event_id' в новом словаре
             _dict = dict()
@@ -182,7 +189,8 @@ async def message(event_id=None, notify=False, bot: Bot = None):
                 participants_count = sorted_dict[item][0].event.participants_count
                 seconds = 0
                 for i, obj in enumerate(sorted_dict[item]):
-                    if obj.created_at.replace(tzinfo=None) <= dedline_date or notify:
+                    if event_id is None:
+                    # if obj.created_at.replace(tzinfo=None) <= dedline_date or notify:
                         if (obj.paid_check is None and obj.payment_confirmed is None) \
                                 or (obj.paid_check is not None and obj.payment_confirmed is False):
                             seconds += 1
@@ -195,6 +203,12 @@ async def message(event_id=None, notify=False, bot: Bot = None):
                         break
             if objects_to_update and notify is False:
                 await EventUser.bulk_update(objects_to_update, ['paid_check', 'payment_confirmed', 'created_at'])
+                await logger.critical('РАБОТАЕТ!!!')
+                if event_id:
+                    await logger.critical('"ЭТОГО НЕ ДОЛЖНО БЫТЬ"!!!')
+                    await Event.filter(id=event_id).update(payment_dedline=None)
+                    await logger.info(
+                        f'Поле payment_dedline тренировки с event_id = {event_id} автоматически заменено на NULL')
 
             # Если сюда в том числе передается конкретное id тренировки, то срабатывает рассылка уведомлений
             elif objects_to_update and notify is True and event_id:
@@ -203,7 +217,7 @@ async def message(event_id=None, notify=False, bot: Bot = None):
                         f'{event_user[0].event.event_text}')
                 for obj in objects_to_update:
                     if obj.user.receive_notifications is True:
-                        try:                
+                        try:
                             await bot.send_message(chat_id=obj.user.tg_id,
                                                    text=text, parse_mode='HTML')
                         except Exception:
@@ -220,3 +234,4 @@ async def message(event_id=None, notify=False, bot: Bot = None):
         stream_logger.error(f'on_schedule_update: {e}')
 
 # stars_dict_getter()
+
