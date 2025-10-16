@@ -1,15 +1,17 @@
 import logging
-
-from aiogram.types import (
-    InlineKeyboardMarkup,
-    InlineKeyboardButton,
-)
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from config import TRAINING_TYPES
+from config import setup_logger, setup_sync_logger, TRAINING_TYPES, DAYS
 
-logger = logging.getLogger(__name__)
+logger, sync_logger = setup_logger(__name__), setup_sync_logger(__name__)
 
+
+# Кнопка возврата в список инструкций
+tutorial_list_kb = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='⤴️ В список инструкций',
+                          callback_data='tutorial_list'),]
+])
 
 # Кнока включения/выключения уведомлений
 async def notify(receive_notifications: bool) -> InlineKeyboardMarkup:
@@ -19,9 +21,20 @@ async def notify(receive_notifications: bool) -> InlineKeyboardMarkup:
     ])
     return keyboard
 
+process_interrupt_kb = InlineKeyboardButton(text='⛔️ Прервать процесс', callback_data='process_interrupt')
 
 # Кнопка возврата в стартовое меню в виде переменной и функции в зависимости от контекста
 return_to_start = InlineKeyboardButton(text='⤴️ В начало', callback_data='return_to_start')
+
+
+# Кнопка редактирования профиля
+profile_edit_kb = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text='Редактировать профиль 🖌', callback_data='profile_edit')],
+        [return_to_start]
+    ],
+)
+
 
 registration_kb = InlineKeyboardMarkup(
     inline_keyboard=[[InlineKeyboardButton(
@@ -45,8 +58,6 @@ back_kb_markup = InlineKeyboardMarkup(inline_keyboard=[[back_kb]])
 show_training_types_kb = InlineKeyboardButton(text='📅 Выбрать тренировку 🖍', callback_data='show_training_types')
 
 tutorial_kb = InlineKeyboardButton(text='💡 Инструкция по использованию бота📘', callback_data='tutorial')
-
-process_interrupt_kb = InlineKeyboardButton(text='⛔️ Прервать процесс', callback_data='process_interrupt')
 
 ''' КНОПКИ СТАРТОВОГО МЕНЮ АДМИН ПАНЕЛИ '''
 add_event_admin_kb = InlineKeyboardButton(text='💠 Создать тренировку 🗓', callback_data='add_event')
@@ -77,7 +88,7 @@ def input_template(current_template: str = None,
                         "❗️Дата тренировки: 01.11.2025\n"
                         "❗️Время: 06:00\n"
                         "Длительность: 2 часа\n"
-                        "❗️Число участников: 12\n"
+                        "❗️Квота участников: 12\n"
                         "Стоимость тренировки: 350\n"
                         "❗️Босс тренировки:\n"
                         "Как оплатить:  карта ТИНЬКОФФ 💳📍4377 7237 4025 3178📍💳. "
@@ -171,7 +182,8 @@ async def keyboard_builder(prefix: str, lst: list,
         keyboard.adjust(1)
         return keyboard.as_markup()
     except Exception as e:
-        logger.error(f"err = {e}")
+        await logger.error(f"err = {e}")
+        # base_logger.error(f"err = {e}")
 
 
 # Инлайн-клавиатура для отображения всех запланированных тренировок
@@ -185,18 +197,22 @@ def show_events_kb(event_user: list, *args) -> InlineKeyboardMarkup:
             for i, item in enumerate(arg['event_text'].split('\n')):
                 if i > 2:
                     break
-                fragment = item.split(':')[1].strip() if i < 2 else f'{item.split(':')[1]}:{item.split(':')[2]}'
+                fragment = item.split(':')[1].strip() if i < 2 else f"{item.split(':')[1]}:{item.split(':')[2]}"
                 match i:
                     case 0: gym = fragment
                     case 1: event_date = fragment
                     case 2: event_time = fragment
-            text = tag + ' ' + event_date + ', ' + event_time + '; ' + gym
+            # Добавляем день недели к кнопкам
+            day_idx = arg['event_datetime'].weekday()
+            day = DAYS[day_idx]
+            text = tag + ' (' + day + ') ' + event_date + ', ' + event_time + '; ' + gym
             keyboard.button(text=text, callback_data=f"choose_event:{arg['id']}")
         keyboard.add(back_kb)
         keyboard.adjust(1)
         return keyboard.as_markup()
     except Exception as e:
-        logger.error(f'err = {e}')
+        sync_logger.error(f'Ошибка строка 193 = {e}')
+        # base_logger.error(f'Ошибка строка 193 = {e}')
 
 
 # Фрмирование текста по тренировке со списком участников
@@ -204,6 +220,21 @@ async def show_text_about_event(event: dict, event_user: list,
                                 tg_id: int,
                                 is_admin: bool=False) -> str:
     text, participants_count = event['event_text'], int(event['participants_count'])
+        # Находим границы фрагмента по дате трени
+    idx_0, idx_end = text.find('<b>Дата тренировки</b>:'), text.find('<b>Длительность</b>')
+    ev_dt_info = text[idx_0:idx_end]
+    # Находим день недели по индексу от datetime
+    day_idx = event['event_datetime'].weekday()
+    day = DAYS[day_idx]
+    # Присваиваем фрагмент инфы по трени временной переменной и вставляем в новый фрагмент день недели
+    new_info = ev_dt_info.replace('\n',f' ({day})\n')
+    text = text.replace(ev_dt_info, new_info)
+
+    if event['stars'] is not None:
+        stars_text = event['stars'].replace(' ', '').split(',')  # переводим текстовый набор user_id в список
+        star_tpl = tuple(map(lambda x: int(x), stars_text))  # преобразуем в кортеж целых чисел значений user_id
+    else:
+        star_tpl = None
     text += '\n\n<b>ОСНОВНОЙ СПИСОК</b>\n'
     for i, item in enumerate(event_user):
         if i + 1 <= participants_count:
@@ -223,11 +254,12 @@ async def show_text_about_event(event: dict, event_user: list,
             username = f"@{item['user__tg_username']}" if item['user__tg_username'] else ""
         else:
             username = ''
+        star = "⭐️" if star_tpl is not None and item['user__id'] in star_tpl else ''
 
         # Чтобы пользователь видел себя выделенным шрифтом в списке на тренировку
         name = f'<b><i>{name}</i></b>' if item['user__tg_id'] == tg_id else name
 
-        text+=f"{i+1}. {name} {username}  {tag}\n"
+        text+=f"{star}{i+1}. {name} {username}  {tag}\n"
         if i + 1 == participants_count:
             text += "\n 📌📌 <b><i>Резерв</i></b>: \n"
 
@@ -282,7 +314,8 @@ def sign_up_for_training(
         keyboard.adjust(1)
         return keyboard.as_markup()
     except Exception as e:
-        logging.error(e)
+        sync_logger.error(f'Ошибка в siggn_up_for_training: {e}')
+        # base_logger.error(f'Ошибка в siggn_up_for_training: {e}')
 
 
 # Кнопки администрирования тренировки
