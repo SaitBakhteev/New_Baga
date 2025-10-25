@@ -1,0 +1,15 @@
+venv
+.idea
+**/__pycache__/
+sudo dydtemctl ssh status
+.env
+~$plan.pptx
+asdasd.rt
+media
+
+db.sqlite3
+db.sqlite3-shm
+db.sqlite3-wal
+
+logs/
+webhook_run.py
