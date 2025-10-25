@@ -13,3 +13,4 @@ db.sqlite3-wal
 
 logs/
 webhook_run.py
+run.py
