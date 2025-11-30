@@ -1,13 +1,19 @@
 import logging
 import os
 
-from datetime import timedelta, datetime, time
+from datetime import datetime, timedelta
+
 from dotenv import load_dotenv
+
+from aiogram import Bot
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
 
 from aiologger import Logger
 from aiologger.formatters.base import Formatter
 from aiologger.handlers.files import AsyncFileHandler
 from aiologger.handlers.streams import AsyncStreamHandler
+
 
 load_dotenv()
 
@@ -19,6 +25,8 @@ DB_PORT = os.getenv("DB_PORT")
 DB_USER = os.getenv("DB_USER")
 DB_PASS = os.getenv("DB_PASS")
 DB_NAME = os.getenv("DB_NAME")
+URL = os.getenv("URL")
+WEBHOOK_TOKEN = os.getenv("WEBHOOK_TOKEN")
 
 NUMBERS = ('0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣')  # марки для чисел рейтинга
 
@@ -27,24 +35,22 @@ TRAINING_TYPES = ('🏐 Волейбол',
                   '⚽️ Футбол',
                   '🏸 Бадминтон')
 
-DEDLINE_TYPE = [
-    # ("12 часов", "12"), ("24 часа", "24"),
-    # ("Индивидуальный дедлайн", "0"),
-    ("Автодедлайн", "-1")
-]
+DEDLINE_TYPE = (
+    # ("6 часов", "6"),
+    ("12 часов", "12"),
+    ("24 часа", "24"),
+    ("48 часов", "48"),
+    # ("3 дня", "72"),
+    # ("5 дней", "120"),
+)
 
 SEASON_INDEX = [0]  # спец переменная, означающая начало летоисчисления сезона
 
 DAYS = ('Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс')
 
-SCAN_TIMES = (
-    time(1,7),
-    time(6,0),
-    time(10, 0),
-    time(14, 0),
-    time(18, 0),
-    time(22, 0),
-)
+REPER_HOURS = (8, 13, 17, 22)
+
+bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
 
 # Функция для Настройки асинхронного логирования
@@ -97,7 +103,7 @@ def setup_base_logger():
 
     # Настраиваем корневой логгер
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.WARNING,
         handlers=[info_handler, error_handler, critical_handler, stream_handler]
     )
 
@@ -193,3 +199,37 @@ async def season_index(write_mode: bool = False):
             with open('season_index.txt', 'w') as f:
                 f.write(str(SEASON_INDEX[0]))
     return SEASON_INDEX[0]
+
+
+# Спец функция, определяющая реперный дедлайн для данного участника
+def reper_dedline_definiton(real_dedline, now=None, event_datetime=None, is_string=True):
+    real_dedline = real_dedline.replace(tzinfo=None)
+    reper_dedline = datetime(real_dedline.year, real_dedline.month, real_dedline.day)
+    dedline_type = 'init_dedline'
+    if now and event_datetime:
+        # Индивидуальный дедлайн для тех, кто записался после общего дедлайна
+        individ_dedline, event_datetime = now + timedelta(hours=12), event_datetime.replace(tzinfo=None)
+        if individ_dedline > real_dedline.replace(tzinfo=None) and individ_dedline < event_datetime.replace(tzinfo=None):
+            real_dedline = individ_dedline
+            reper_dedline = datetime(real_dedline.year, real_dedline.month, real_dedline.day)
+            dedline_type = 'individ_dedline'
+        elif individ_dedline >= event_datetime.replace(tzinfo=None):
+            return (event_datetime.replace(tzinfo=None).strftime("%H:%M %d.%m.%Y"), 'individ_dedline')
+
+    day = 0
+    if reper_dedline < real_dedline:
+        while reper_dedline < real_dedline:
+            for hour in REPER_HOURS:
+                reper_dedline = (datetime(real_dedline.year,
+                                          real_dedline.month,
+                                          real_dedline.day,
+                                          hour)
+                                 + timedelta(days=day))
+                if reper_dedline > real_dedline:
+                    break
+            if reper_dedline < real_dedline:
+                day += 1
+    if is_string:
+        return (reper_dedline.strftime("%H:%M %d.%m.%Y"), dedline_type)
+    else:
+        return (reper_dedline, 'not string')

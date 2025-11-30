@@ -1,16 +1,14 @@
+import uuid
+from uuid import uuid1
 import logging
 
 from tortoise.exceptions import DoesNotExist
-from datetime import datetime, timedelta
-
-from config import setup_logger
 
 from app.database.models import User, Event, EventUser, Template
+from datetime import datetime, timedelta
 
+logger = logging.getLogger(__name__)
 
-logger = setup_logger(__name__)
-
-# stream_logger = logging.getLogger(__name__)
 
 # ----- ПОЛЬЗОВАТЕЛЬ -----------
 # Создание или получение пользователя
@@ -21,7 +19,8 @@ async def get_or_create_user(from_user, for_telegramm=False, create_user=False):
 
         user = await User.get_or_none(tg_id=from_user.id)
         if create_user:
-            full_name = f'{from_user.first_name} {from_user.last_name}'
+            last_name = f' {from_user.last_name}' if from_user.last_name else ''
+            full_name = f'{from_user.first_name}{last_name}'
             await User.create(
                 tg_id=from_user.id, tg_username=from_user.username,
                 tg_name=full_name, created_at=datetime.now()
@@ -29,8 +28,7 @@ async def get_or_create_user(from_user, for_telegramm=False, create_user=False):
             return
         return user
     except Exception as e:
-        await logger.error(f"User is not created; {e}")
-        # stream_logger.error(f"User is not created; {e}")
+        logger.error(f"User is not created; {e}")
         return
 
 
@@ -43,24 +41,25 @@ async def get_user_by_username(tg_username: str):
         boss = await User.filter(tg_username=tg_username).get()
         return boss.id
     except DoesNotExist as e:
-        await logger.error(f"get_user_by_username: {e}")
-        # stream_logger.error(f"get_user_by_username: {e}")
+        logger.error(f"get_user_by_username: {e}")
         return None
 
 
 ''' ДЕЙСТВИЯ С БД, ДОСТУПНЫЕ ТОЛЬКО АДМИНУ '''
+
+
 # добавление объектов моделей
 
 async def create_event(data):  # добавить событие
     try:
         await Event.create(
-            training_type = data['training_type'],
-            created_at = data['created_at'],
-            payment_dedline = data['payment_dedline'],
-            event_datetime = data['event_datetime'],
-            participants_count = data['participants_count'],
-            event_text = data['event_text'],
-            boss_id = data['boss_id']
+            training_type=data['training_type'],
+            created_at=data['created_at'],
+            payment_dedline=data['payment_dedline'],
+            event_datetime=data['event_datetime'],
+            participants_count=data['participants_count'],
+            event_text=data['event_text'],
+            boss_id=data['boss_id']
         )
     except Exception:
         return
@@ -69,14 +68,18 @@ async def create_event(data):  # добавить событие
 # Создание записи пользователя на тренировку
 async def create_event_user(data, **kwargs):
     if 'friend_id' not in kwargs:
-        await EventUser.create(user_id=data['user_id'],
-                               event_id=data['event_id'],
-                               created_at=datetime.now())
+        await EventUser.create(
+            user_id=data['user_id'],
+            event_id=data['event_id'],
+            created_at=data['created_at']
+        )
     else:
-        await EventUser.create(user_id=kwargs['friend_id'],
-                               event_id=data['event_id'],
-                               friend=kwargs['i_am_friend'],
-                               created_at=datetime.now())
+        await EventUser.create(
+            user_id=kwargs['friend_id'],
+            event_id=data['event_id'],
+            friend=kwargs['i_am_friend'],
+            created_at=data['created_at']
+        )
 
 
 async def create_template(text: str):
@@ -87,7 +90,7 @@ async def create_template(text: str):
 
 async def get_event(id=None, for_telegramm=False,
                     for_schedule=False, last_record=False,
-                    training_type=None) -> Event():
+                    training_type=None, **kwargs) -> Event():
     try:
         if for_telegramm:
             return await (
@@ -104,14 +107,23 @@ async def get_event(id=None, for_telegramm=False,
                             values('id', 'payment_dedline', 'stars'))
         elif training_type or id:
             if training_type:
-                return await (Event.filter(training_type=training_type).order_by('id').
-                              values(
-                    'id', 'payment_dedline', 'event_datetime','event_text','participants_count', 'stars'
-                )
-                )
+                if 'is_admin' in kwargs:  # админы видят и прошедшие необработанные по звезлам тренировки
+                    return await (Event.filter(training_type=training_type).order_by('id').
+                    values(
+                        'id', 'payment_dedline', 'event_datetime', 'event_text', 'participants_count', 'stars'
+                    )
+                    )
+                else:
+                    return await (Event.filter(training_type=training_type,
+                                               event_datetime__gt=datetime.now() - timedelta(hours=12)).order_by('id').
+                    values(
+                        'id', 'payment_dedline', 'event_datetime', 'event_text', 'participants_count', 'stars'
+                    )
+                    )
+
             else:
                 return await (Event.filter(id=id).values(
-                    'id', 'payment_dedline', 'event_datetime','event_text','participants_count', 'stars'
+                    'id', 'payment_dedline', 'event_datetime', 'event_text', 'participants_count', 'stars'
                 )
                 )
 
@@ -120,7 +132,7 @@ async def get_event(id=None, for_telegramm=False,
                 await (
                     Event.all().order_by('id').
                     values('id', 'payment_dedline', 'event_datetime',
-                           'event_text','participants_count', 'stars')
+                           'event_text', 'participants_count', 'stars')
                 )
     except DoesNotExist:
         return
@@ -128,7 +140,7 @@ async def get_event(id=None, for_telegramm=False,
 
 async def get_event_user(event_id=None, user_tg_id=None,
                          payment_verification=False,
-                         event_ids:list =None) -> EventUser():
+                         event_ids: list = None) -> EventUser():
     try:
 
         # Запрос к БД для верификации оплаты
@@ -150,25 +162,29 @@ async def get_event_user(event_id=None, user_tg_id=None,
                               prefetch_related('user', 'event').
                               values('user__tg_id', 'event__id'))
 
-
             # Запрос к БД для отображения списка участников согласно хронологии их записи
-            return await (EventUser.filter(event_id=event_id).prefetch_related(
-                'event','user'
+            result = await (EventUser.filter(event_id=event_id).prefetch_related(
+                'event', 'user'
             ).order_by('created_at').
-                          values('id',
-                                 'user__id',
-                                 'user__tg_id',
-                                 'user__tg_name',
-                                 'user__tg_username',
-                                 'payment_confirmed',
-                                 'paid_check',
-                                 'friend',))
+                            values('id',
+                                   'user__id',
+                                   'user__tg_id',
+                                   'user__tg_name',
+                                   'user__tg_username',
+                                   'payment_confirmed',
+                                   'paid_check',
+                                   'friend',
+                                   'created_at',
+                                   'event__participants_count',
+                                   'event__id'))
+            result = sorted(result, key=lambda x: x['created_at'].replace(tzinfo=None))
+            print(result)
+            return result
+
     except DoesNotExist:
-        await logger.error('get_event_user: User DoesNotExist')
-        # stream_logger.error('get_event_user: User DoesNotExist')
+        logger.error('get_event_user: User DoesNotExist')
     except Exception as e:
-        await logger.error(f'get_event_user: {e}')
-        # stream_logger.error(f'get_event_user: {e}')
+        logger.error(f'get_event_user: {e}')
 
 
 # Запрос для проверки можно ли добавить друга
@@ -195,11 +211,9 @@ async def delete_event_user(user_id: int, event_id: int):
     try:
         await EventUser.filter(user_id=user_id, event_id=event_id).delete()
     except DoesNotExist as e:
-        await logger.error(f'delete_event_user: {e}')
-        # stream_logger.error(f'delete_event_user: {e}')
+        logger.error(f'delete_event_user: {e}')
     except Exception as e:
-        await logger.error(f'delete_event_user_other error: {e}')
-        # stream_logger.error(f'delete_event_user_other error: {e}')
+        logger.error(f'delete_event_user_other error: {e}')
 
 
 async def delete_template(template_id: int):
@@ -208,13 +222,8 @@ async def delete_template(template_id: int):
         await template.delete()
         return 'OK'
     except DoesNotExist as e:
-        await logger.error(f'delete_template: {e}')
-        # stream_logger.error(f'delete_template: {e}')
-
-
-""" Обновление времени записи на тренировку для участников,
-которые не выполнинли условия по оплате. Данное обновление
-выполняется за один запрос к БД """
+        logger.error(f'delete_template: {e}')
+        return 'Error'
 
 
 # Запрос на редактирование профиля
@@ -230,6 +239,11 @@ async def update_user(**kwargs):
         # stream_logger.error(f'update_user: {e}')
 
 
+""" Обновление времени записи на тренировку для участников,
+которые не выполнинли условия по оплате. Данное обновление
+выполняется за один запрос к БД """
+
+
 # Обновление поля включения или отключения уведомлений
 async def update_user_receive_notificcations(tg_id: int):
     try:
@@ -239,26 +253,22 @@ async def update_user_receive_notificcations(tg_id: int):
         await user.save()
         return receive_notifications
     except DoesNotExist as e:
-        await logger.error(f'ошибка при обновлении поля получения уведомлений: {e}')
-        # stream_logger.error(f'ошибка при обновлении поля получения уведомлений: {e}')
+        logger.error(f'ошибка при обновлении поля получения уведомлений: {e}')
         return None
 
 
 async def update_admin_and_get(tg_username: str, admin_permissions: bool):
     try:
         user = await User.get_or_none(tg_username=tg_username)
-        await logger.info(f'USER: {user.tg_name}')
-        # stream_logger.error(f'USER: {user.tg_name}')
+        logger.info(f'USER: {user.tg_name}')
         user_id = user.id
         user.admin_permissions = admin_permissions
         await User.filter(id=user_id).update(admin_permissions=admin_permissions)
         return (user, user.tg_id)
     except DoesNotExist as e:
-        await logger.error(f'update_admin_and_get: User does not exist')
-        # stream_logger.error(f'update_admin_and_get: User does not exist')
+        logger.error(f'update_admin_and_get: User does not exist')
     except Exception as e:
-        await logger.error(f'update_admin_and_get: {e}')
-        # stream_logger.error(f'update_admin_and_get: {e}')
+        logger.error(f'update_admin_and_get: {e}')
 
 
 async def update_event(event_id: int, data, **kwargs):
@@ -273,37 +283,41 @@ async def update_event(event_id: int, data, **kwargs):
         await Event.filter(id=event_id).update(stars=kwargs['stars'])
 
 
-# Запрос к БД для обновления записей EventUser при нажатии пользователем кнопки '✔️ Я оплатил'
+
 async def update_event_user(user_id: int, event_id: int,
                             payment_notify: bool = False,
-                            replace_to_end: bool=None):
+                            replace_to_end: bool = None):
     try:
         if payment_notify:
             await (EventUser.filter(user_id=user_id,
-                                   event_id=event_id).
+                                    event_id=event_id).
                    update(paid_check='paid'))
         elif replace_to_end:
             await (EventUser.filter(user_id=user_id,
-                                   event_id=event_id).
+                                    event_id=event_id).
                    update(created_at=datetime.now()))
 
         else:
             await (EventUser.filter(user_id=user_id,
-                                   event_id=event_id).
+                                    event_id=event_id).
                    update(paid_check=None, payment_confirmed=None))
     except DoesNotExist:
-        await logger.error(f'update_event_user: Does Not exist')
-        # stream_logger.error(f'update_event_user: Does Not exist')
+        logger.error(f'update_event_user: Does Not exist')
     except Exception as e:
-        await logger.error(f'update_event_user: {e}')
-        # stream_logger.error(f'update_event_user: {e}')
+        logger.error(f'update_event_user: {e}')
+
+
+# Запрос к БД для обновления записей EventUser при нажатии пользователем кнопки '✔️ Я оплатил'
+async def update_event_user_paid_check(id: int):
+    await (EventUser.filter(id=id).update(paid_check='paid'))
+
 
 
 # Запрос к БД для обновления записей EventUser при проверке админом оплаты
 async def update_event_user_for_payment_verify(id_list: list, is_confirm=True):
-    if is_confirm: # если админ подтверждает оплату
+    if is_confirm:  # если админ подтверждает оплату
         await EventUser.filter(id__in=id_list).update(payment_confirmed=True)
-    elif is_confirm == False: # если админ опровергает оплату
+    elif is_confirm == False:  # если админ опровергает оплату
         await EventUser.filter(id__in=id_list).update(payment_confirmed=False)
     else:  # если админ отменяет верификацию оплаты
         print(f'is_conf = {is_confirm}')
@@ -313,6 +327,11 @@ async def update_event_user_for_payment_verify(id_list: list, is_confirm=True):
 # Обновление поля friend после записи друга на тренировку
 async def update_event_user_after_add_friend(user):
     await EventUser.filter(user=user).update(friend='+')
+
+
+# Обновление поля created_at после перехода из резерва
+async def update_event_user_after_transfer(event_id, user_id, now):
+    await EventUser.filter(user_id=user_id, event_id=event_id).update(created_at=now)
 
 
 async def test():

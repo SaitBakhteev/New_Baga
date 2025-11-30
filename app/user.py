@@ -7,18 +7,20 @@ from typing import Callable, Dict, Any, Awaitable
 from datetime import datetime, timedelta, time, date, timezone
 
 from aiogram import Router, F, BaseMiddleware, Bot
-from aiogram.types import Message, CallbackQuery, TelegramObject, BufferedInputFile
+from aiogram.types import Message, CallbackQuery, TelegramObject, BufferedInputFile, FSInputFile
 from aiogram.filters import CommandStart, Command, StateFilter
 from aiogram.fsm.context import FSMContext
 
 import app.database.requests as db_req  # импортирование модуля запросов к БД
-from .schedule import delete_events, test_stat, stars_dict_getter
-
+from .schedule import delete_events, test_stat, stars_dict_getter, general_raiting_getter
+from .schedule import test_for_sch
+from .add_routers.checks_operations import add_router
+from .universal_coroutines import delete_bkg, choose_event
 import app.keyboards as kb
 import app.states as st
 from app.tutorial import (TUTORIAL, ADMIN_TUTORIAL, SIGN_UP_FOR_TRAINING_TUTORIAL,
                           MARKS_DESCRIPTION, GENERAL_TUTORIAL, VIDEO_ADMIN_TUTORIAL)
-from config import setup_logger, TRAINING_TYPES, DEDLINE_TYPE, SCAN_TIMES
+from config import bot, setup_logger, reper_dedline_definiton, TRAINING_TYPES, DEDLINE_TYPE, NUMBERS
 
 logger = setup_logger(__name__)
 
@@ -30,6 +32,7 @@ user_router = Router()
 
 # Кэш список пользователей и дедлайнов
 user_cache, dedlines, dedline_notifications = dict(), [], []
+
 
 # Мидлварь для проверки прав пользователя
 class AdminMiddleware(BaseMiddleware):
@@ -73,26 +76,19 @@ class AdminMiddleware(BaseMiddleware):
                 user_id, new_username = user_cache[user_tg_id].id, user_cache[user_tg_id].tg_username
                 await db_req.update_user(user_id=user_id, new_username=new_username)
             if user:
-                data["is_admin"] = True if (event.from_user.username=='Rustambagautdinov'
-                                            or event.from_user.username=='2SaitBakhteev') \
+                data["is_admin"] = True if (event.from_user.username == 'Rustambagautdinov'
+                                            or event.from_user.username == '2SaitBakhteev') \
                     else user.admin_permissions
             else:
                 data["is_admin"] = False
-        log_message = f'event.from_user.username={event.from_user.username}'
-        await logger.info(log_message)
         return await handler(event, data)
+
 
 user_router.message.middleware(AdminMiddleware())
 user_router.callback_query.middleware(AdminMiddleware())
+user_router.include_router(add_router)
 
 
-# Фоновая задача для очистки пользовательского окна переписки
-async def delete_bkg(call_mess: Message | CallbackQuery):
-    try:
-        call_mess = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
-        await call_mess.bot.delete_message(call_mess.chat.id, call_mess.message_id)
-    except Exception:
-        return
 
 
 # Регистрация
@@ -118,7 +114,7 @@ async def registration(event: Message | CallbackQuery):
         )
 
 
-@user_router.callback_query(F.data=='registration')
+@user_router.callback_query(F.data == 'registration')
 async def registration_callback_query(call: CallbackQuery, state: FSMContext):
     await db_req.get_or_create_user(from_user=call.from_user, create_user=True)
     await call.message.delete()
@@ -156,8 +152,8 @@ async def cmd_start(call_mess: CallbackQuery | Message, state: FSMContext, is_ad
 
 
 # Кнопка прерывания
-@user_router.callback_query(F.data=='process_interrupt')
-async def process_interrupt(call: CallbackQuery, state: FSMContext,  is_admin: bool):
+@user_router.callback_query(F.data == 'process_interrupt')
+async def process_interrupt(call: CallbackQuery, state: FSMContext, is_admin: bool):
     if is_admin:
         current_state = await state.get_state()
         match current_state:
@@ -172,7 +168,7 @@ async def process_interrupt(call: CallbackQuery, state: FSMContext,  is_admin: b
     asyncio.create_task(delete_bkg(call))
 
 
-@user_router.callback_query(F.data=='return_to_start')
+@user_router.callback_query(F.data == 'return_to_start')
 async def return_to_start(call: CallbackQuery, state: FSMContext, is_admin: bool):
     current_state = await state.get_state()
     match current_state:
@@ -194,7 +190,7 @@ async def return_to_start(call: CallbackQuery, state: FSMContext, is_admin: bool
         asyncio.create_task(delete_bkg(call))
 
 
-@user_router.callback_query(F.data=='back')
+@user_router.callback_query(F.data == 'back')
 async def back(call: CallbackQuery, state: FSMContext, is_admin: bool):
     current_state = await state.get_state()
     match current_state:
@@ -202,12 +198,12 @@ async def back(call: CallbackQuery, state: FSMContext, is_admin: bool):
             await show_training_types(call.message, state)
         case st.ChooseEventFSM.choose_event:
             await state.set_state(st.ChooseEventFSM.training_type)
-            await show_events(call.message, state)
+            await show_events(call.message, state, is_admin)
         case st.CreateEventFSM.training_type | st.EditAdminFSM.show_list:
             await admin_panel(call, state, is_admin)
         case st.ChooseEventFSM.admin_management:
             await state.set_state(st.ChooseEventFSM.training_type)
-            await show_events(call.message, state)
+            await show_events(call.message, state, is_admin)
         case st.ShowRaitingFSM.raiting:
             await choose_raiting(call.message, state)
     asyncio.create_task(delete_bkg(call))
@@ -224,19 +220,19 @@ async def prof(call_mess: CallbackQuery | Message, state: FSMContext):
                            reply_markup=kb.profile_edit_kb, parse_mode='HTML')
 
 
-@user_router.callback_query(F.data=='profile_edit')
+@user_router.callback_query(F.data == 'profile_edit')
 async def profile_edit_begin(call: CallbackQuery, state: FSMContext):
-        await call.message.answer('Введите свое имя. Например, <i>Иван Иванов</i>',
-                                  parse_mode='HTML',
-                                  reply_markup=kb.return_to_start_markup())
-        await state.set_state(st.EditProfileFSM.edit_tg_name)
+    await call.message.answer('Введите свое имя. Например, <i>Иван Иванов</i>',
+                              parse_mode='HTML',
+                              reply_markup=kb.return_to_start_markup())
+    await state.set_state(st.EditProfileFSM.edit_tg_name)
 
 
 @user_router.message(st.EditProfileFSM.edit_tg_name)
 async def profile_edit_tg_name(message: Message, state: FSMContext):
     try:
         tg_name = message.text.strip()
-        if len(tg_name.replace(" ","")) == 0:
+        if len(tg_name.replace(" ", "")) == 0:
             await message.answer("Вы не ввели свое имя", reply_markup=kb.return_to_start_markup())
             return
         user_cache[message.chat.id].tg_name = tg_name
@@ -262,7 +258,7 @@ async def profile_edit_tg_username(message: Message, state: FSMContext):
         await message.answer('Неверный формат никнейма ❗️. Никнейм может состоять только из одного слова',
                              reply_markup=kb.return_to_start_markup())
         return
-    tg_username = tg_username.replace("@","").replace(" ","")
+    tg_username = tg_username.replace("@", "").replace(" ", "")
     if any('\u0400' <= char <= '\u04FF' for char in tg_username):
         await message.answer('Наличие кириллицы в никнейме недопустимо ❗️',
                              parse_mode='HTML', reply_markup=kb.return_to_start_markup())
@@ -270,6 +266,7 @@ async def profile_edit_tg_username(message: Message, state: FSMContext):
     tg_username = None if tg_username == "0" else tg_username
     if tg_username:
         user_cache[message.chat.id].tg_username = tg_username
+
 
 # ----- Коец работы с профилем ---------
 
@@ -284,9 +281,10 @@ async def dev(mesage: Message, state: FSMContext, is_admin: bool):
 
 ''' КНОПКИ ДЛЯ ВЫВОДА ИНСТРУКЦИЙ '''
 
+
 # Вызов TUTORIAL через инлайн-кнопку или команду '/help'
 @user_router.message(Command('help'))
-@user_router.callback_query(F.data=='tutorial')
+@user_router.callback_query(F.data == 'tutorial')
 async def tutorial(call_mess: Message | CallbackQuery, state: FSMContext):
     await state.clear()
     message = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
@@ -294,7 +292,7 @@ async def tutorial(call_mess: Message | CallbackQuery, state: FSMContext):
 
 
 # Возврат к списку инструкций
-@user_router.callback_query(F.data=='tutorial_list')
+@user_router.callback_query(F.data == 'tutorial_list')
 async def tutorial_list(call: CallbackQuery, state: FSMContext):
     await tutorial(call, state)
 
@@ -329,7 +327,7 @@ async def general_tut(message: Message, bot: Bot):
 async def show_sign_up_for_training_tutorial(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(SIGN_UP_FOR_TRAINING_TUTORIAL, parse_mode='HTML',
-                         reply_markup= kb.tutorial_list_kb)
+                         reply_markup=kb.tutorial_list_kb)
 
 
 @user_router.message(Command('marks'))
@@ -354,13 +352,14 @@ async def queue(message: Message):
 
 # Сообщения о багах от пользователей
 @user_router.message(Command('bug'))
-async def bug(message: Message, state:FSMContext):
+async def bug(message: Message, state: FSMContext):
     await message.answer('Напишите о проблеме работы бота и отправьте сообщение.',
-                         reply_markup= kb.return_to_start_markup())
+                         reply_markup=kb.return_to_start_markup())
     await state.set_state(st.WrightBugsFSM.wright_bug)
 
+
 @user_router.message(st.WrightBugsFSM.wright_bug)
-async def send_bugs_message(message: Message, state: FSMContext, is_admin:bool):
+async def send_bugs_message(message: Message, state: FSMContext, is_admin: bool):
     try:
         text = message.text
         if '0' not in text:
@@ -380,42 +379,63 @@ async def send_bugs_message(message: Message, state: FSMContext, is_admin:bool):
 # Просмотр рейтинга
 @user_router.message(Command('rait'))
 async def choose_raiting(message: Message, state: FSMContext):
-    await message.answer('Выберите рейтинг по видам спорта', reply_markup=kb.training_types_kb())
+    await message.answer('Выберите рейтинг по видам спорта', reply_markup=kb.training_types_kb(raiting=True))
     await state.clear()
     await state.set_state(st.ShowRaitingFSM.raiting)
 
 
 @user_router.callback_query(F.data.startswith('training_type'), st.ShowRaitingFSM.raiting)
 async def show_raiting(call: CallbackQuery, state: FSMContext, is_admin: bool):
-    training_index = int(call.data.split(':')[1])
-    training_type = TRAINING_TYPES[training_index]
-    stars_dict = stars_dict_getter()
-    print(f'stars_dict show_raiting: {stars_dict}')
-    if training_type in stars_dict:
-        text = ''
-        for i, item in enumerate(stars_dict[training_type]):
-            if item.star_count > 0:
+    if 'general' not in call.data:
+        training_index = int(call.data.split(':')[1])
+        training_type = TRAINING_TYPES[training_index]
+        stars_dict = stars_dict_getter()
+        if training_type in stars_dict:
+            text = ''
+            for i, item in enumerate(stars_dict[training_type]):
+                if item.star_count > 0:
+                    stars = ''
+                    for _i, _num in enumerate(str(item.star_count)):
+                        # Здесь преобразуем цифру числа звезд в индекс
+                        idx = int(_num)
+                        stars += f'{NUMBERS[idx]}'
+                        stars = f'⭐️{stars}'
+                else:
+                    stars = ''
+                visit_count = f'🏃🏽‍♂️{item.visit_count}'
+                name = item.user.tg_name
+                username = '@' + item.user.tg_username if is_admin else ''
+                if call.from_user.id == item.user.tg_id:
+                    text += f'<b>{i + 1}</b>. {stars} <b><i>{name} {username}</i></b> {visit_count}\n'
+                else:
+                    text += f'<b>{i + 1}</b>. {stars} {name} {username} {visit_count}\n'
+            await call.message.answer(f'Текущий рейтинг по дисциплине <b>"{training_type}"</b>:\n\n'
+                                      f'{text}',
+                                      parse_mode='HTML', reply_markup=kb.back_kb_markup)
+        else:
+            await call.message.answer(
+                f'По дисциплине <b>"{training_type}"</b> в этом сезоне тренировки пока не проводились',
+                parse_mode='HTML', reply_markup=kb.back_kb_markup)
+    else:
+        general_raiting = general_raiting_getter()
+        if len(general_raiting) > 0:
+            gen_rait_txt = ''
+            for i, item in enumerate(general_raiting):
+                tg_username = f'@{item[1]}' if is_admin else ''
+                tg_name, star_count, marks = item[0], item[2], item[3]
                 stars = ''
-                for _i, _num in enumerate(str(item.star_count)):
+                for _i, _num in enumerate(str(star_count)):
                     # Здесь преобразуем цифру числа звезд в индекс
                     idx = int(_num)
                     stars += f'{NUMBERS[idx]}'
                     stars = f'⭐️{stars}'
-            else:
-                stars = ''
-            visit_count = f'🏃🏽‍♂️{item.visit_count}'
-            name = item.user.tg_name
-            username = '@' + item.user.tg_username if is_admin else ''
-            if call.from_user.id == item.user.tg_id:
-                text += f'<b>{i+1}</b>. {stars} <b><i>{name} {username}</i></b> {visit_count}\n'
-            else:
-                text += f'<b>{i+1}</b>. {stars} {name} {username} {visit_count}\n'
-        await call.message.answer(f'Текущий рейтинг по дисциплине <b>"{training_type}"</b>:\n\n'
-                                  f'{text}',
-                                  parse_mode='HTML', reply_markup=kb.back_kb_markup)
-    else:
-        await call.message.answer(f'По дисциплине <b>"{training_type}"</b> в этом сезоне тренировки пока не проводились',
-                                  parse_mode='HTML', reply_markup=kb.back_kb_markup)
+                gen_rait_txt += f'<b>{i + 1}</b>. {stars} {tg_name} {tg_username} {marks}\n'
+            await call.message.answer(f'<b>ОБЩИЙ РЕЙТИНГ⚡️</b>\n\n'
+                                      f'{gen_rait_txt}',
+                                      parse_mode='HTML', reply_markup=kb.back_kb_markup)
+        else:
+            await call.message.answer(f'В этом сезоне тренировки пока не проводились',
+                                      parse_mode='HTML', reply_markup=kb.back_kb_markup)
 
 
 # Включение/выключение получения уведомлений
@@ -424,36 +444,39 @@ async def ntf(message: Message, state: FSMContext):
     await state.clear()
     user = await db_req.get_or_create_user(message.from_user, for_telegramm=True)
     receive_notifications = user['receive_notifications']
-    await message.answer('Изменение настроек уведомлений. Если у Вас уведомление включено, '
-                         'то это означает, что Вам будут приходить уведомления по тренировкам, если:\n'
-                         '🔹 Вы записаны на эту тренировку;\n'
-                         '🔹 Если для тренировки установлен ОБЩИЙ ДЕДЛАЙН для всех участников;\n'
-                         '🔹 если Вы ещё не оплатили за эту тренировку.',
-                         reply_markup= await kb.notify(receive_notifications))
+    text = ('При включенном уведомлении Вы:\n'
+            '🔹 сразу же будете получать сообщения о новых тренировках\n')
+    await message.answer(text, parse_mode='HTML', reply_markup=await kb.notify(receive_notifications))
     await state.update_data(receive_notifications=receive_notifications)
 
 
-@user_router.callback_query(F.data=='on_off_notify')
+@user_router.callback_query(F.data == 'on_off_notify')
 async def on_off_notify(call: CallbackQuery, state: FSMContext):
     receive_notifications = await db_req.update_user_receive_notificcations(call.from_user.id)
     await call.message.delete()
-    text = 'Уведомления по <b>ОБЩИМ</b> дедлайнам оплаты за тренировки включены 🔔'\
-        if receive_notifications else  'Уведомления отключены 🔕'
+    text = 'Уведомления по <b>ОБЩИМ</b> дедлайнам оплаты за тренировки включены 🔔' \
+        if receive_notifications else 'Уведомления отключены 🔕'
     await call.message.answer(text, parse_mode='HTML')
+    user_cache[call.from_user.id].receive_notifications = receive_notifications
 
 
 @user_router.message(Command('event'))
-@user_router.callback_query(F.data=='show_training_types')
+@user_router.callback_query(F.data == 'show_training_types')
 async def show_training_types(message: Message, state: FSMContext):
     await state.clear()
     await message.answer('Выберите тип тренировки', reply_markup=kb.training_types_kb(without_back=True))
     await state.set_state(st.ChooseEventFSM.training_type)
 
 
-async def show_events(message: Message, state: FSMContext):
+async def show_events(message: Message, state: FSMContext, is_admin: bool):
     data = await state.get_data()
     training_type = data['training_type']
-    events = await db_req.get_event(training_type=training_type)
+
+    if is_admin:
+        events = await db_req.get_event(training_type=training_type, is_admin=is_admin)
+    else:
+        events = await db_req.get_event(training_type=training_type)
+    events = sorted(events, key=lambda x: x['event_datetime'].replace(tzinfo=None))
     event_ids = [i['id'] for i in events]
     event_user = await db_req.get_event_user(user_tg_id=message.chat.id, event_ids=event_ids)
 
@@ -465,160 +488,46 @@ async def show_events(message: Message, state: FSMContext):
             f'Ближайшие тренировки по дисциплине <b><i>{training_type}</i></b>.\n'
             'Тренировки, на которые Вы уже записаны, отмечены 🟢.',
             reply_markup=kb.show_events_kb(
-                event_user,*events
+                event_user, *events
             ),
             parse_mode='HTML'
         )
         await state.update_data(events=events)
 
-async def training_info(call_mess: Message | CallbackQuery, is_admin: bool, **kwargs):
-    try:
-        events, training_type = kwargs['events'], kwargs['training_type']
-        this_call_query = None  # специальный флаг, определяющий работу этой функции
 
-        if isinstance(call_mess, CallbackQuery):
-            this_call_query = True if call_mess.data.startswith('choose_event') else False
-        event_id = int(call_mess.data.split(':')[1]) if this_call_query else kwargs['event_id']
-        event = next(item for item in events if item['id'] == event_id) if this_call_query else kwargs['event']
-        event_user = await db_req.get_event_user(event_id=event_id)
-        text = await kb.show_text_about_event(event, event_user,
-                                              tg_id=call_mess.from_user.id,
-                                              is_admin=is_admin)
-        text = f'<b>Тип тренировки</b>: {training_type}\n' + text
-        return {
-            'event': event,
-            'events': events,
-            'event_id': event_id,
-            'event_user': event_user,
-            'text': text}
-    except Exception as e:
-        await logger.error(f'Error on /training_text: {e}')
-        # stream_logger.error(f'Error on /training_text: {e}')
-        pass
-
-
-# После выбора тренировки отображается текущий список заявишихся участников
 @user_router.callback_query(F.data.startswith('choose_event'))
-async def choose_event(call_mess: Message | CallbackQuery, state: FSMContext,
-                       is_admin: bool):
-    try:
-        data = await state.get_data()
-        events, training_type = data['events'], data['training_type']
-
-        # Дурацкий с event_id, но пока ничего лучше не получилось. Тупая перестраховкас условиями
-        if 'event_id' in data and 'event' in data:
-            event_id, event, events, event_user = data['event_id'], data['event'], data['events'], data['event_user']
-            trn_info = await training_info(call_mess, is_admin,
-                                           training_type=training_type,
-                                           events=events,
-                                           event_id=event_id,
-                                           event=event,
-                                           event_user=event_user)
-        else:
-            if isinstance(call_mess, CallbackQuery):
-                trn_info = await training_info(call_mess, is_admin,
-                                               training_type=training_type,
-                                               events=events)
-
-        event, events, event_id, event_user = (
-            trn_info['event'], trn_info['events'], trn_info['event_id'], trn_info['event_user']
-        )
-        this_call_query = None  # специальный флаг, определяющий работу этой функции
-        if isinstance(call_mess, CallbackQuery):
-            this_call_query = True if call_mess.data.startswith('choose_event') else False
-        call_id = call_mess.from_user.id
-        await state.update_data(event_id=event_id, event=event, event_user=event_user)
-
-        # Определение параметров отображения инлайн-клавиатуры
-        availible_pay, paid_check, payment_confirmed = False, None, None
-        signed_up_for_training =True if any(item['user__tg_id'] == call_id for item in event_user)\
-            else False
-
-        availible_notify_by_payment = None
-
-        # Если пользователь ранее записался на эту тренировку, то кнопка записи на тренировку не отображается
-        friend = None
-        if signed_up_for_training:
-            user_id, paid_check, payment_confirmed = (
-                next((item['user__id'], item['paid_check'], item['payment_confirmed'])
-                     for item in event_user if item['user__tg_id'] == call_id))
-            await state.update_data(user_id = user_id)
-
-            # Определение критериев доступности кнопки оповещения бота об оплате
-            participants_count = int(event['participants_count'])
-            user_place_on_list = next(i+1 for i, item in enumerate(event_user)
-                                      if item['user__tg_id']==call_id)
-            availible_pay = True if (user_place_on_list <= participants_count
-                                     and paid_check is None
-                                     and payment_confirmed is None ) else False
-            availible_notify_by_payment = True if user_place_on_list <= participants_count else None
-            friend = next(item['friend'] for item in event_user if item['user__tg_id'] == call_id)
-
-        keyboard = kb.sign_up_for_training(
-            signed_up_for_training,
-            availible_pay,
-            admin_permissions=is_admin,
-            payment_confirmed=payment_confirmed,
-            availible_notify_by_payment=availible_notify_by_payment,
-            friend=friend,
-            event_id=event_id
-        )
-        text = trn_info['text']
-        if isinstance(call_mess, CallbackQuery):
-            await call_mess.message.answer(text, parse_mode='HTML', reply_markup=keyboard)
-        else:
-            await call_mess.answer(text, parse_mode='HTML', reply_markup=keyboard)
-        await state.set_state(st.ChooseEventFSM.choose_event)
-
-        # Специальная переделка call_mess наоборот (может это избыточно!)
-        call_mess = call_mess.message if this_call_query else call_mess
-        asyncio.create_task(delete_bkg(call_mess))
-    except Exception as e:
-        await logger.error(f'Ошибка в choose_event: {e}')
-        # stream_logger.error(f'Ошибка в choose_event: {e}')
+async def call_choose_event(call: CallbackQuery, state: FSMContext, is_admin: bool):
+    await choose_event(call, state, is_admin)
 
 
 # Записаться на тренировку
-@user_router.callback_query(F.data=='sign_up_for_training')
+@user_router.callback_query(F.data == 'sign_up_for_training')
 async def sign_up_for_training(call: CallbackQuery, state: FSMContext, is_admin: bool):
     try:
-        await call.message.answer('Вы записались на тренировку.\n'
-                                  'Если у вас уже оплачена эта тренировка, нажмите на кнопку'
-                                  '<i>"✔️ Тренировка оплачена"</i>')
         data = await state.get_data()
+        event, now = data['event'], datetime.now()
         user = await db_req.get_or_create_user(call.from_user, True)
-        data['user_id'] = user['id']
+        data['user_id'], data['created_at'] = user['id'], datetime.now().replace(tzinfo=None)
         await db_req.create_event_user(data)
         await choose_event(call, state, is_admin)
-        await state.set_state(st.ChooseEventFSM.sign_up_for_training)
-    except Exception as e:
-        await logger.error(e)
-        # stream_logger.error(e)
-
-
-# Оповестить бот об оплате кнопкой '✔️ Тренировка оплачена'
-@user_router.callback_query(F.data.startswith('payment_notify'))
-async def payment_notify(call: CallbackQuery, state: FSMContext, is_admin: bool):
-    try:
-        call_data = call.data.split(':')[1]
-        data = await state.get_data()
-        user_id, event_id = data['user_id'], data['event_id']
-        payment_notify = True if call_data == "i_payed_check" else False
-        await db_req.update_event_user(user_id, event_id, payment_notify)
-        await choose_event(call, state, is_admin)
-        if payment_notify is not True:
-            await call.message.answer('❗️<b>ВНИМАНИЕ</b>❗️\n'
-                                      'Вы отменили уведомление об оплате. Но это не '
-                                      'означает автоматический возврат денежных средств, если '
-                                      'Вы уже оплатили. Поэтому для возврата денежных средств обратитесь '
-                                      'к админу тренировки.')
+        text = ('Вы записались на тренировку.\n'
+                'Если у вас уже оплачена эта тренировка, нажмите на кнопку <i>"✔️ Тренировка оплачена"</i>')
+        reper_dedline, dedline_type = reper_dedline_definiton(
+            real_dedline=event['payment_dedline'].replace(tzinfo=None),
+            now=now, event_datetime=event['event_datetime'].replace(tzinfo=None),
+        )
+        if dedline_type == 'individ_dedline':
+            text += (f'\n\n <b>ВНИМАНИЕ❗️</b>\n'
+                     f' У Вас другой дедлайн оплаты, Вам необходимо оплатить '
+                     f'за тренировку до <b><i>{reper_dedline}</i></b>')
+        await call.message.answer(text, parse_mode='HTML')
     except Exception as e:
         await logger.error(e)
         # stream_logger.error(e)
 
 
 # Удалиться из тренировки
-@user_router.callback_query(F.data=='delete_from_training')
+@user_router.callback_query(F.data == 'delete_from_training')
 async def delete_from_training(call: CallbackQuery, state: FSMContext, is_admin: bool):
     await call.message.answer('Если Вы уверены, что хотите удалиться из тренировки '
                               'напишите в сообщении <i><b>да</b></i> и отправьте его.\n'
@@ -630,21 +539,70 @@ async def delete_from_training(call: CallbackQuery, state: FSMContext, is_admin:
 
 @user_router.message(st.DeleteFromTrainingFSM.delete_from_training)
 async def delete_from_training_confirm(message: Message, state: FSMContext, is_admin: bool):
-    if message.text.lower().strip() == 'да':
-        data = await state.get_data()
-        user_id, event_id = data.get('user_id'), data.get('event_id')
+    try:
+        if message.text.lower().strip() == 'да':
+            data = await state.get_data()
+            user_id, event_id, event = data.get('user_id'), data.get('event_id'), data.get('event')
+            await cmd_start(message, state, is_admin)
+            current_event_user = await db_req.get_event_user_after_delete(event_id=event_id)
+            participants_count = current_event_user[0].event.participants_count
+            res_prtcpt = None
+            if len(current_event_user) > participants_count:
+                user_pos = next(
+                    i for i, item in enumerate(current_event_user) if item.user.tg_id == message.from_user.id)
+                res_prtcpt = current_event_user[participants_count] if user_pos < participants_count else None
+            await db_req.delete_event_user(user_id, event_id)
+            await message.answer('Вы удалились из записи на тренировку.')
 
-        await db_req.delete_event_user(user_id, event_id)
-        await message.answer('Вы удалились из записи на тренировку.')
-        asyncio.create_task(delete_bkg(message))
+            text = (f"❗️⚡️ <b>ВНИМАНИЕ АДМИНАМ</b>\n"
+                    f"Пользователь с никнеймом @<i>{message.from_user.username}</i> удалился из следующей тренировки\n\n"
+                    f"Дисциплина: <b><i>{data['training_type']}</i></b>\n"
+                    f"{data['event']['event_text']}")
+            if res_prtcpt:
+                res_tg_username, res_tg_id, res_id = (res_prtcpt.user.tg_username, res_prtcpt.user.tg_id,
+                                                      res_prtcpt.user.id)
+                text += (f'\n\n<b><i>🔆ВАЖНО!</i></b>\n'
+                         f"Пользователь с никнеймом <i>@{res_tg_username}</i> поднялся из резерва в основной список "
+                         f"и ему было выслано соответствующее уведомление")
+                # Обновляем времена поднявшегося из резерева и других резервистов
+                seconds, update_list = -1, []
+                now = datetime.now().replace(tzinfo=None)
+                for _user in current_event_user[participants_count:]:
+                    seconds += 1
+                    _user.created_at = now + timedelta(seconds=seconds)
+                    update_list.append(_user)
+                await db_req.update_event_user_after_delete(update_list)
+
+            for k in user_cache:  # Информаривание админов
+                if user_cache[k].admin_permissions == True:
+                    tg_id = user_cache[k].tg_id
+                    await bot.send_message(chat_id=tg_id, text=text, parse_mode='HTML')
+            if res_prtcpt:  # Информаривание пользователя, поднявшегося из резерва
+                text = (f'⚡️⚡️<b>ВАЖНАЯ ИНФОРМАЦИЯ ДЛЯ ВАС</b>\n'
+                        f'Вы перешли из резерва в основной список следующей тренировки:\n\n'
+                        f"Дисциплина: <b><i>{data['training_type']}</i></b>\n"
+                        f"{data['event']['event_text']}")
+                reper_dedline, dedline_type = reper_dedline_definiton(
+                    real_dedline=event['payment_dedline'],
+                    now=now, event_datetime=event['event_datetime'],
+                )
+                if dedline_type == 'individ_dedline':
+                    text += (f'\n\n <b>ВНИМАНИЕ❗️</b> \n'
+                             f'<i>У Вас другой дедлайн оплаты.\n'
+                             f' Вам необходимо оплатить за тренировку до</i>'
+                             f' <b><i>{reper_dedline}</i></b>')
+                await bot.send_message(chat_id=res_tg_id, text=text, parse_mode='HTML')
+        else:
+            await message.answer('Удаление прервано')
+            await choose_event(message, state, is_admin)
+    except Exception as e:
+        await logger.error(f'ошибка в delete_from_training_confirm: {e}')
         await cmd_start(message, state, is_admin)
-    else:
-        await message.answer('Удаление прервано')
-        await choose_event(message, state, is_admin)
+    asyncio.create_task(delete_bkg(message))
 
 
 # Записать друга на тренировку
-@user_router.callback_query(F.data=='add_friend')
+@user_router.callback_query(F.data == 'add_friend')
 async def add_friend(call: CallbackQuery, state: FSMContext):
     await call.message.answer('Введите никнейм вашего друга.\n'
                               '<i>Пример</i>: @ivanov1934',
@@ -653,7 +611,7 @@ async def add_friend(call: CallbackQuery, state: FSMContext):
 
 
 @user_router.message(st.AddFriendFSM.add_friend)
-async def add_friend(message: Message, state: FSMContext):
+async def add_friend(message: Message, state: FSMContext, is_admin: bool):
     try:
         data = await state.get_data()
         event_id = data.get('event_id')
@@ -662,7 +620,7 @@ async def add_friend(message: Message, state: FSMContext):
             friend = None
             for k in user_cache:
                 if user_cache[k].tg_username == text:
-                    friend_id, friend = user_cache[k].id, user_cache[k].tg_username
+                    friend_id, friend, friend_tg_id = user_cache[k].id, user_cache[k].tg_username, user_cache[k].tg_id
                     break
             if friend is not None:
                 ''' Проверяем не записывался ли ранее мой друг (friend_signed_up) и не
@@ -672,15 +630,20 @@ async def add_friend(message: Message, state: FSMContext):
                     event_id, i_am_friend=message.from_user.username
                 )
 
-                if not friend_signed_up and not my_prev_friend:
+                if not friend_signed_up and is_admin is not True and not my_prev_friend:
                     message_text = ('⚠️ Внимание! Записать друга на тренировку можно только <b>один раз</b>!\n'
                                     'Вы подтверждаете запись друга?')
-                    await state.update_data(friend_id=friend_id, friend=friend)
+                    await state.update_data(friend_id=friend_id, friend=friend, friend_tg_id=friend_tg_id)
+                    await state.set_state(st.AddFriendFSM.add_friend_confirm)
+                    return await message.answer(message_text, reply_markup=kb.add_friend_confirm_kb, parse_mode='HTML')
+                elif not friend_signed_up and is_admin is True:  # админы могут добавлять хоть сколько друзей
+                    message_text = ('Вы подтверждаете запись друга?')
+                    await state.update_data(friend_id=friend_id, friend=friend, friend_tg_id=friend_tg_id)
                     await state.set_state(st.AddFriendFSM.add_friend_confirm)
                     return await message.answer(message_text, reply_markup=kb.add_friend_confirm_kb, parse_mode='HTML')
                 elif friend_signed_up:
                     message_text = f'☑️ Ваш друг с никнеймом <i>{friend}</i> уже состоит в записи на тренировку'
-                elif my_prev_friend:
+                elif my_prev_friend and is_admin is not True:
                     message_text = f'⛔️ Вы ранее уже записали друга с никнеймом <i>{my_prev_friend}</i>'
             else:
                 message_text = f'🤷🏻‍♂️ Пользователь с никнеймом <i>{text}</i> не зарегистрирован в боте'
@@ -689,24 +652,51 @@ async def add_friend(message: Message, state: FSMContext):
         await message.answer(message_text, parse_mode='HTML', reply_markup=kb.return_to_start_markup())
     except Exception as e:
         await logger.error(f'Add+friend: {e}')
+        await cmd_start(message, state, is_admin)
+        asyncio.create_task(delete_bkg(message))
         # stream_logger.error(f'Add+friend: {e}')
 
 
 @user_router.callback_query(F.data.startswith('add_friend') and st.AddFriendFSM.add_friend_confirm)
 async def add_friend_confirm(call: CallbackQuery, state: FSMContext, is_admin: bool):
-    call_data = call.data.split(':')[1]
-    data = await state.get_data()
-    friend_id, friend = data['friend_id'], data['friend']
-    if call_data == 'yes':
-        await db_req.create_event_user(data, friend_id=friend_id, i_am_friend=call.from_user.username)
-        await call.message.answer(f'Вы успешно записали друга с никнеймом <i>{friend}</i> на тренировку 🖍')
-    else:
-        await call.message.answer(f'Вы отменили запись друга на тренировку🟡')
-    await state.set_state(None)  # выходим из состояния, чтобы кнопки дезактивировались
-    await choose_event(call, state, is_admin)
+    try:
+        call_data = call.data.split(':')[1]
+        if call_data == 'yes':
+            data = await state.get_data()
+            data['created_at'] = datetime.now()
+            friend_id, friend, friend_tg_id = data['friend_id'], data['friend'], data['friend_tg_id']
+            await db_req.create_event_user(data, friend_id=friend_id, i_am_friend=call.from_user.username)
+            event_id = data.get('event_id')
+            event = await db_req.get_event(id=event_id)
+            training_type, event_text = event[0]['training_type'], event[0]['event_text']
+            text = (f'️⚡️ ️⚡️ <b>ВАЖНАЯ ИНФОРМАЦИЯ</b>\n'
+                    f'Вас записали на следующую тренировку\n'
+                    f'<b>Тип тренировки</b>:{training_type}\n{event_text}')
+            reper_dedline, dedline_type = reper_dedline_definiton(
+                real_dedline=event[0]['payment_dedline'].replace(tzinfo=None),
+                now=data['created_at'], event_datetime=event[0]['event_datetime'].replace(tzinfo=None),
+            )
+            if dedline_type == 'individ_dedline':
+                text += (f'\n\n <b>ВНИМАНИЕ❗️</b>\n'
+                         f' У Вас другой дедлайн оплаты, Вам необходимо оплатить '
+                         f'за тренировку до <b><i>{reper_dedline}</i></b>')
+
+            await bot.send_message(chat_id=friend_tg_id, text=text, parse_mode='HTML')
+            await call.message.answer(f'Вы успешно записали друга с никнеймом <i>{friend}</i> на тренировку 🖍')
+        else:
+            await call.message.answer(f'Вы отменили запись друга на тренировку🟡')
+        await state.set_state(None)  # выходим из состояния, чтобы кнопки дезактивировались
+        await choose_event(call, state, is_admin)
+    except Exception as e:
+        await call.message.answer(f'Возникла ошибка')
+        await logger.error(f'add_friend_confirm: {e}\n'
+                           f'user_cache = {user_cache}')
+        await cmd_start(call, state, is_admin)
+        asyncio.create_task(delete_bkg(call))
 
 
 ''' ДОСТУПНЫЕ АДМИНУ ФУНКЦИИ  '''
+
 
 # Функция, которая определяет из БД учатников по веденным порядковым номерам
 async def participant_list_formation(call_mess: Message | CallbackQuery, state: FSMContext, is_admin: bool):
@@ -729,21 +719,21 @@ async def participant_list_formation(call_mess: Message | CallbackQuery, state: 
         return {'index_list': index_list, 'number_list': number_list}
     except ValueError:
         await call_mess.answer('Нужно <i><u>через запятую</u></i> вводить только '
-                             '<b>целочисленные значения</b>. Повторите ввод.',
-                             parse_mode='HTML',
-                             reply_markup=kb.return_to_start_markup(process_interrupt=True))
+                               '<b>целочисленные значения</b>. Повторите ввод.',
+                               parse_mode='HTML',
+                               reply_markup=kb.return_to_start_markup(process_interrupt=True))
         raise
     except IndexError:
         await call_mess.answer(f'Допустимы только порядковые номера из '
-                             f'<u>ОСНОВНОГО СПИСКА</u>.\n'
-                             f'Повторите ввод.',
-                             parse_mode='HTML',
-                             reply_markup=kb.return_to_start_markup(process_interrupt=True))
+                               f'<u>ОСНОВНОГО СПИСКА</u>.\n'
+                               f'Повторите ввод.',
+                               parse_mode='HTML',
+                               reply_markup=kb.return_to_start_markup(process_interrupt=True))
         raise
 
 
 # -------------- Список админов ----------------
-@user_router.callback_query(F.data=='admin_list')
+@user_router.callback_query(F.data == 'admin_list')
 async def admin_list(call_mess: CallbackQuery | Message, state: FSMContext):
     call_mess = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
     try:
@@ -760,7 +750,7 @@ async def admin_list(call_mess: CallbackQuery | Message, state: FSMContext):
             await call_mess.answer('Кроме Вас больше нет админов', reply_markup=kb.edit_admins())
     except Exception as e:
         await logger.error(f'Error_on admin_list: {e}\n'
-                     f'user_cache = {user_cache}')
+                           f'user_cache = {user_cache}')
         # stream_logger.error(f'Error_on admin_list: {e}\n'
         #              f'user_cache = {user_cache}')
         await call_mess.answer('Возникла неизвестная ошибка.')
@@ -779,8 +769,8 @@ async def edit_admin(call: CallbackQuery, state: FSMContext):
         await call.message.answer('Введите никнейм телеграмм-аккаунта ❗️<i>без "@"</i>❗️, '
                                   'для которого хотите установить или отменить админский статус.\n '
                                   '<i>Например, если у пользователя аккаунт <u>"@Ivanov_79"</u>, то '
-                             'нужно ввести <u>"Ivanov_79"</u></i>.',
-                             reply_markup=kb.return_to_start_markup(), parse_mode='HTML')
+                                  'нужно ввести <u>"Ivanov_79"</u></i>.',
+                                  reply_markup=kb.return_to_start_markup(), parse_mode='HTML')
         await state.set_state(st.EditAdminFSM.edit_admin)
     except Exception as e:
         await logger.error(f'Ошибка при редактировании списка админов: {e}')
@@ -808,6 +798,7 @@ async def finish_edit_admin(message: Message, state: FSMContext):
     await state.clear()
     await admin_list(message, state)
     asyncio.create_task(delete_bkg(message))
+
 
 # ---------- Конец редактирования списка админов ---------------
 
@@ -869,7 +860,7 @@ async def admin_panel(call_mess: Message | CallbackQuery, state: FSMContext, is_
 
 # Видео-Инструкция для админа
 @user_router.message(Command('admin'))
-@user_router.callback_query(F.data=='admin_tutorial')
+@user_router.callback_query(F.data == 'admin_tutorial')
 async def admin_tutorial(call_mess: Message | CallbackQuery, state: FSMContext):
     await state.clear()
     message = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
@@ -903,7 +894,7 @@ async def general_tut(message: Message, bot: Bot):
 
 # СОЗДАНИЕ ТРЕНИРОВКИ
 
-@user_router.callback_query(F.data=='add_event')
+@user_router.callback_query(F.data == 'add_event')
 async def add_event(call: CallbackQuery, state: FSMContext):
     await state.clear()
     await call.message.answer("Выберите тип создаваемой тренировки",
@@ -914,13 +905,13 @@ async def add_event(call: CallbackQuery, state: FSMContext):
 
 @user_router.callback_query(F.data.startswith('training_type'), st.ChooseEventFSM.training_type)
 @user_router.callback_query(F.data.startswith('training_type'), st.CreateEventFSM.training_type)
-async def choose_training_type(call: CallbackQuery, state: FSMContext):
+async def choose_training_type(call: CallbackQuery, state: FSMContext, is_admin: bool):
     current_state = await state.get_state()
     training_index = int(call.data.split(':')[1])
     training_type = TRAINING_TYPES[training_index]
     await state.update_data(training_type=training_type)
     if current_state == st.ChooseEventFSM.training_type:
-        await show_events(call.message, state)
+        await show_events(call.message, state, is_admin)
     elif current_state == st.ShowRaitingFSM.raiting:
         await call.message.answer('Рейтинг')
     else:
@@ -967,16 +958,16 @@ async def input_template(message: Message, state: FSMContext):
                     else:  # если никнейм босса не вводить, то None
                         boss_id = None
             # Формирование текста о создаваемой тренировке
-            if index < len(text.split("\n")) - 1:
-                if 'Босс тренировки' not in key:
-                    event_text += f"<b>{key}</b>: {value}\n"
-                else:
-                    value = f'@{value}' if boss_id is not None else '-'
-                    value.replace('@@', '@')  # ещё одна перестраховка
-                    event_text += f"<b>{key}</b>: {value}\n"
+            # if index < len(text.split("\n")) - 1:
+            if 'Босс тренировки' not in key:
+                event_text += f"<b>{key}</b>: {value}\n"
             else:
-                event_text += (f"\n<b>ИНФОРМАЦИЯ ОБ ОПЛАТЕ</b>:\n"
-                              f"{value}")
+                value = f'@{value}' if boss_id is not None else '-'
+                value.replace('@@', '@')  # ещё одна перестраховка
+                event_text += f"<b>{key}</b>: {value}\n"
+            # else:
+            #     event_text += (f"\n<b>ИНФОРМАЦИЯ ОБ ОПЛАТЕ</b>:\n"
+            #                    f"{value}")
         event_text = event_text.replace("❗️", "")
         await state.update_data(event_text=event_text,
                                 event_datetime=event_datetime,
@@ -993,7 +984,7 @@ async def input_template(message: Message, state: FSMContext):
 
     except ValueError as e:
         if str(e) == "month must be in 1..12":
-                error_message = "Некорректно введен месяц"
+            error_message = "Некорректно введен месяц"
         elif str(e) == "unreal date":
             error_message = ("Тренировка не может быть запланирована прошедним днем "
                              "и более, чем за <u>90 дней вперед</u>.")
@@ -1030,82 +1021,71 @@ async def add_dedline_and_finish(call: CallbackQuery | Message, state: FSMContex
     show_mess = call.message if isinstance(call, CallbackQuery) else call
     try:
         data = await state.get_data()
-        event_text = data["event_text"]
+        event_text, event_datetime = data["event_text"], data["event_datetime"]
         if 'is_update' not in data:  # если создается новая тренировка (там работает CallbackQuery)
-            dedline_hour = int(call.data.split("_")[1]) if isinstance(call, CallbackQuery) \
-                else None
+            # Здесь проверка скорее всего бесмысленна, так перестраховка
+            dedline_hour = int(call.data.split("_")[1]) if isinstance(call, CallbackQuery) else None
             now = datetime.now()
-            data["created_at"] = now
+            # now = datetime.now() - timedelta(days=26)  # заглушка для теста
 
-            # payment_dedline = now + timedelta(hours=dedline_hour) if dedline_hour else None
-            # #payment_dedline = now + timedelta(minutes=2) if dedline_hour else None
+            real_dedline = now + timedelta(hours=dedline_hour)
+            # real_dedline = now + timedelta(hours=400)  # заглушка для тестов
+            reper_dedline, _ = reper_dedline_definiton(real_dedline=real_dedline, is_string=False)
+            data["created_at"], data["payment_dedline"] = now, real_dedline
 
-            ''' Ищем время дедлайна согласно точкам сканирования бота '''
-            # now = datetime.now()
-            now = datetime(2025, 10,13,23,45)
-            dedline = now + timedelta(days=1)
-            print(f'dedline = {dedline}')
+            if event_datetime - timedelta(hours=2) < reper_dedline:
+                raise ValueError
 
-            # Присваиваем сегодняшний день начальному значению реперного дня
-            payment_dedline = datetime(dedline.year, dedline.month, dedline.day)
-
-            day = 0
-            while payment_dedline < dedline:
-                stop = False
-                for i in SCAN_TIMES:
-                    payment_dedline = (
-                            datetime(dedline.year, dedline.month, dedline.day) +
-                            timedelta(hours=i.hour) + timedelta(days=day)
-                    )
-                    if payment_dedline > dedline:
-                        break
-                        stop = True
-                    if not stop:
-                        day += 1
-                    print(f'payment_dedline = {payment_dedline}')
-
-            if payment_dedline:  # если для тренировки устанавалиеватся общий дедлайн
+            if real_dedline:
                 data["event_text"] = (f"{event_text}\n"
-                                      f"<b><i>Срок оплаты</i></b>: до "
-                                      f"{payment_dedline.strftime('%H:%M %d.%m.%Y')}\n")
-            else:  # иначе для тренировки устанавливается индивидуальный для каждого участника посуточный дедлайн
-                data["event_text"] = (f"{event_text}\n"
-                                      f"<b><i>Срок оплаты</i></b>: в течение суток после записи на тренировку\n")
-            data["payment_dedline"] = dedline  # сюда все таки вставляем реальный дедлайн
+                                      f"<b><i>Начальный дедлайн оплаты</i></b>: до "
+                                      f"{reper_dedline.strftime('%H:%M %d.%m.%Y')}\n")
 
-            await show_mess.answer(f"<b>Создана следующая тренировка</b>:\n\n"
-                                           f"<b>Тип тренировки</b>: {data['training_type']}\n"
-                                           f"{data['event_text']}\n\n")
+            # Отложен в стороеку этот фрагмент
+            # else:  # иначе для тренировки устанавливается индивидуальный для каждого участника посуточный дедлайн
+            #     data["event_text"] = (f"{event_text}\n"
+            #                           f"<b><i>Срок оплаты</i></b>: в течение суток после записи на тренировку\n")
+            text = (
+                f"<b>Создана следующая тренировка</b>:\n\n"
+                f"<b>Тип тренировки</b>: {data['training_type']}\n"
+                f"{data['event_text']}\n\n"
+            )
+
+            await show_mess.answer(text, parse_mode="HTML")
 
             # Два запроса в БД: запись новой тренировки и получение её данных
             await db_req.create_event(data)
-            if call.data != 'dedline_0' and call.data != 'dedline_-1':
-                last_event = await db_req.get_event(for_schedule=True, last_record=True)
-                payment_dedline, id = last_event['payment_dedline'], last_event['id']
-
-                # Обновление списка дедлайнов
-                dedlines.append((payment_dedline.replace(tzinfo=None), id))
-                dedlines.sort()
-                notificate_datetime = payment_dedline.replace(tzinfo=None) - timedelta(hours=1)
-                dedline_notifications.append((notificate_datetime, id))
-                dedline_notifications.sort()
             await cmd_start(call, state, is_admin)
+            for k in user_cache:
+                if user_cache[k].receive_notifications is True:
+                    tg_id = user_cache[k].tg_id
+                    # await bot.send_message(chat_id=tg_id, text=text, parse_mode='HTML')
         else:
-            event_text, end_fragment = str(data["event_text"]), str(data["end_fragment"])
-            event_id = int(data["event_id"])
-            data["event_text"] = f'{event_text.strip()}\n{end_fragment}'
+            await show_mess.answer('Тренировка отредактирована')
+            event_text, end_fragment, event_id = str(data["event_text"]), str(data["end_fragment"]), int(
+                data["event_id"])
+            end_key_idx = end_fragment.find(':')
+            end_key, end_val = end_fragment[:end_key_idx + 1], end_fragment[end_key_idx + 1:]
+            data["event_text"] = f'{event_text.strip()}\n<b>{end_key}</b> {end_val}'
             await db_req.update_event(event_id, data)
             event = await db_req.get_event(id=event_id)
-            await show_mess.answer('Тренировка отредактирована')
             await state.update_data(event=event[0])
-            await choose_event (show_mess, state, is_admin)
+            # await choose_event(show_mess, state, is_admin)
+    except ValueError:
+        await state.set_state(st.CreateEventFSM.dedline_type)
+        await show_mess.answer('⛔️ Дедлайн оплаты должен быть минимум за два часа до начала '
+                               'тренировки. Выберите другой дедлайн',
+                               reply_markup=await kb.admin_dedline_type(*DEDLINE_TYPE))
     except Exception as e:
         await show_mess.answer("Возникла ошибка! Повторите создание тренировки")
+        await cmd_start(call, state, is_admin)
         await logger.error(f"Ошибка при добавлении тренировки: {e}")
-        # stream_logger.error(f"Ошибка при добавлении тренировки: {e}")
+    await choose_event(show_mess, state, is_admin)
     asyncio.create_task(delete_bkg(show_mess))
 
-#----------Конец по добавке тренировки --------------
+
+# ----------Конец по добавке тренировки --------------
+
 
 @user_router.callback_query(F.data.startswith("training_manage"))
 async def training_manage(call: CallbackQuery, state: FSMContext):
@@ -1126,31 +1106,34 @@ async def training_manage(call: CallbackQuery, state: FSMContext):
 
 
 # --------- Редактирование тренировки -----------
+
+
 @user_router.callback_query(F.data == 'edit_event')
 async def edit_event(call: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     template = data['event']['event_text']
-    end_fragment = template[template.find('<b><i>Срок оплаты'):]
-    print(f'sours: {template}')
 
     # Более приемлемый способ для множественной замены в большой строке
     replacements = {"<b>": "", "</b>": "", "<i>": "", "</i>": "",
                     "Дата тренировки": "❗️Дата тренировки",
                     "Время": "❗️Время",
-                    "Число участников": "❗️Число участников",
+                    "Квота участников": "❗️Квота участников",
                     'Босс тренировки': '❗️Босс тренировки',
-                    "ИНФОРМАЦИЯ ОБ ОПЛАТЕ:\n": "Как оплатить: ",
+                    # "ИНФОРМАЦИЯ ОБ ОПЛАТЕ:\n": "Как оплатить: ",
                     "\n\n": "\n"}
 
     # Переделка текущего текста тренировки под шаблон для создания
     template = reduce(lambda fragment, kv: fragment.replace(*kv), replacements.items(), template)
-    template = template[:template.find('Срок оплаты')]  # урезаем до фразы срок оплаты
+    end_fragment = template[template.find('Начальный дедлайн оплаты'):]
+    end_idx = template.find(end_fragment)
+    template = template[:end_idx]  # урезаем до фразы срок оплаты
 
     await state.update_data(is_update=True, end_fragment=end_fragment)
     await state.set_state(st.CreateEventFSM.template)
     await call.message.answer('Вставьте текущий шаблон этой тренировки, '
                               'после чего отредактируйте и отправьте в сообщении боту',
                               reply_markup=await kb.insert_template_on_edit_admin(template))
+
 
 # ------------ Конец редактирования тренировки ----------
 
@@ -1202,20 +1185,20 @@ async def confirm_payment(message: Message, state: FSMContext, is_admin: bool):
             id_list = [event_user[i]['id'] for i in index_list]
         elif verify_type == 'confirm':  # Подтвердить платеж можно только, если поле 'payment_confirmed' не True
             id_list = [event_user[i]['id'] for i in index_list if event_user[i]['payment_confirmed'] is not True]
-        else: # Опровергнуть платеж можно, если 'payment_confirmed' пустое и 'paid_check' не пустое
+        else:  # Опровергнуть платеж можно, если 'payment_confirmed' пустое и 'paid_check' не пустое
             id_list = [event_user[i]['id'] for i in index_list if event_user[i]['payment_confirmed'] is None
                        and event_user[i]['paid_check'] is not None]
 
         # Обновление в БД
         if len(id_list) > 0:
-            if verify_type=='change':
+            if verify_type == 'change':
                 await db_req.update_event_user_for_payment_verify(id_list, is_confirm=None)
-            elif verify_type=='refute':
+            elif verify_type == 'refute':
                 await db_req.update_event_user_for_payment_verify(id_list, is_confirm=False)
             else:
                 await db_req.update_event_user_for_payment_verify(id_list)
             report = ('👁‍🗨 Обновление статусов проведено <i>частично</i>. '
-                      'Причины описаны в <b>/admin</b>.') if len(id_list)<len(number_list)\
+                      'Причины описаны в <b>/admin</b>.') if len(id_list) < len(number_list) \
                 else '🔷 Статусы всех указанных участников обновлены.'
         else:
             report = '🛑 Статусы <b>не обновлены</b>. Причины описаны в <b>/admin</b>.'
@@ -1227,12 +1210,14 @@ async def confirm_payment(message: Message, state: FSMContext, is_admin: bool):
     except Exception as e:
         await logger.error(e)
         # stream_logger.error(e)
+
+
 # ---------- Конец верификации оплаты ---------------
 
 
 # --------- Присвоить звезду. Начало -------------
 
-@user_router.callback_query(F.data=='give_star')
+@user_router.callback_query(F.data == 'give_star')
 async def give_star(call: CallbackQuery, state: FSMContext, is_admin: bool):
     data = await state.get_data()
     event = data['event']
@@ -1245,7 +1230,7 @@ async def give_star(call: CallbackQuery, state: FSMContext, is_admin: bool):
             reply_markup=kb.return_to_start_markup(), parse_mode='HTML'
         )
     else:
-        user_id_lst = [int(i)  for i in event['stars'].replace(' ', '').split(',')]
+        user_id_lst = [int(i) for i in event['stars'].replace(' ', '').split(',')]
         stars_txt = ""
         for k in user_cache:
             if user_cache[k].id in user_id_lst:
@@ -1297,6 +1282,7 @@ async def confirm_give_star(message: Message, state: FSMContext, is_admin: bool)
     # await state.set_state(None)
     await choose_event(message, state, is_admin)
 
+
 # --------- Присвоить звезду. Конец -------------
 
 
@@ -1325,12 +1311,12 @@ async def drop_participant_middlware_state(message: Message, state: FSMContext, 
     try:
         data = await state.get_data()
         event_user, event_id = data.get('event_user'), data.get('event_id')
-        index = int(message.text) # порядковый номер участника
+        index = int(message.text)  # порядковый номер участника
 
         if index > len(event_user) or index == 0:
             raise IndexError
 
-        user_id = next(item['user__id'] for i, item in enumerate(event_user) if i==index-1)
+        user_id = next(item['user__id'] for i, item in enumerate(event_user) if i == index - 1)
         await state.update_data(user_id=user_id)
         await message.answer('Вы подтверждаете выполнение данного действия?',
                              reply_markup=kb.drop_participant_kb)
@@ -1369,9 +1355,10 @@ async def drop_participant(call: CallbackQuery, state: FSMContext, is_admin: boo
             text = 'Участник перемещен в конец очереди.'
     else:
         text = 'Операция отменена.'
-    await call.message.delete()
-    await choose_event(call.message, state, is_admin)
+    await choose_event(call, state, is_admin)
     await call.message.answer(text)
+    asyncio.create_task(delete_bkg(call))
+
 
 @user_router.message(st.ChancelTraininigFSM.chancel_training)
 async def chancel_training_state(message: Message, state: FSMContext, is_admin: bool):
@@ -1381,19 +1368,33 @@ async def chancel_training_state(message: Message, state: FSMContext, is_admin: 
         event_id = data.get('event_id')
         await db_req.delete_event(event_id)
         await message.answer('Тренировка удалена.')
+        await cmd_start(message, state, is_admin)
     else:
         await message.answer('Удаление тренировки отменено.')
         await state.set_state(None)
     asyncio.create_task(delete_bkg(message))
 
+
 ''' ----------- КОНЕЦ АДМИНСКИХ ФУНКЦИЙ  ------------ '''
+
 
 @user_router.message(Command('test'))
 async def test(message: Message):
     try:
+        # await test_for_sch(user_cache=user_cache, bot = bot)
         await message.answer('Это тест')
-        await logger.critical(f'dedlines = {dedlines}')
-        await logger.critical(f'dedline_notifications = {dedline_notifications}')
     except Exception as e:
         await logger.error(e)
         # stream_logger.error(e)
+
+
+@user_router.message(Command('tst'))
+async def test(message: Message):
+    try:
+        # test_for_sch
+        # await test_for_sch(tst=True)
+        await message.answer('Это тест ТСТ')
+    except Exception as e:
+        await logger.error(e)
+        # stream_logger.error(e)
+

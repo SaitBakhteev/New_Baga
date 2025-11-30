@@ -63,19 +63,26 @@ async def startup(dispatcher: Dispatcher):
         users = await get_all_users()
         for user_ in users:
             user_cache[user_.tg_id] = user_
+        print(user_cache)
 
-        await stat_raiting()  # загрузка статистики для рейтинга текущего сезона
+        # await stat_raiting()  # загрузка статистики для рейтинга текущего сезона
 
         await season_index()  # загрузка текущего индекса летоичсчисления сезона
+
         scheduler = AsyncIOScheduler()
-        scheduler.add_job(delete_events, CronTrigger(hour=1, minute=00), id="work_by_stats_and_delete_events_at_2")
-        scheduler.add_job(delete_events, CronTrigger(hour=4, minute=00), id="work_by_stats_and_delete_events_at_5")
+        scheduler.add_job(delete_events, CronTrigger(hour=1, minute=00), id="work_by_stats_and_delete_events_at_1", kwargs={'test': None, 'bot': bot})
+        scheduler.add_job(delete_events, CronTrigger(hour=4, minute=00), id="work_by_stats_and_delete_events_at_4", kwargs={'test': None, 'bot': bot})
         for i in REPER_HOURS:  # это планировщик по проверкам дедлайнов
             scheduler.add_job(check_payment_dedline,
                               CronTrigger(hour=i - 1, minute=0),
-                              kwargs={'notify': True, 'bot': bot},
-                              id=f"notify_by_{i}")
-            scheduler.add_job(check_payment_dedline, CronTrigger(hour=i, minute=0), id=f"scan_by_{i}")
+                              kwargs={'notify': True, 'bot': bot, 'user_cache': user_cache},
+                              id=f"notify_by_{i - 1}")
+            scheduler.add_job(check_payment_dedline,
+                              CronTrigger(hour=i, minute=0),
+                              id=f"scan_by_{i}",
+                              kwargs={'notify': False, 'bot': bot, 'user_cache': user_cache})
+        scheduler.add_job(check_payment_dedline, CronTrigger(hour=21, minute=50), id=f"scan_test", kwargs={'notify': False, 'bot': bot, 'user_cache':user_cache})
+        print(84)
 
         # # Заглушки
         # test_now = datetime.now()
@@ -131,7 +138,6 @@ async def main():
     dp.include_router(user_router)
     dp.startup.register(startup)
     dp.shutdown.register(shutdown)
-
     await dp.start_polling(bot)
 
 

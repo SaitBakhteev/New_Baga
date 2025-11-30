@@ -88,10 +88,10 @@ def input_template(current_template: str = None,
                         "❗️Дата тренировки: 01.11.2025\n"
                         "❗️Время: 06:00\n"
                         "Длительность: 2 часа\n"
-                        "❗️Число участников: 12\n"
+                        "❗️Квота участников: 12\n"
                         "Стоимость тренировки: 350\n"
                         "❗️Босс тренировки:\n"
-                        "Как оплатить:  карта ТИНЬКОФФ 💳📍4377 7237 4025 3178📍💳. "
+                        "ИНФОРМАЦИЯ ОБ ОПЛАТЕ:  карта ТИНЬКОФФ 💳📍4377 7237 4025 3178📍💳. "
                         "После кидаем скрин чека @Rustambagautdinov")
             title = "Чистый шаблон"
         else:
@@ -360,6 +360,8 @@ def training_types_kb(**kwargs) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardBuilder()
     for i, item in enumerate(TRAINING_TYPES):
         keyboard.add(InlineKeyboardButton(text=item, callback_data=f'training_type:{i}'))
+    if 'raiting' in kwargs:
+        keyboard.add(InlineKeyboardButton(text='🔥ОБЩИЙ РЕЙТИНГ💫', callback_data='training_type:general'))
     if 'without_back' not in kwargs:
         keyboard.add(back_kb)
     keyboard.adjust(1)

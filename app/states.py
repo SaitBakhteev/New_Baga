@@ -75,3 +75,7 @@ class ChooseEventFSM(StatesGroup):
 
 class ShowRaitingFSM(StatesGroup):
     raiting = State()
+
+
+class SendCheckFSM(StatesGroup):
+    send_check = State()

@@ -13,3 +13,9 @@ asdasd.rt
 db.sqlite3
 db.sqlite3-shm
 db.sqlite3-wal
+
+media
+logs/
+webhook_run.py
+run.py
+scripts.py
