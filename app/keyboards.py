@@ -271,9 +271,10 @@ async def show_text_about_event(event: dict, event_user: list,
 # Кнопки под списком участников тренировки
 def sign_up_for_training(
         signed_up_for_training: bool,
-        availible_pay: bool,
+        event_id: int = None,
         admin_permissions=False, payment_confirmed=False,
         availible_notify_by_payment: bool = None,
+        event_user_id: int = None,
         **kwargs
 ) -> InlineKeyboardMarkup:
     try:
@@ -281,7 +282,7 @@ def sign_up_for_training(
         if signed_up_for_training is False:
             keyboard.add(InlineKeyboardButton(
                 text='🟢 Записаться на тренировку',
-                callback_data='sign_up_for_training'
+                callback_data=f'sign_up_for_training:{event_id}'
             ))
         else:
             keyboard.add(InlineKeyboardButton(
@@ -292,8 +293,8 @@ def sign_up_for_training(
         ''' Эта кнопка доступна при соблюдении 2 условий: участник в основном списке, поле 'payment_confirmed'
         в БД not True. Пока не подтвердил оплату, кнопки уведомдления или отмены уведомсления об оплате доступны '''
         if payment_confirmed is not True and signed_up_for_training:
-            if availible_pay:
-                text, call = '✔️ Тренировка оплачена', 'payment_notify:i_payed_check'
+            if event_user_id:
+                text, call = '✔️ Тренировка оплачена', f'payment_notify:{event_user_id}'
             else:
                 text, call = '✖️ Отменить оповещение об оплате', 'payment_notify:i_chancelled_check'
 
