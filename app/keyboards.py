@@ -161,6 +161,14 @@ async def start_menu(admin_perm=False) -> InlineKeyboardMarkup:
     return keyboard.as_markup()
 
 
+def payment_verify_kb(event_user_id):
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text='Подтвердить оплату ✅', callback_data=f'confirm_payment:{event_user_id}'),],
+        [InlineKeyboardButton(text='Опровергнуть оплату ❌', callback_data=f'refute_payment:{event_user_id}'),],
+])
+    return keyboard.as_markup()
+
+
 async def keyboard_builder(prefix: str, lst: list,
                            return_to_start_for_interrupt=True
                            ) -> InlineKeyboardMarkup:

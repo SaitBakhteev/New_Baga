@@ -54,6 +54,19 @@ class EventUser(Model):
     class Meta:
         table = 'EventUser'
 
+    async def upload_check(self):
+        self.paid_check = 'paid'
+        await self.save()
+
+    async def verify_payment(self, confirm=True):
+        if confirm:
+            self.payment_confirmed = True
+        elif confirm is None:  # если верификация отменена (например нечаянно нажал на подтверждение)
+            self.payment_confirmed = None
+        else:
+            self.payment_confirmed = False
+        await self.save()
+
 
 # Класс для сохранения шаблонов по созданию тренировок
 class Template(Model):

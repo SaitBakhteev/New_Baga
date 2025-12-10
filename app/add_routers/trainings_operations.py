@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from config import bot, setup_logger, reper_dedline_definiton
 from ..keyboards import return_to_start_markup
 from ..database import requests as db_req
+from ..database.models import *
 from app.states import SendCheckFSM
 from ..universal_coroutines import *
 import app.states as st
@@ -43,8 +44,12 @@ class SendCheck():
 
     async def _send_check(self):
         file_id = self._call.photo[-1].file_id
-        await bot.send_photo(chat_id=1933865493, photo=file_id,  caption='Чек об оплате')
-        await db_req.update_event_user_paid_check()
+        event_user_id = int(self._call.data.split(':')[1])
+        event_user = await EventUser.get(id=event_user_id)
+        await event_user.upload_cjeck()
+        await bot.send_photo(chat_id=1933865493,
+                             photo=file_id,  caption='Чек об оплате',
+                             reply_markup=kb.payment_verify_kb(event_user_id))
         await choose_event(self._call, self._state, self._is_admin)
         if payment_notify is not True:
             await self._call.message.answer('❗️<b>ВНИМАНИЕ</b>❗️\n'
@@ -175,13 +180,13 @@ class TrainingsOperations():
         asyncio.create_task(delete_bkg(message))
 
 
-# Записать друга на тренировку
-@add_router.callback_query(F.data == 'add_friend')
-async def add_friend(call: CallbackQuery, state: FSMContext):
-    await call.message.answer('Введите никнейм вашего друга.\n'
-                              '<i>Пример</i>: @ivanov1934',
-                              parse_mode='HTML', reply_markup=kb.return_to_start_markup())
-    await state.set_state(st.AddFriendFSM.add_friend)
+    # Записать друга на тренировку
+    # @add_router.callback_query(F.data == 'add_friend')
+    async def add_friend(call: CallbackQuery, state: FSMContext):
+        await call.message.answer('Введите никнейм вашего друга.\n'
+                                  '<i>Пример</i>: @ivanov1934',
+                                  parse_mode='HTML', reply_markup=kb.return_to_start_markup())
+        await state.set_state(st.AddFriendFSM.add_friend)
 
 
 @add_router.message(st.AddFriendFSM.add_friend)

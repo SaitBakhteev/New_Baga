@@ -333,6 +333,8 @@ async def update_event_user_after_add_friend(user):
     await EventUser.filter(user=user).update(friend='+')
 
 
+
+
 # # Обновление поля created_at после перехода из резерва
 # async def update_event_user_after_transfer(event_id, user_id, now):
 #     await EventUser.filter(user_id=user_id, event_id=event_id).update(created_at=now)
