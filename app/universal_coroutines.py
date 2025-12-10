@@ -1,10 +1,10 @@
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery, TelegramObject, BufferedInputFile, FSInputFile
+from aiogram.types import Message, CallbackQuery
 
 from app.database import requests as db_req
 from app import keyboards as kb
 from app import states as st
-from config import bot, setup_logger, reper_dedline_definiton, TRAINING_TYPES, DEDLINE_TYPE, NUMBERS
+from config import setup_logger
 import asyncio
 
 logger = setup_logger(__name__)
@@ -16,6 +16,46 @@ async def delete_bkg(call_mess: Message | CallbackQuery):
         call_mess = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
         await call_mess.bot.delete_message(call_mess.chat.id, call_mess.message_id)
     except Exception:
+        return
+
+
+# Регистрация
+async def registration(event: Message | CallbackQuery):
+    username = event.from_user.username
+    event_message = event.message if isinstance(event, CallbackQuery) else event
+    if username:
+        await event_message.answer(
+            "Спорт у дома приветсвует Вас в нашем телеграмм-боте для записи на тренировки.😊\n"
+            "Для того, чтобы воспользоваться этим ботом нажмите на кнопку регистрации.\n"
+            "При этом нажимая на кнопку регистрации, Вы соглашаетесь со всеми условиями предоставления "
+            'персональных данных своего телеграмм аккаунта и иных условий пользовательского соглашения, '
+            'описанных <a href="https://disk.yandex.ru/i/J4i-dcxqrgKCPw"><b>здесь</b></a>.',
+            reply_markup=kb.registration_kb)
+    else:
+        await event_message.answer(
+            "Сожалеем, но у Вас отсутствует никнейм телеграмм 🥺\n"
+            "ℹ️ Как установить никнейм (username):\n"
+            "1. Откройте 'Настройки' Telegram\n"
+            "2. Выберите 'Изменить профиль'\n"
+            "3. В поле 'Username' укажите желаемый ник\n"
+            "4. После этого возвращайтесь в бота!☺️"
+        )
+
+
+async def cmd_start(call_mess: CallbackQuery | Message, state: FSMContext, is_admin: bool, user_cache):
+    try:
+        if call_mess.from_user.id not in user_cache:
+            await registration(call_mess)
+            return
+        await state.clear()
+        call_mess = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
+        await call_mess.answer(
+            f"Для работы с ботом воспользуйтесь командами меню, расположенными "
+            f"слева внизу (если у вас на устройстве стандатная раскладка).\n↙️"
+        )
+    except Exception as e:
+        await logger.error(f'Ошибка в cmd_start: {e}')
+        # stream_logger.error(log_message)
         return
 
 

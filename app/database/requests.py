@@ -94,7 +94,7 @@ async def get_event(id=None, for_telegramm=False,
     try:
         if for_telegramm:
             return await (
-                Event.get(id=id).values('payment_dedline', 'stars',
+                Event.get(id=id).values('id', 'payment_dedline', 'stars',
                                         'event_datetime', 'event_text',
                                         'participants_count')
             )
@@ -123,7 +123,8 @@ async def get_event(id=None, for_telegramm=False,
 
             else:
                 return await (Event.filter(id=id).values(
-                    'id', 'payment_dedline', 'event_datetime', 'event_text', 'participants_count', 'stars'
+                    'id', 'payment_dedline', 'event_datetime', 'event_text', 'participants_count', 'stars',
+                    'training_type'
                 )
                 )
 
@@ -131,7 +132,7 @@ async def get_event(id=None, for_telegramm=False,
             return await Event.get(id=id) if id else \
                 await (
                     Event.all().order_by('id').
-                    values('id', 'payment_dedline', 'event_datetime',
+                    values('id', 'payment_dedline', 'event_datetime', 'training_type',
                            'event_text', 'participants_count', 'stars')
                 )
     except DoesNotExist:
@@ -175,16 +176,25 @@ async def get_event_user(event_id=None, user_tg_id=None,
                                    'paid_check',
                                    'friend',
                                    'created_at',
-                                   'event__participants_count',
-                                   'event__id'))
+                                   'event__participants_count'))
             result = sorted(result, key=lambda x: x['created_at'].replace(tzinfo=None))
-            print(result)
             return result
 
     except DoesNotExist:
         logger.error('get_event_user: User DoesNotExist')
     except Exception as e:
         logger.error(f'get_event_user: {e}')
+
+
+# Проверка не состоит ди уже в записи участник, во избежание багов
+async def get_event_user_for_check_existing(event_id, user_id):
+    return await EventUser.filter(event_id=event_id, user_id=user_id).exists()
+
+
+async def get_event_user_after_delete(event_id):
+    result = await EventUser.filter(event_id=event_id).prefetch_related('event', 'user').all()
+    result = sorted(result, key=lambda x: x.created_at.replace(tzinfo=None))
+    return result
 
 
 # Запрос для проверки можно ли добавить друга
@@ -283,7 +293,7 @@ async def update_event(event_id: int, data, **kwargs):
         await Event.filter(id=event_id).update(stars=kwargs['stars'])
 
 
-
+# Запрос к БД для обновления записей EventUser при нажатии пользователем кнопки '✔️ Я оплатил'
 async def update_event_user(user_id: int, event_id: int,
                             payment_notify: bool = False,
                             replace_to_end: bool = None):
@@ -307,12 +317,6 @@ async def update_event_user(user_id: int, event_id: int,
         logger.error(f'update_event_user: {e}')
 
 
-# Запрос к БД для обновления записей EventUser при нажатии пользователем кнопки '✔️ Я оплатил'
-async def update_event_user_paid_check(id: int):
-    await (EventUser.filter(id=id).update(paid_check='paid'))
-
-
-
 # Запрос к БД для обновления записей EventUser при проверке админом оплаты
 async def update_event_user_for_payment_verify(id_list: list, is_confirm=True):
     if is_confirm:  # если админ подтверждает оплату
@@ -329,9 +333,13 @@ async def update_event_user_after_add_friend(user):
     await EventUser.filter(user=user).update(friend='+')
 
 
-# Обновление поля created_at после перехода из резерва
-async def update_event_user_after_transfer(event_id, user_id, now):
-    await EventUser.filter(user_id=user_id, event_id=event_id).update(created_at=now)
+# # Обновление поля created_at после перехода из резерва
+# async def update_event_user_after_transfer(event_id, user_id, now):
+#     await EventUser.filter(user_id=user_id, event_id=event_id).update(created_at=now)
+
+
+async def update_event_user_after_delete(update_list):
+    await EventUser.bulk_update(update_list, ['created_at'])
 
 
 async def test():

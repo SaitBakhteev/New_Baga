@@ -15,7 +15,7 @@ import app.database.requests as db_req  # импортирование моду�
 from .schedule import delete_events, test_stat, stars_dict_getter, general_raiting_getter
 from .schedule import test_for_sch
 from .add_routers.trainings_operations import add_router
-from .universal_coroutines import delete_bkg, choose_event
+from .universal_coroutines import *
 import app.keyboards as kb
 import app.states as st
 from app.tutorial import (TUTORIAL, ADMIN_TUTORIAL, SIGN_UP_FOR_TRAINING_TUTORIAL,
@@ -43,6 +43,7 @@ class AdminMiddleware(BaseMiddleware):
             data: Dict[str, Any]
     ) -> Any:
         # Проверяем, является ли пользователь администратором
+        data['user_cache'] = user_cache
         if isinstance(event, (Message, CallbackQuery)):
             user_tg_id = event.from_user.id
 
@@ -89,31 +90,6 @@ user_router.callback_query.middleware(AdminMiddleware())
 user_router.include_router(add_router)
 
 
-
-
-# Регистрация
-async def registration(event: Message | CallbackQuery):
-    username = event.from_user.username
-    event_message = event.message if isinstance(event, CallbackQuery) else event
-    if username:
-        await event_message.answer(
-            "Спорт у дома приветсвует Вас в нашем телеграмм-боте для записи на тренировки.😊\n"
-            "Для того, чтобы воспользоваться этим ботом нажмите на кнопку регистрации.\n"
-            "При этом нажимая на кнопку регистрации, Вы соглашаетесь со всеми условиями предоставления "
-            'персональных данных своего телеграмм аккаунта и иных условий пользовательского соглашения, '
-            'описанных <a href="https://disk.yandex.ru/i/J4i-dcxqrgKCPw"><b>здесь</b></a>.',
-            reply_markup=kb.registration_kb)
-    else:
-        await event_message.answer(
-            "Сожалеем, но у Вас отсутствует никнейм телеграмм 🥺\n"
-            "ℹ️ Как установить никнейм (username):\n"
-            "1. Откройте 'Настройки' Telegram\n"
-            "2. Выберите 'Изменить профиль'\n"
-            "3. В поле 'Username' укажите желаемый ник\n"
-            "4. После этого возвращайтесь в бота!☺️"
-        )
-
-
 @user_router.callback_query(F.data == 'registration')
 async def registration_callback_query(call: CallbackQuery, state: FSMContext):
     await db_req.get_or_create_user(from_user=call.from_user, create_user=True)
@@ -126,29 +102,8 @@ async def registration_callback_query(call: CallbackQuery, state: FSMContext):
         f"где Вы можете выбрать интересующую Вас команду."
     )
 
-
 # ----- ОБРАБОТКА /start -----------
 @user_router.message(CommandStart())
-async def cmd_start(call_mess: CallbackQuery | Message, state: FSMContext, is_admin: bool):
-    try:
-        if call_mess.from_user.id not in user_cache:
-            await registration(call_mess)
-            return
-        await state.clear()
-        call_mess = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
-        await call_mess.answer(
-            f"Для работы с ботом воспользуйтесь командами меню, расположенными "
-            f"слева внизу (если у вас на устройстве стандатная раскладка).\n↙️"
-        )
-        if call_mess.from_user.username == "radik313":
-            await call_mess.answer("Эээйй!!! Щупряк!!")
-        if call_mess.from_user.username == "Rinat_Tranzit":
-            await call_mess.answer("Мансура на тебя нет!!")
-    except Exception as e:
-        log_message = f'Ошибюка в cmd_start: {e}'
-        await logger.error(log_message)
-        # stream_logger.error(log_message)
-        return
 
 
 # Кнопка прерывания
