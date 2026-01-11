@@ -1,64 +1,19 @@
 from aiogram.filters import Command
-from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message, FSInputFile
 from aiogram import Router, F
 
 from datetime import datetime, timedelta
 
-from config import bot, setup_logger, reper_dedline_definiton
+from config import bot, reper_dedline_definiton
 from ..keyboards import return_to_start_markup
-from ..database import requests as db_req
 from ..database.models import *
 from app.states import SendCheckFSM
-from ..universal_coroutines import *
+from app.operations.often_useful_funcs import *
 import app.states as st
 
 
 logger = setup_logger(__name__)
 
 add_router = Router()  # дополнительный роутер, чтобы разгрузить бизнес-логику
-
-
-# Класс отправки чека об оплате
-class SendCheck():
-    def __init__(self, call: Message | CallbackQuery,
-                 state: FSMContext,
-                 id: int,
-                 is_admin: bool):
-        self._call, self._state, self._is_admin = call, state, is_admin
-        if isinstance(call, CallbackQuery):
-            self._call_data = 'upload_check'
-        else:
-            self._call_data = 'send_check'
-
-    async def dispatch(self):
-        match self._call_data:
-            case 'upload_check':
-                await self._upload_check()
-            case 'send_check':
-                await self._send_check()
-
-    async def _upload_check(self):
-        await self._call.message.answer('Загрузите чек об оплате', reply_markup=return_to_start_markup())
-        await self._state.set_state(SendCheckFSM.send_check)
-
-    async def _send_check(self):
-        file_id = self._call.photo[-1].file_id
-        event_user_id = int(self._call.data.split(':')[1])
-        event_user = await EventUser.get(id=event_user_id)
-        await event_user.upload_cjeck()
-        await bot.send_photo(chat_id=1933865493,
-                             photo=file_id,  caption='Чек об оплате',
-                             reply_markup=kb.payment_verify_kb(event_user_id))
-        await choose_event(self._call, self._state, self._is_admin)
-        if payment_notify is not True:
-            await self._call.message.answer('❗️<b>ВНИМАНИЕ</b>❗️\n'
-                                      'Вы отменили уведомление об оплате. Но это не '
-                                      'означает автоматический возврат денежных средств, если '
-                                      'Вы уже оплатили. Поэтому для возврата денежных средств обратитесь '
-                                      'к админу тренировки.')
-
-        # self._state.update_data(file_id = file_id)
 
 
 class TrainingsOperations():
@@ -73,24 +28,37 @@ class TrainingsOperations():
             if self._handler.data.startswith('choose_event'):
                 self._call_choose_event(self._handler, self._state, self._is_admin)
             elif self._handler.data.startswith('sign_up_for_training'):
-                self._sign_up_for_training(self._handler, self._state, self._is_admin)
-            elif self._handler.startswith('sign_up_for_training'):
+                self._sign_up_for_training()
+            # elif self._handler.startswith('sign_up_for_training'):
+        elif self._state.get_state() == st.DeleteFromTrainingFSM.delete_from_training:
+            self._delete_from_training_confirm(self._handler, self._state, self._is_admin, self._user_cache)
         else:
             if self._state.get_state() == st.DeleteFromTrainingFSM.delete_from_training:
                 self._delete_from_training_confirm(self._handler, self._state, self._is_admin, self._user_cache)
 
     async def _call_choose_event(self, call: CallbackQuery, state: FSMContext, is_admin: bool):
-        await choose_event(call, state, is_admin)
+        await show_formed_info_about_event(call, state, is_admin)
 
     # Записаться на тренировку
-    async def _sign_up_for_training(self, call: CallbackQuery, state: FSMContext, is_admin: bool):
+    async def _sign_up_for_training(self):
         try:
-            data = await state.get_data()
-            event, now = data['event'], datetime.now()
-            user = await db_req.get_or_create_user(call.from_user, True)
-            data['user_id'], data['created_at'] = user['id'], datetime.now().replace(tzinfo=None)
+            event_id = int(self._handler.data.split(':')[1])
+            event = db_req.get_event(id=event_id)
+            event_user = await db_req.get_event_user(event_id=event_id)
+            ''' Подгружаем из БД все необходимые данные по тренировке '''
+
+            user_id = self._user_cache[self._handler.from_user.id].id
+            now = datetime.now().replace(tzinfo=None)
+            data = {'user_id': user_id,
+                    'event_id': event_id,
+                    'created_at': now,
+                    'modified_at': now}
+            text = show_text_about_event(event=event,
+                                         event_user=event_user,
+                                         tg_id=self._handler.from_user.id,
+                                         is_admin=self._is_admin,)
             await db_req.create_event_user(data)
-            await choose_event(call, state, is_admin)
+            await show_formed_info_about_event(call, is_admin)
             text = ('Вы записались на тренировку.\n'
                     'Если у вас уже оплачена эта тренировка, нажмите на кнопку <i>"✔️ Тренировка оплачена"</i>')
             reper_dedline, dedline_type = reper_dedline_definiton(
@@ -173,12 +141,11 @@ class TrainingsOperations():
                     await bot.send_message(chat_id=res_tg_id, text=text, parse_mode='HTML')
             else:
                 await message.answer('Удаление прервано')
-                await choose_event(message, state, is_admin)
+                await show_formed_info_about_event(message, state, is_admin)
         except Exception as e:
             await logger.error(f'ошибка в delete_from_training_confirm: {e}')
             await cmd_start(message, state, is_admin)
         asyncio.create_task(delete_bkg(message))
-
 
     # Записать друга на тренировку
     # @add_router.callback_query(F.data == 'add_friend')
@@ -190,7 +157,7 @@ class TrainingsOperations():
 
 
 @add_router.message(st.AddFriendFSM.add_friend)
-async def add_friend(message: Message, state: FSMContext, is_admin: bool):
+async def add_friend(message: Message, state: FSMContext, is_admin: bool, user_cache):
     try:
         data = await state.get_data()
         event_id = data.get('event_id')
@@ -237,7 +204,7 @@ async def add_friend(message: Message, state: FSMContext, is_admin: bool):
 
 
 @add_router.callback_query(F.data.startswith('add_friend') and st.AddFriendFSM.add_friend_confirm)
-async def add_friend_confirm(call: CallbackQuery, state: FSMContext, is_admin: bool):
+async def add_friend_confirm(call: CallbackQuery, state: FSMContext, is_admin: bool, user_cache):
     try:
         call_data = call.data.split(':')[1]
         if call_data == 'yes':
@@ -265,7 +232,7 @@ async def add_friend_confirm(call: CallbackQuery, state: FSMContext, is_admin: b
         else:
             await call.message.answer(f'Вы отменили запись друга на тренировку🟡')
         await state.set_state(None)  # выходим из состояния, чтобы кнопки дезактивировались
-        await choose_event(call, state, is_admin)
+        await show_formed_info_about_event(call, state, is_admin)
     except Exception as e:
         await call.message.answer(f'Возникла ошибка')
         await logger.error(f'add_friend_confirm: {e}\n'
@@ -325,4 +292,47 @@ async def add_command(message: Message, is_admin: bool):
 #         await logger.error(e)
 #         # stream_logger.error(e)
 
+
+''' Неиспользумые фичи, но потенциально могут пригодиться '''
+
+# Класс отправки чека об оплате
+# class SendCheck():
+#     def __init__(self, call: Message | CallbackQuery,
+#                  state: FSMContext,
+#                  id: int,
+#                  is_admin: bool):
+#         self._call, self._state, self._is_admin = call, state, is_admin
+#         if isinstance(call, CallbackQuery):
+#             self._call_data = 'upload_check'
+#         else:
+#             self._call_data = 'send_check'
+#
+#     async def dispatch(self):
+#         match self._call_data:
+#             case 'upload_check':
+#                 await self._upload_check()
+#             case 'send_check':
+#                 await self._send_check()
+#
+#     async def _upload_check(self):
+#         await self._call.message.answer('Загрузите чек об оплате', reply_markup=return_to_start_markup())
+#         await self._state.set_state(SendCheckFSM.send_check)
+#
+#     async def _send_check(self):
+#         file_id = self._call.photo[-1].file_id
+#         event_user_id = int(self._call.data.split(':')[1])
+#         event_user = await EventUser.get(id=event_user_id)
+#         await event_user.upload_cjeck()
+#         await bot.send_photo(chat_id=1933865493,
+#                              photo=file_id,  caption='Чек об оплате',
+#                              reply_markup=kb.payment_verify_kb(event_user_id))
+#         await choose_event(self._call, self._state, self._is_admin)
+#         if payment_notify is not True:
+#             await self._call.message.answer('❗️<b>ВНИМАНИЕ</b>❗️\n'
+#                                       'Вы отменили уведомление об оплате. Но это не '
+#                                       'означает автоматический возврат денежных средств, если '
+#                                       'Вы уже оплатили. Поэтому для возврата денежных средств обратитесь '
+#                                       'к админу тренировки.')
+#
+#         # self._state.update_data(file_id = file_id)
 

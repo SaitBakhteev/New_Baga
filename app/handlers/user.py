@@ -1,26 +1,21 @@
 import os
-import logging
 
-import asyncio
 from functools import reduce
 from typing import Callable, Dict, Any, Awaitable
-from datetime import datetime, timedelta, time, date, timezone
+from datetime import datetime, timedelta, time, date
 
 from aiogram import Router, F, BaseMiddleware, Bot
-from aiogram.types import Message, CallbackQuery, TelegramObject, BufferedInputFile, FSInputFile
-from aiogram.filters import CommandStart, Command, StateFilter
-from aiogram.fsm.context import FSMContext
+from aiogram.types import TelegramObject, BufferedInputFile
+from aiogram.filters import CommandStart, Command
 
-import app.database.requests as db_req  # импортирование модуля запросов к БД
-from .schedule import delete_events, test_stat, stars_dict_getter, general_raiting_getter
-from .schedule import test_for_sch
-from .add_routers.trainings_operations import add_router
-from .universal_coroutines import *
+from app.schedule import stars_dict_getter, general_raiting_getter
+from app.operations.trainings_operations import add_router
+from app.operations.often_useful_funcs import *
 import app.keyboards as kb
 import app.states as st
-from app.tutorial import (TUTORIAL, ADMIN_TUTORIAL, SIGN_UP_FOR_TRAINING_TUTORIAL,
+from app.tutorial import (SIGN_UP_FOR_TRAINING_TUTORIAL,
                           MARKS_DESCRIPTION, GENERAL_TUTORIAL, VIDEO_ADMIN_TUTORIAL)
-from config import bot, setup_logger, reper_dedline_definiton, TRAINING_TYPES, DEDLINE_TYPE, NUMBERS
+from config import setup_logger, reper_dedline_definiton, TRAINING_TYPES, DEDLINE_TYPE, NUMBERS
 
 logger = setup_logger(__name__)
 
@@ -130,7 +125,7 @@ async def return_to_start(call: CallbackQuery, state: FSMContext, is_admin: bool
         case (st.AddFriendFSM.add_friend | st.DeleteFromTrainingFSM.delete_from_training |
               st.ChooseEventFSM.give_star | st.ChooseEventFSM.give_star):
             await state.set_state(None)
-            await choose_event(call, state, is_admin)
+            await show_formed_info_about_event(call, state, is_admin)
         case st.CreateEventFSM.dedline_type | st.EditAdminFSM.edit_admin | st.DeleteTemplateFSM.delete_template:
             await state.clear()
             await admin_panel(call, state, is_admin)
@@ -838,7 +833,7 @@ async def add_dedline_and_finish(call: CallbackQuery | Message, state: FSMContex
         await show_mess.answer("Возникла ошибка! Повторите создание тренировки")
         await cmd_start(call, state, is_admin)
         await logger.error(f"Ошибка при добавлении тренировки: {e}")
-    await choose_event(show_mess, state, is_admin)
+    await show_formed_info_about_event(show_mess, state, is_admin)
     asyncio.create_task(delete_bkg(show_mess))
 
 
@@ -851,10 +846,10 @@ async def training_manage(call: CallbackQuery, state: FSMContext):
         data = await state.get_data()
         events, event_id, event, training_type = data['events'], data['event_id'], data['event'], data['training_type']
         await state.set_state(st.ChooseEventFSM.admin_management)
-        trn_info = await training_info(call, True, events=events,
-                                       event_id=event_id,
-                                       event=event,
-                                       training_type=training_type)
+        trn_info = await training_info_formation(call, True, events=events,
+                                                 event_id=event_id,
+                                                 event=event,
+                                                 training_type=training_type)
         await call.message.answer(trn_info['text'],
                                   parse_mode="HTML",
                                   reply_markup=kb.admin_train_manag_kb)
@@ -962,7 +957,7 @@ async def confirm_payment(message: Message, state: FSMContext, is_admin: bool):
             report = '🛑 Статусы <b>не обновлены</b>. Причины описаны в <b>/admin</b>.'
 
         await message.answer(report, parse_mode='HTML')
-        await choose_event(message, state, is_admin)
+        await show_formed_info_about_event(message, state, is_admin)
         asyncio.create_task(delete_bkg(message))
 
     except Exception as e:
@@ -997,7 +992,7 @@ async def give_star(call: CallbackQuery, state: FSMContext, is_admin: bool):
                                   'следующими никнеймами:\n'
                                   f'{stars_txt}', parse_mode='HTML')
         await state.set_state(None)
-        await choose_event(call, state, is_admin)
+        await show_formed_info_about_event(call, state, is_admin)
 
 
 @user_router.message(st.ChooseEventFSM.give_star)
@@ -1038,7 +1033,7 @@ async def confirm_give_star(message: Message, state: FSMContext, is_admin: bool)
         answer = 'Отправлено невалидное сообщение. Операция отменена ⛔️'
     await message.answer(answer)
     # await state.set_state(None)
-    await choose_event(message, state, is_admin)
+    await show_formed_info_about_event(message, state, is_admin)
 
 
 # --------- Присвоить звезду. Конец -------------
@@ -1094,7 +1089,7 @@ async def drop_participant_middlware_state(message: Message, state: FSMContext, 
         pass
 
     await state.set_state(None)
-    await choose_event(message, state, is_admin)
+    await show_formed_info_about_event(message, state, is_admin)
     await message.answer(f'{text}\nОперация отклонена')
     asyncio.create_task(delete_bkg(message))
 
@@ -1113,7 +1108,7 @@ async def drop_participant(call: CallbackQuery, state: FSMContext, is_admin: boo
             text = 'Участник перемещен в конец очереди.'
     else:
         text = 'Операция отменена.'
-    await choose_event(call, state, is_admin)
+    await show_formed_info_about_event(call, state, is_admin)
     await call.message.answer(text)
     asyncio.create_task(delete_bkg(call))
 

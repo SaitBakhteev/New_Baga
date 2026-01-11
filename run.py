@@ -1,13 +1,9 @@
-from datetime import datetime
 import asyncio
 import logging
-from datetime import timedelta
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler  # для webhook
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -15,11 +11,11 @@ from apscheduler.triggers.cron import CronTrigger
 from tortoise import Tortoise, connections
 from tortoise.exceptions import DBConnectionError, OperationalError
 
-from app.user import user_router, user_cache  #, dedlines, dedline_notifications
-from app.database.requests import get_all_users, get_event
+from app.handlers.user import user_router, user_cache  #, dedlines, dedline_notifications
+from app.database.requests import get_all_users
 
 from config import REPER_HOURS, TOKEN, TORTOISE_ORM, season_index, setup_logger, setup_base_logger
-from app.schedule import delete_events, check_payment_dedline, stat_raiting
+from app.schedule import delete_events, check_payment_dedline
 
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 

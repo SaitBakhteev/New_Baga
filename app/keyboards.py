@@ -223,58 +223,6 @@ def show_events_kb(event_user: list, *args) -> InlineKeyboardMarkup:
         # base_logger.error(f'Ошибка строка 193 = {e}')
 
 
-# Фрмирование текста по тренировке со списком участников
-async def show_text_about_event(event: dict, event_user: list,
-                                tg_id: int,
-                                is_admin: bool=False) -> str:
-    text, participants_count = event['event_text'], int(event['participants_count'])
-        # Находим границы фрагмента по дате трени
-    idx_0, idx_end = text.find('<b>Дата тренировки</b>:'), text.find('<b>Длительность</b>')
-    ev_dt_info = text[idx_0:idx_end]
-    # Находим день недели по индексу от datetime
-    day_idx = event['event_datetime'].weekday()
-    day = DAYS[day_idx]
-    # Присваиваем фрагмент инфы по трени временной переменной и вставляем в новый фрагмент день недели
-    new_info = ev_dt_info.replace('\n',f' ({day})\n')
-    text = text.replace(ev_dt_info, new_info)
-
-    if event['stars'] is not None:
-        stars_text = event['stars'].replace(' ', '').split(',')  # переводим текстовый набор user_id в список
-        star_tpl = tuple(map(lambda x: int(x), stars_text))  # преобразуем в кортеж целых чисел значений user_id
-    else:
-        star_tpl = None
-    text += '\n\n<b>ОСНОВНОЙ СПИСОК</b>\n'
-    for i, item in enumerate(event_user):
-        if i + 1 <= participants_count:
-            if item['payment_confirmed'] is False:
-                tag = '❌'
-            elif not item['payment_confirmed'] and item['paid_check']:
-                tag = '✔️'
-            elif item['payment_confirmed']:
-                tag = '✅'
-            else:
-                tag = '⚠️'
-        else:
-            tag = ''
-        name = item["user__tg_name"] if item["user__tg_name"] else ''
-
-        if is_admin:  # в списке участников имя аккаунта выводится только для админов
-            username = f"@{item['user__tg_username']}" if item['user__tg_username'] else ""
-        else:
-            username = ''
-        star = "⭐️" if star_tpl is not None and item['user__id'] in star_tpl else ''
-
-        # Чтобы пользователь видел себя выделенным шрифтом в списке на тренировку
-        name = f'<b><i>{name}</i></b>' if item['user__tg_id'] == tg_id else name
-
-        text+=f"{star}{i+1}. {name} {username}  {tag}\n"
-        if i + 1 == participants_count:
-            text += "\n 📌📌 <b><i>Резерв</i></b>: \n"
-
-    text += '\n<b>❗️ВАЖНЫЕ РЕКОМЕНДАЦИИ</b> в <b>/rec</b>'
-
-    return text
-
 
 # Кнопки под списком участников тренировки
 def sign_up_for_training(

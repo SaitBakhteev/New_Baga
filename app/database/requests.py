@@ -71,14 +71,16 @@ async def create_event_user(data, **kwargs):
         await EventUser.create(
             user_id=data['user_id'],
             event_id=data['event_id'],
-            created_at=data['created_at']
+            created_at=data['created_at'],
+            modified_at=data['modified_at']
         )
     else:
         await EventUser.create(
             user_id=kwargs['friend_id'],
             event_id=data['event_id'],
             friend=kwargs['i_am_friend'],
-            created_at=data['created_at']
+            created_at=data['created_at'],
+            modified_at=data['modified_at']
         )
 
 

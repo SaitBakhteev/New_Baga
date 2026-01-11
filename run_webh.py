@@ -1,11 +1,8 @@
 with open("/tmp/bot_debug.log", "a") as f:
     f.write("=== STARTING BOT новая отладка ===\n")
 
-
-from datetime import datetime
 import asyncio
 import logging
-from datetime import timedelta
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -26,8 +23,9 @@ from tortoise import Tortoise, connections
 from tortoise.exceptions import DBConnectionError, OperationalError
 
 
-from app.user import user_router, user_cache  #, dedlines, dedline_notifications
-from app.database.requests import get_all_users, get_event
+from app.handlers.user import user_router, user_cache  #, dedlines, dedline_notifications
+from app.database.requests import get_all_users
+
 with open("/tmp/bot_debug.log", "a") as f:
     f.write("=== line 32 ===\n")
 
