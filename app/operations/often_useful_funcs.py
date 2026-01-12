@@ -1,10 +1,12 @@
+from re import fullmatch
+
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
 from app.database import requests as db_req
 from app import keyboards as kb
 from app import states as st
-from config import setup_logger, DAYS
+from config import setup_logger, DAYS, user_cache
 import asyncio
 
 logger = setup_logger(__name__)
@@ -62,9 +64,7 @@ async def cmd_start(call_mess: CallbackQuery | Message, state: FSMContext, is_ad
 ''' ДАЛЕЕ ИДУТ ФУНКЦИИ ПО ОТОБРАЖЕНИЮ ТРЕНИРОВКИ '''
 
 # Фрмирование текста по тренировке со списком участников
-def show_text_about_event(event: dict, event_user: list,
-                                tg_id: int,
-                                is_admin: bool=False) -> str:
+def show_text_about_event(event: dict, event_user: list, user_id: int) -> str:
     text, participants_count = event['event_text'], int(event['participants_count'])
         # Находим границы фрагмента по дате трени
     idx_0, idx_end = text.find('<b>Дата тренировки</b>:'), text.find('<b>Длительность</b>')
@@ -94,18 +94,13 @@ def show_text_about_event(event: dict, event_user: list,
                 tag = '⚠️'
         else:
             tag = ''
-        name = item["user__tg_name"] if item["user__tg_name"] else ''
-
-        if is_admin:  # в списке участников имя аккаунта выводится только для админов
-            username = f"@{item['user__tg_username']}" if item['user__tg_username'] else ""
-        else:
-            username = ''
+        fullname = f"{item["user__tg_name"]} @{item['user__tg_username']}"
         star = "⭐️" if star_tpl is not None and item['user__id'] in star_tpl else ''
 
         # Чтобы пользователь видел себя выделенным шрифтом в списке на тренировку
-        name = f'<b><i>{name}</i></b>' if item['user__tg_id'] == tg_id else name
+        fullname = f'<b><i>{fullname}</i></b>' if item['user__id'] == user_id else fullname
 
-        text+=f"{star}{i+1}. {name} {username}  {tag}\n"
+        text+=f"{star}{i+1}. {fullname} {tag}\n"
         if i + 1 == participants_count:
             text += "\n 📌📌 <b><i>Резерв</i></b>: \n"
 
@@ -114,71 +109,20 @@ def show_text_about_event(event: dict, event_user: list,
     return text
 
 
-
-async def training_info_formation(call_mess: Message | CallbackQuery, is_admin: bool, **kwargs):
-    try:
-        # events, training_type = kwargs['events'], kwargs['training_type']
-        event_id, event, event_user = kwargs['event_id'], kwargs['event'], kwargs['event_user']
-        signed_up_for_training, payment_confirmed, availible_pay, availible_notify_by_payment = (
-            kwargs['signed_up_for_training'], kwargs['payment_confirmed'],
-            kwargs['availible_pay'], kwargs['availible_notify_by_payment']
-        )
-
-        text = await kb.show_text_about_event(event, event_user,
-                                              tg_id=call_mess.from_user.id,
-                                              is_admin=is_admin)
-        text = f'<b>Тип тренировки</b>: {event['training_type']}\n' + text
-        keyboard = kb.sign_up_for_training(
-            signed_up_for_training,
-            availible_pay,
-            admin_permissions=is_admin,
-            payment_confirmed=payment_confirmed,
-            availible_notify_by_payment=availible_notify_by_payment,
-            event_id=event_id
-        )
-
-        return {'text': text, 'keyboard': keyboard}
-    except Exception as e:
-        await logger.error(f'Error on /training_text: {e}')
-        # stream_logger.error(f'Error on /training_text: {e}')
-        pass
-
-
 # После выбора тренировки отображается текущий список заявишихся участников
-
-async def show_formed_info_about_event(
-        call_mess: Message | CallbackQuery, is_admin: bool,
-        event_id: int, event: list, event_user: list,
-):
+async def show_formed_info_about_event(call_mess: Message | CallbackQuery,
+                                       is_admin: bool,
+                                       event_id: int,
+                                       user_id: int):
     try:
-        user__tg_id = call_mess.from_user.id  # считываем tg_id данного пользователя
+        event = db_req.get_event(id=event_id)
+        event_user = await db_req.get_event_user(event_id=event_id)
+        ''' Подгружаем из БД все необходимые данные по тренировке '''
 
-        # Определение параметров отображения инлайн-клавиатуры
-        availible_pay, paid_check, payment_confirmed, availible_notify_by_payment = False, None, None, None
-        signed_up_for_training = True if any(item['user__tg_id'] == user__tg_id for item in event_user) else False
-
-        if signed_up_for_training:  # если пользователь записан на тренировку
-            user_id, paid_check, payment_confirmed = (
-                next((item['user__id'], item['paid_check'], item['payment_confirmed'])
-                     for item in event_user if item['user__tg_id'] == user__tg_id))
-
-            # Определение критериев доступности кнопки оповещения бота об оплате
-            participants_count = int(event['participants_count'])
-            user_place_on_list = next(i + 1 for i, item in enumerate(event_user)
-                                      if item['user__tg_id'] == user__tg_id)
-            availible_pay = True if (user_place_on_list <= participants_count
-                                     and paid_check is None
-                                     and payment_confirmed is None) else False
-            availible_notify_by_payment = True if user_place_on_list <= participants_count else None
-
-        trn_info = await training_info_formation(call_mess=call_mess, is_admin=is_admin,
-                                           event=event, event_user=event_user,
-                                           signed_up_for_training=signed_up_for_training,
-                                           payment_confirmed=payment_confirmed,
-                                           availible_pay=availible_pay,
-                                           availible_notify_by_payment=availible_notify_by_payment)
+        keyboard = kb.training_interface_kb(event, event_user, user_id, is_admin)
+        text = show_text_about_event(event, event_user, user_id)
         mess_handler = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
-        await mess_handler.answer(trn_info['text'], parse_mode='HTML', reply_markup=trn_info['keyboard'])
+        await mess_handler.answer(text, parse_mode='HTML', reply_markup=keyboard)
         asyncio.create_task(delete_bkg(call_mess))
     except Exception as e:
         await logger.error(f'Ошибка в choose_event: {e}')

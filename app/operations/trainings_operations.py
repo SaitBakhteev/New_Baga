@@ -16,6 +16,41 @@ logger = setup_logger(__name__)
 add_router = Router()  # дополнительный роутер, чтобы разгрузить бизнес-логику
 
 
+# Записаться на тренировку
+async def sign_up_for_training(call: CallbackQuery, is_admin: bool):
+    try:
+        user_id = user_cache[call.from_user.id].id
+        event_id = int(call.data.split(':')[1])
+        now = datetime.now().replace(tzinfo=None)
+        data = {'user_id': user_id,
+                'event_id': event_id,
+                'created_at': now,
+                'modified_at': now}
+        await db_req.create_event_user(data)
+        await show_formed_info_about_event(call, is_admin, event_id, user_id)
+        text = ('Вы записались на тренировку.\n'
+                'Если у вас уже оплачена эта тренировка, нажмите на кнопку <i>"✔️ Тренировка оплачена"</i>')
+
+        ### ----- !!  ЗДЕСЬ БУДЕТ ЕЩЁ КОД ПО ОТОБРАЖЕНИЮ СООБЩЕНИЯ ДЛЯ ПОЛЬЗЩОВТАЕЛЯ ПО ДЕДЛАЙНУ  !! --- #####
+
+        await call.message.answer(text, parse_mode='HTML')
+    except Exception as e:
+        await logger.error(e)
+        # stream_logger.error(e)
+
+
+# Уведомить бот об оплате
+class PaymentNotify():
+    def __init__(self, handler: CallbackQuery | Message, state: FSMContext):
+        self._handler, self._state = handler, state
+
+    def dispatch(self):
+        if isinstance(self._handler, CallbackQuery):
+            if self._handler.data.startswith('payment_notify'):
+                event_user_id = int(self._handler.data.split(':')[1])
+        elif self._state.get_state() == st:
+            if self._handler.data.startswith('payment_notify'):
+
 class TrainingsOperations():
     def __init__(self, handler: CallbackQuery | Message,
                  state: FSMContext,
@@ -39,40 +74,6 @@ class TrainingsOperations():
     async def _call_choose_event(self, call: CallbackQuery, state: FSMContext, is_admin: bool):
         await show_formed_info_about_event(call, state, is_admin)
 
-    # Записаться на тренировку
-    async def _sign_up_for_training(self):
-        try:
-            event_id = int(self._handler.data.split(':')[1])
-            event = db_req.get_event(id=event_id)
-            event_user = await db_req.get_event_user(event_id=event_id)
-            ''' Подгружаем из БД все необходимые данные по тренировке '''
-
-            user_id = self._user_cache[self._handler.from_user.id].id
-            now = datetime.now().replace(tzinfo=None)
-            data = {'user_id': user_id,
-                    'event_id': event_id,
-                    'created_at': now,
-                    'modified_at': now}
-            text = show_text_about_event(event=event,
-                                         event_user=event_user,
-                                         tg_id=self._handler.from_user.id,
-                                         is_admin=self._is_admin,)
-            await db_req.create_event_user(data)
-            await show_formed_info_about_event(call, is_admin)
-            text = ('Вы записались на тренировку.\n'
-                    'Если у вас уже оплачена эта тренировка, нажмите на кнопку <i>"✔️ Тренировка оплачена"</i>')
-            reper_dedline, dedline_type = reper_dedline_definiton(
-                real_dedline=event['payment_dedline'].replace(tzinfo=None),
-                now=now, event_datetime=event['event_datetime'].replace(tzinfo=None),
-            )
-            if dedline_type == 'individ_dedline':
-                text += (f'\n\n <b>ВНИМАНИЕ❗️</b>\n'
-                         f' У Вас другой дедлайн оплаты, Вам необходимо оплатить '
-                         f'за тренировку до <b><i>{reper_dedline}</i></b>')
-            await call.message.answer(text, parse_mode='HTML')
-        except Exception as e:
-            await logger.error(e)
-            # stream_logger.error(e)
 
     # # Удалиться из тренировки
     # @add_router.callback_query(F.data == 'delete_from_training')

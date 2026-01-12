@@ -25,8 +25,6 @@ BOT_NAME = os.getenv('BOT_NAME')
 
 user_router = Router()
 
-# Кэш список пользователей и дедлайнов
-user_cache, dedlines, dedline_notifications = dict(), [], []
 
 
 # Мидлварь для проверки прав пользователя

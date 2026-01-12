@@ -225,53 +225,54 @@ def show_events_kb(event_user: list, *args) -> InlineKeyboardMarkup:
 
 
 # Кнопки под списком участников тренировки
-def sign_up_for_training(
-        signed_up_for_training: bool,
-        event_id: int = None,
-        admin_permissions=False, payment_confirmed=False,
-        availible_notify_by_payment: bool = None,
-        event_user_id: int = None,
-        **kwargs
-) -> InlineKeyboardMarkup:
+def training_interface_kb(event: dict,
+                          event_user: list,
+                          user_id: int,
+                          admin_permissions: bool) -> InlineKeyboardMarkup:
     try:
+        # Условия по записи и доступности уведомления об оплате
+        signed_up_for_training = True if any(item['user_id'] == user_id for item in event_user) else False
+        availible_notify_by_payment = None
+        if signed_up_for_training:  # если пользователь записан на тренировку
+            event_user_id, paid_check, payment_confirmed = (
+                next((item['id'], item['paid_check'], item['payment_confirmed'])
+                     for item in event_user if item['user_id'] == user_id)
+            )
+
+            # Определение критериев доступности кнопки оповещения бота об оплате
+            participants_count = int(event['participants_count'])
+            user_place_on_list = next(i + 1 for i, item in enumerate(event_user)
+                                      if item['user_id'] == user_id)
+            availible_notify_by_payment = True if (
+                    user_place_on_list <= participants_count
+                    and paid_check is None and payment_confirmed is None)\
+                else False
+        ''' Находим критерии, которые определят интерфейс по кнопкам'''
+
         keyboard = InlineKeyboardBuilder()
-        if signed_up_for_training is False:
-            keyboard.add(InlineKeyboardButton(
-                text='🟢 Записаться на тренировку',
-                callback_data=f'sign_up_for_training:{event_id}'
-            ))
-        else:
-            keyboard.add(InlineKeyboardButton(
-                text='🔴 Удалиться из тренировки',
-                callback_data='delete_from_training'
-            ))
 
-        ''' Эта кнопка доступна при соблюдении 2 условий: участник в основном списке, поле 'payment_confirmed'
-        в БД not True. Пока не подтвердил оплату, кнопки уведомдления или отмены уведомсления об оплате доступны '''
-        if payment_confirmed is not True and signed_up_for_training:
-            if event_user_id:
-                text, call = '✔️ Тренировка оплачена', f'payment_notify:{event_user_id}'
-            else:
-                text, call = '✖️ Отменить оповещение об оплате', 'payment_notify:i_chancelled_check'
+        text = '🔴 Удалиться из тренировки' if signed_up_for_training else '🟢 Записаться на тренировку'
+        callback_data = f'sign_up_for_training:{event['id']}' if signed_up_for_training \
+            else f'delete_from_training:{event_user_id}'
+        keyboard.add(InlineKeyboardButton(text=text, callback_data=callback_data))
 
-            # Кнопка уведомления об оплате или её отмена доступна, только если участник не в резерве
-            if availible_notify_by_payment:
-                keyboard.button(text=text, callback_data=call)
+        # Кнопка уведомления об оплате или её отмена доступна, только если участник не в резерве
+        if availible_notify_by_payment:
+            text, call = '✔️ Оповестить бот об оплате', f'payment_notify:{event_user_id}'
+            keyboard.button(text=text, callback_data=call)
 
         keyboard.button(text='🤜🏽Записать друга🤛🏽', callback_data='add_friend')
 
         if admin_permissions:
-            if 'event_id' in kwargs:
-                event_id = int(kwargs['event_id'])
-                keyboard.button(
-                    text='💠🤵🏻‍♂️ Администрирование тренировки',
-                    callback_data=f'training_manage:{event_id}'
-                )
+            keyboard.button(
+                text='💠🤵🏻‍♂️ Администрирование тренировки',
+                callback_data=f'training_manage:{event['id']}'
+            )
         keyboard.add(back_kb)
         keyboard.adjust(1)
         return keyboard.as_markup()
     except Exception as e:
-        sync_logger.error(f'Ошибка в siggn_up_for_training: {e}')
+        sync_logger.error(f'Ошибка в training_interface: {e}')
         # base_logger.error(f'Ошибка в siggn_up_for_training: {e}')
 
 

@@ -233,3 +233,7 @@ def reper_dedline_definiton(real_dedline, now=None, event_datetime=None, is_stri
         return (reper_dedline.strftime("%H:%M %d.%m.%Y"), dedline_type)
     else:
         return (reper_dedline, 'not string')
+
+
+# Кэш список пользователей и дедлайнов
+user_cache, dedlines, dedline_notifications = dict(), [], []
