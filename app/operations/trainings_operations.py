@@ -7,6 +7,7 @@ from config import bot, reper_dedline_definiton
 from ..keyboards import return_to_start_markup
 from ..database.models import *
 import app.database.requests as db_rq
+import app.database.event_user_requests as db_rq_event_user
 from app.states import SendCheckFSM
 from app.operations.often_useful_funcs import *
 import app.states as st
@@ -27,7 +28,7 @@ async def sign_up_for_training(call: CallbackQuery, is_admin: bool):
                 'event_id': event_id,
                 'created_at': now,
                 'modified_at': now}
-        await db_req.create_event_user(data)
+        await db_rq_event_user.create_event_user(data)
         await show_formed_info_about_event(call, is_admin, event_id, user_id)
         text = ('Вы записались на тренировку.\n'
                 'Если у вас уже оплачена эта тренировка, нажмите на кнопку <i>"✔️ Тренировка оплачена"</i>')
@@ -40,11 +41,14 @@ async def sign_up_for_training(call: CallbackQuery, is_admin: bool):
         # stream_logger.error(e)
 
 
-# Уведомить бот об оплате
-class PaymentNotify():
+# Родительский класс, чтобы не дублировать метод __init__
+class ParentClassForTrainingOperations:
     def __init__(self, handler: CallbackQuery | Message, state: FSMContext, is_admin: bool):
         self._handler, self._state, self._is_admin = handler, state, is_admin
 
+
+# Уведомить бот об оплате
+class PaymentNotify(ParentClassForTrainingOperations):
     async def dispatch(self):
         if isinstance(self._handler, CallbackQuery):
             if self._handler.data.startswith('payment_notify'):
@@ -61,63 +65,50 @@ class PaymentNotify():
             '❌ (админ не подтвердил оплату).\n'
             'Если Вы подтверждаете факт оплаты и отправки скрина админу, отправьте в сообщении боту слово <i>"да"</i>?'
         )
-        await self._handler.message.answer(text, parse_mode='HTML')
+        await self._handler.message.answer(text, reply_markup=kb.universal_interrupt_button(), parse_mode='HTML')
         await self._state.update_data(event_id=event_id)
         await self._state.set_state(st.PaymenNotify.confirm)
 
     async def _payment_notify_confirm(self):
         try:
-            message = self._handler.message.text
+            message = self._handler.text
+            data = await self._state.get_data()
+            event_id, user_id = data['event_id'], user_cache[self._handler.from_user.id].id
+
             if message.replace('"', '').lower() == "да":
-                data = await self._state.get_data()
-                event_id, user_id = data['event_id'], user_cache[self._handler.from_user.id].id
-                await db_rq. .create_event_user(data)
+                await db_rq_event_user.update_event_user(user_id, event_id, True)
                 text = '✔️ Вы успешно уведомили бот об оплате. Ожидайте в течение суток подтверждения оплаты админом.'
             else:
                 text = '⚠️ Вы отменили уведомление бота об оплате.'
             await self._handler.message.answer(text, parse_mode='HTML')
-        except Exception:
-            pass
+            await self._state.clear()
+            await show_formed_info_about_event(self._handler, self._is_admin, event_id, user_id)
+        except Exception as e:
+            text = '⭕️ Возникла ошибка.'
+            await self._handler.message.answer(text)
+            await cmd_start(self._handler, self._state, self._is_admin, user_cache)
+            await logger.error(f'Ошибка _payment_notify_confirm: {e}')
+        asyncio.create_task(delete_bkg(self._handler))
 
 
-class TrainingsOperations():
-    def __init__(self, handler: CallbackQuery | Message,
-                 state: FSMContext,
-                 is_admin: bool,
-                 user_cache):
-        self._handler, self._state, self._is_admin, self._user_cache = handler, state, is_admin, user_cache
-
+class DeleteFromTraining(ParentClassForTrainingOperations):
     def dispatch(self):
         if isinstance(self._handler, CallbackQuery):
-            if self._handler.data.startswith('choose_event'):
-                self._call_choose_event(self._handler, self._state, self._is_admin)
-            elif self._handler.data.startswith('sign_up_for_training'):
-                self._sign_up_for_training()
-            # elif self._handler.startswith('sign_up_for_training'):
-        elif self._state.get_state() == st.DeleteFromTrainingFSM.delete_from_training:
-            self._delete_from_training_confirm(self._handler, self._state, self._is_admin, self._user_cache)
-        else:
-            if self._state.get_state() == st.DeleteFromTrainingFSM.delete_from_training:
-                self._delete_from_training_confirm(self._handler, self._state, self._is_admin, self._user_cache)
+            if self._handler.data.startswith('delete_from_training'):
+                self._delete_from_training()
+            elif self._state.get_state() == st.DeleteFromTrainingFSM.delete_from_training:
+                self._delete_from_training_confirm()
 
-    async def _call_choose_event(self, call: CallbackQuery, state: FSMContext, is_admin: bool):
-        await show_formed_info_about_event(call, state, is_admin)
+    async def _delete_from_training(self):
+        text =('Если Вы уверены, что хотите удалиться из тренировки напишите в сообщении '
+               '<i><b>да</b></i> и отправьте его.\n'
+               'Если сомневаетесь, отмените действие нажатием на кнопку или отправьте любое другое сообщение')
+        await self._handler.message.answer(text, reply_markup=kb.universal_interrupt_button(), parse_mode='HTML')
+        await self._state.set_state(st.DeleteFromTrainingFSM.delete_from_training)
 
-
-    # # Удалиться из тренировки
-    # @add_router.callback_query(F.data == 'delete_from_training')
-    async def _delete_from_training(self, call: CallbackQuery, state: FSMContext, is_admin: bool):
-        await call.message.answer('Если Вы уверены, что хотите удалиться из тренировки '
-                                  'напишите в сообщении <i><b>да</b></i> и отправьте его.\n'
-                                  'Если сомневаетесь, прервите процесс или отправьте любое слово',
-                                  reply_markup=kb.return_to_start_markup(),
-                                  parse_mode='HTML')
-        await state.set_state(st.DeleteFromTrainingFSM.delete_from_training)
-
-    # @add_router.message(st.DeleteFromTrainingFSM.delete_from_training)
-    async def _delete_from_training_confirm(self, message: Message, state: FSMContext, is_admin: bool, user_cache):
+    async def _delete_from_training_confirm(self):
         try:
-            if message.text.lower().strip() == 'да':
+            if self._handler.text.lower().strip() == 'да':
                 data = await state.get_data()
                 user_id, event_id, event = data.get('user_id'), data.get('event_id'), data.get('event')
                 await cmd_start(message, state, is_admin)
@@ -176,6 +167,37 @@ class TrainingsOperations():
             await logger.error(f'ошибка в delete_from_training_confirm: {e}')
             await cmd_start(message, state, is_admin)
         asyncio.create_task(delete_bkg(message))
+
+
+
+class TrainingsOperations():
+    def __init__(self, handler: CallbackQuery | Message,
+                 state: FSMContext,
+                 is_admin: bool,
+                 user_cache):
+        self._handler, self._state, self._is_admin, self._user_cache = handler, state, is_admin, user_cache
+
+    def dispatch(self):
+        if isinstance(self._handler, CallbackQuery):
+            if self._handler.data.startswith('choose_event'):
+                self._call_choose_event(self._handler, self._state, self._is_admin)
+            elif self._handler.data.startswith('sign_up_for_training'):
+                self._sign_up_for_training()
+            # elif self._handler.startswith('sign_up_for_training'):
+        elif self._state.get_state() == st.DeleteFromTrainingFSM.delete_from_training:
+            self._delete_from_training_confirm(self._handler, self._state, self._is_admin, self._user_cache)
+        else:
+            if self._state.get_state() == st.DeleteFromTrainingFSM.delete_from_training:
+                self._delete_from_training_confirm(self._handler, self._state, self._is_admin, self._user_cache)
+
+    async def _call_choose_event(self, call: CallbackQuery, state: FSMContext, is_admin: bool):
+        await show_formed_info_about_event(call, state, is_admin)
+
+
+
+    # @add_router.message(st.DeleteFromTrainingFSM.delete_from_training)
+    async def _delete_from_training_confirm(self, message: Message, state: FSMContext, is_admin: bool, user_cache):
+
 
     # Записать друга на тренировку
     # @add_router.callback_query(F.data == 'add_friend')

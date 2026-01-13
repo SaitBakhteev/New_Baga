@@ -2,13 +2,13 @@ from datetime import datetime, timedelta
 from tortoise.exceptions import DoesNotExist
 
 from config import setup_logger
-from app.database.models import EventUser
+from app.database.models import EventUser, User
 
 
 logger = setup_logger(__name__)
 
 
-''' CREATE '''
+''' ---------------------------------- CREATE ---------------------------------------------- '''
 
 # Создание записи пользователя на тренировку
 async def create_event_user(data, **kwargs):
@@ -29,7 +29,7 @@ async def create_event_user(data, **kwargs):
         )
 
 
-''' GET '''
+''' ----------------------------------------- GET ---------------------------------------------- '''
 
 async def get_event_user(event_id=None, user_tg_id=None,
                          payment_verification=False,
@@ -99,7 +99,7 @@ async def get_event_user_for_check_friend(event_id, friend_id=None, i_am_friend=
         return event_user[0]['user__tg_username'] if len(event_user) > 0 else None
 
 
-''' UPDATE '''
+''' --------------------------------------- UPDATE --------------------------------------- '''
 
 # Запрос к БД для обновления записей EventUser при проверке админом оплаты
 async def update_event_user_for_payment_verify(id_list: list, is_confirm=True):
@@ -112,7 +112,7 @@ async def update_event_user_for_payment_verify(id_list: list, is_confirm=True):
         await EventUser.filter(id__in=id_list).update(payment_confirmed=None)
 
 
-# Запрос к БД для обновления записей EventUser при нажатии пользователем кнопки '✔️ Я оплатил'
+# Запрос к БД для обновления записей EventUser при нажатии пользователем кнопки оповещения об оплате ✔️
 async def update_event_user(user_id: int, event_id: int,
                             payment_notify: bool = False,
                             replace_to_end: bool = None):
@@ -144,7 +144,7 @@ async def update_event_user_after_delete(update_list):
     await EventUser.bulk_update(update_list, ['created_at'])
 
 
-''' DELETE '''
+''' -------------------------------------- DELETE ---------------------------------------- '''
 
 async def delete_event_user(user_id: int, event_id: int):
     try:

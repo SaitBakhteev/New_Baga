@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 logger = setup_logger(__name__)
 
 
-# ----- ПОЛЬЗОВАТЕЛЬ -----------
+''' ---------------------------- USER -------------------------------------- '''
 # Создание или получение пользователя
 async def get_or_create_user(from_user, for_telegramm=False, create_user=False):
     try:
@@ -45,7 +45,62 @@ async def get_user_by_username(tg_username: str):
         return None
 
 
-# Получение объектов моделей
+# Запрос на редактирование профиля
+async def update_user(**kwargs):
+    try:
+        if 'new_username' in kwargs:
+            await User.filter(id=kwargs['user_id']).update(tg_username=kwargs['new_username'])
+        elif 'tg_name' in kwargs:
+            tg_name, id = kwargs['tg_name'], kwargs['user_id']
+            await User.filter(id=id).update(tg_name=tg_name)
+    except Exception as e:
+        await logger.error(f'Ошибка в update_user: {e}')
+        # stream_await logger.error(f'update_user: {e}')
+
+
+# Обновление поля включения или отключения уведомлений
+async def update_user_receive_notificcations(tg_id: int):
+    try:
+        user = await User.filter(tg_id=tg_id).get()
+        receive_notifications = not user.receive_notifications
+        user.receive_notifications = receive_notifications
+        await user.save()
+        return receive_notifications
+    except DoesNotExist as e:
+        await logger.error(f'ошибка при обновлении поля получения уведомлений: {e}')
+        return None
+
+
+# Специфицеский запрос из админ-панели
+async def update_admin_and_get(tg_username: str, admin_permissions: bool):
+    try:
+        user = await User.get_or_none(tg_username=tg_username)
+        await logger.info(f'USER: {user.tg_name}')
+        user_id = user.id
+        user.admin_permissions = admin_permissions
+        await User.filter(id=user_id).update(admin_permissions=admin_permissions)
+        return (user, user.tg_id)
+    except DoesNotExist as e:
+        await logger.error(f'update_admin_and_get: User does not exist')
+    except Exception as e:
+        await logger.error(f'update_admin_and_get: {e}')
+
+
+''' ---------------------------- EVENT ------------------------------------------------ '''
+async def create_event(data):  # добавить событие
+    try:
+        await Event.create(
+            training_type=data['training_type'],
+            created_at=data['created_at'],
+            payment_dedline=data['payment_dedline'],
+            event_datetime=data['event_datetime'],
+            participants_count=data['participants_count'],
+            event_text=data['event_text'],
+            boss_id=data['boss_id']
+        )
+    except Exception:
+        return
+
 
 async def get_event(id=None, for_telegramm=False,
                     for_schedule=False, last_record=False,
@@ -98,58 +153,6 @@ async def get_event(id=None, for_telegramm=False,
         return
 
 
-
-async def get_templates() -> Template():
-    return await Template.all().values('id', 'text')
-
-
-# Удаление объектов моделей
-
-async def delete_event(id: int):
-    await Event.filter(id=id).delete()
-
-
-async def delete_template(template_id: int):
-    try:
-        template = await Template.filter(id=template_id).get()
-        await template.delete()
-        return 'OK'
-    except DoesNotExist as e:
-        await logger.error(f'delete_template: {e}')
-        return 'Error'
-
-
-# Запрос на редактирование профиля
-async def update_user(**kwargs):
-    try:
-        if 'new_username' in kwargs:
-            await User.filter(id=kwargs['user_id']).update(tg_username=kwargs['new_username'])
-        elif 'tg_name' in kwargs:
-            tg_name, id = kwargs['tg_name'], kwargs['user_id']
-            await User.filter(id=id).update(tg_name=tg_name)
-    except Exception as e:
-        await logger.error(f'Ошибка в update_user: {e}')
-        # stream_await logger.error(f'update_user: {e}')
-
-
-""" Обновление времени записи на тренировку для участников,
-которые не выполнинли условия по оплате. Данное обновление
-выполняется за один запрос к БД """
-
-
-# Обновление поля включения или отключения уведомлений
-async def update_user_receive_notificcations(tg_id: int):
-    try:
-        user = await User.filter(tg_id=tg_id).get()
-        receive_notifications = not user.receive_notifications
-        user.receive_notifications = receive_notifications
-        await user.save()
-        return receive_notifications
-    except DoesNotExist as e:
-        await logger.error(f'ошибка при обновлении поля получения уведомлений: {e}')
-        return None
-
-
 async def update_event(event_id: int, data, **kwargs):
     if 'stars' not in kwargs:
         await Event.filter(id=event_id).update(
@@ -162,50 +165,27 @@ async def update_event(event_id: int, data, **kwargs):
         await Event.filter(id=event_id).update(stars=kwargs['stars'])
 
 
+async def delete_event(id: int):
+    await Event.filter(id=id).delete()
 
 
-
-''' ДЕЙСТВИЯ С БД, ДОСТУПНЫЕ ТОЛЬКО АДМИНУ '''
-
-# добавление объектов моделей
-
-async def create_event(data):  # добавить событие
-    try:
-        await Event.create(
-            training_type=data['training_type'],
-            created_at=data['created_at'],
-            payment_dedline=data['payment_dedline'],
-            event_datetime=data['event_datetime'],
-            participants_count=data['participants_count'],
-            event_text=data['event_text'],
-            boss_id=data['boss_id']
-        )
-    except Exception:
-        return
-
-
+''' ------------------------------------- TEMPLATE ----------------------------------- '''
 async def create_template(text: str):
     await Template.create(modified_at=datetime.now(), text=text)
 
 
+async def get_templates() -> Template():
+    return await Template.all().values('id', 'text')
 
-async def update_admin_and_get(tg_username: str, admin_permissions: bool):
+
+async def delete_template(template_id: int):
     try:
-        user = await User.get_or_none(tg_username=tg_username)
-        await logger.info(f'USER: {user.tg_name}')
-        user_id = user.id
-        user.admin_permissions = admin_permissions
-        await User.filter(id=user_id).update(admin_permissions=admin_permissions)
-        return (user, user.tg_id)
+        template = await Template.filter(id=template_id).get()
+        await template.delete()
+        return 'OK'
     except DoesNotExist as e:
-        await logger.error(f'update_admin_and_get: User does not exist')
-    except Exception as e:
-        await logger.error(f'update_admin_and_get: {e}')
-
-
-
-
-
+        await logger.error(f'delete_template: {e}')
+        return 'Error'
 
 
 ''' ДЛЯ ТЕСТИРОВАНИЯ '''

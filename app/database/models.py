@@ -44,8 +44,10 @@ class EventUser(Model):
     id = fields.IntField(primary_key=True)
     event = fields.ForeignKeyField('models.Event', on_delete=fields.CASCADE)
     user = fields.ForeignKeyField('models.User', on_delete=fields.CASCADE)
-    paid_check = fields.CharField(null=True, max_length=4)  # поле оповещения пользователем боту об оплате
     created_at = fields.DatetimeField(auto_now_add=True, timezone=timezone('Europe/Moscow'))
+    modified_at = fields.DatetimeField(auto_now_add=True, timezone=timezone('Europe/Moscow'))
+    paid_check = fields.CharField(null=True, max_length=4)  # поле оповещения пользователем боту об оплате
+    paid_check_datetime = fields.DatetimeField(null=True, timezone=timezone('Europe/Moscow'))
     payment_confirmed = fields.BooleanField(default=None, null=True)  # подтверждение оплаты, доступное только админу
 
     # По идее это поле должно быть bool и по умолчанию быть False, но из-за ограничений SQLite оставляем как есть

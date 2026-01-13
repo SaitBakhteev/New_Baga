@@ -44,10 +44,10 @@ registration_kb = InlineKeyboardMarkup(
 )
 
 
-def return_to_start_markup(process_interrupt=True) -> InlineKeyboardMarkup:
+# Универсальная кнопка прерываний различных действий
+def universal_interrupt_button(text='⛔️ Отменить действие', callback_data='interrupt') -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardBuilder()
-    caption = '⛔️ Прервать процесс' if process_interrupt else '⤴️ В начало'
-    keyboard.button(text=caption, callback_data='return_to_start')
+    keyboard.button(text=text, callback_data=callback_data)
     return keyboard.as_markup()
 
 
