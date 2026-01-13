@@ -234,10 +234,8 @@ def training_interface_kb(event: dict,
         signed_up_for_training = True if any(item['user_id'] == user_id for item in event_user) else False
         availible_notify_by_payment = None
         if signed_up_for_training:  # если пользователь записан на тренировку
-            event_user_id, paid_check, payment_confirmed = (
-                next((item['id'], item['paid_check'], item['payment_confirmed'])
-                     for item in event_user if item['user_id'] == user_id)
-            )
+            paid_check, payment_confirmed = (next((item['paid_check'], item['payment_confirmed'])
+                                                  for item in event_user if item['user_id'] == user_id))
 
             # Определение критериев доступности кнопки оповещения бота об оплате
             participants_count = int(event['participants_count'])
@@ -253,12 +251,12 @@ def training_interface_kb(event: dict,
 
         text = '🔴 Удалиться из тренировки' if signed_up_for_training else '🟢 Записаться на тренировку'
         callback_data = f'sign_up_for_training:{event['id']}' if signed_up_for_training \
-            else f'delete_from_training:{event_user_id}'
+            else f'delete_from_training:{event['id']}'
         keyboard.add(InlineKeyboardButton(text=text, callback_data=callback_data))
 
         # Кнопка уведомления об оплате или её отмена доступна, только если участник не в резерве
         if availible_notify_by_payment:
-            text, call = '✔️ Оповестить бот об оплате', f'payment_notify:{event_user_id}'
+            text, call = '✔️ Оповестить бот об оплате', f'payment_notify:{event['id']}'
             keyboard.button(text=text, callback_data=call)
 
         keyboard.button(text='🤜🏽Записать друга🤛🏽', callback_data='add_friend')

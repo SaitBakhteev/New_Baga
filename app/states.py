@@ -7,6 +7,7 @@ class CreateUserFSM(StatesGroup):
 
 class CreateTrainingTypeFSM(StatesGroup):
     title=State()
+
 class CreateGymFSM(StatesGroup):
     info = State()
 
@@ -21,6 +22,10 @@ class CreateEventFSM(StatesGroup):
 class AddFriendFSM(StatesGroup):
     add_friend = State()
     add_friend_confirm = State()
+
+
+class PaymenNotify(StatesGroup):
+    confirm = State()
 
 
 class EditEvent(StatesGroup):

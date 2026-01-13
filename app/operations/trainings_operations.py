@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from config import bot, reper_dedline_definiton
 from ..keyboards import return_to_start_markup
 from ..database.models import *
+import app.database.requests as db_rq
 from app.states import SendCheckFSM
 from app.operations.often_useful_funcs import *
 import app.states as st
@@ -41,15 +42,43 @@ async def sign_up_for_training(call: CallbackQuery, is_admin: bool):
 
 # Уведомить бот об оплате
 class PaymentNotify():
-    def __init__(self, handler: CallbackQuery | Message, state: FSMContext):
-        self._handler, self._state = handler, state
+    def __init__(self, handler: CallbackQuery | Message, state: FSMContext, is_admin: bool):
+        self._handler, self._state, self._is_admin = handler, state, is_admin
 
-    def dispatch(self):
+    async def dispatch(self):
         if isinstance(self._handler, CallbackQuery):
             if self._handler.data.startswith('payment_notify'):
-                event_user_id = int(self._handler.data.split(':')[1])
-        elif self._state.get_state() == st:
-            if self._handler.data.startswith('payment_notify'):
+                event_id = int(self._handler.data.split(':')[1])
+                await self._show_payment_notify_message(event_id)
+        elif self._state.get_state() == st.PaymenNotify.confirm:
+            await self._payment_notify_confirm()
+
+    async def _show_payment_notify_message(self, event_id):
+        text = (
+            'ВНИМАНИЕ❗️\n'
+            'Уведомлять об оплате можно только ОДИН (!!) раз. '
+            'Через сутки (или раньше) статус ✔️ переходит либо в статус ✅ (админ подтвердил оплату), либо в '
+            '❌ (админ не подтвердил оплату).\n'
+            'Если Вы подтверждаете факт оплаты и отправки скрина админу, отправьте в сообщении боту слово <i>"да"</i>?'
+        )
+        await self._handler.message.answer(text, parse_mode='HTML')
+        await self._state.update_data(event_id=event_id)
+        await self._state.set_state(st.PaymenNotify.confirm)
+
+    async def _payment_notify_confirm(self):
+        try:
+            message = self._handler.message.text
+            if message.replace('"', '').lower() == "да":
+                data = await self._state.get_data()
+                event_id, user_id = data['event_id'], user_cache[self._handler.from_user.id].id
+                await db_rq. .create_event_user(data)
+                text = '✔️ Вы успешно уведомили бот об оплате. Ожидайте в течение суток подтверждения оплаты админом.'
+            else:
+                text = '⚠️ Вы отменили уведомление бота об оплате.'
+            await self._handler.message.answer(text, parse_mode='HTML')
+        except Exception:
+            pass
+
 
 class TrainingsOperations():
     def __init__(self, handler: CallbackQuery | Message,
