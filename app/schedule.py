@@ -68,7 +68,7 @@ async def statistic_list_formation(now, event_user, statistics) -> dict:
             # Затем уже преобразуем в int и формируем кортеж звезд
             stars_of_event = tuple(map(lambda x: int(x), stars_text_lst))
         lst = sorted([_item for _item in event_user if _item.event.id == event_id],
-                     key=lambda x: x.created_at.replace(tzinfo=None))
+                     key=lambda x: x.modified_at.replace(tzinfo=None))
         '''Фомируем список QuerySet по данной трени, отсортированный по временам записи участников  '''
 
         last_index = lst[0].event.participants_count
@@ -219,7 +219,7 @@ async def check_payment_dedline(user_cache: dict, notify=False, bot: Bot = None)
                 _dict[item.event.id].append(item)
 
             # Сортировка сформированных списков в словаре по 'created_at'
-            sorted_dict = {k: sorted(v, key=lambda obj: obj.created_at.replace(tzinfo=None)) for k, v in _dict.items()}
+            sorted_dict = {k: sorted(v, key=lambda obj: obj.modified_at.replace(tzinfo=None)) for k, v in _dict.items()}
             objects_to_update = []
             rep_dedl_for_individ = now - timedelta(hours=12) if notify is False else now - timedelta(hours=11)
 
@@ -240,7 +240,7 @@ async def check_payment_dedline(user_cache: dict, notify=False, bot: Bot = None)
                 for i, obj in enumerate(sorted_dict[item]):
                     if i < participants_count:  # работаем сначала с основным списком
                         # Теперь смотрим, прошли ли 12 часов у пользователя с момента записи им на тренировку
-                        if obj.created_at.replace(tzinfo=None) <= rep_dedl_for_individ:
+                        if obj.modified_at.replace(tzinfo=None) <= rep_dedl_for_individ:
                             if (obj.paid_check is None and obj.payment_confirmed is None) \
                                     or (obj.paid_check is not None and obj.payment_confirmed is False):
                                 # Если это не рассылка уведомлений, то обновляем очередь
@@ -249,7 +249,7 @@ async def check_payment_dedline(user_cache: dict, notify=False, bot: Bot = None)
                                         seconds += 1
                                         update_datetime = now + timedelta(seconds=seconds)
                                         update_datetime = update_datetime.replace(tzinfo=None)
-                                        obj.paid_check, obj.payment_confirmed, obj.created_at = (
+                                        obj.paid_check, obj.payment_confirmed, obj.modified_at = (
                                             None, None, update_datetime
                                         )
                                         count += 1
@@ -257,13 +257,13 @@ async def check_payment_dedline(user_cache: dict, notify=False, bot: Bot = None)
                                 objects_to_update.append(obj)
                     else:
                         if notify is False:
-                            obj.created_at = now - timedelta(seconds=len(sorted_dict[item]) - i)
+                            obj.modified_at = now - timedelta(seconds=len(sorted_dict[item]) - i)
                             objects_to_update.append(obj)
                             # await logger.critical(f'обновлен created_at РЕЗЕРВНОГО пользователя {obj.user.tg_username} по тренировке с id={event_id}, для него установлено значение created_at={obj.created_at}')
                 if len(sorted_dict[item]) > participants_count and notify is False:  # если список превышает квоту
-                    new_sorted_dct = sorted(sorted_dict[item], key=lambda x: x.created_at.replace(tzinfo=None))[
+                    new_sorted_dct = sorted(sorted_dict[item], key=lambda x: x.modified_at.replace(tzinfo=None))[
                                      :participants_count]
-                    log_sorted_dct_ = [(_item.user.tg_username, _item.created_at) for _item in new_sorted_dct]
+                    log_sorted_dct_ = [(_item.user.tg_username, _item.modified_at) for _item in new_sorted_dct]
                     # await logger.critical(f'Новый отсортированный усеченный список после обновления по тренировке с id = {event_id}: {log_sorted_dct_}')
                     for _obj in new_sorted_dct:
                         if _obj in reserv_list:  # and _obj.user.receive_notifications is True:

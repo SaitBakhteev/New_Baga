@@ -83,9 +83,9 @@ async def get_event_user_for_check_existing(event_id, user_id):
     return await EventUser.filter(event_id=event_id, user_id=user_id).exists()
 
 
-async def get_event_user_after_delete(event_id):
+async def get_event_user_before_delete(event_id):
     result = await EventUser.filter(event_id=event_id).prefetch_related('event', 'user').all()
-    result = sorted(result, key=lambda x: x.created_at.replace(tzinfo=None))
+    result = sorted(result, key=lambda x: x.modified_at.replace(tzinfo=None))
     return result
 
 
