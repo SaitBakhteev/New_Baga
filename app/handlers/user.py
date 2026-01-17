@@ -11,7 +11,7 @@ from aiogram.filters import CommandStart, Command
 from app.schedule import stars_dict_getter, general_raiting_getter
 from app.operations.trainings_operations import add_router
 from app.operations.often_useful_funcs import *
-import app.keyboards as kb
+import app.keyboards.keyboards as kb
 import app.states as st
 from app.tutorial import (SIGN_UP_FOR_TRAINING_TUTORIAL,
                           MARKS_DESCRIPTION, GENERAL_TUTORIAL, VIDEO_ADMIN_TUTORIAL)

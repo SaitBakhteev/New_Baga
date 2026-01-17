@@ -4,6 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
 from app.database import requests as db_req
+from app.database import event_user_requests as db_rq_event_user
 from app import keyboards as kb
 from app import states as st
 from config import setup_logger, DAYS, user_cache
@@ -116,7 +117,7 @@ async def show_formed_info_about_event(call_mess: Message | CallbackQuery,
                                        user_id: int):
     try:
         event = db_req.get_event(id=event_id)
-        event_user = await db_req.get_event_user(event_id=event_id)
+        event_user = await db_rq_event_user.get_event_user(event_id=event_id)
         ''' Подгружаем из БД все необходимые данные по тренировке '''
 
         keyboard = kb.training_interface_kb(event, event_user, user_id, is_admin)
