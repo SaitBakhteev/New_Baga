@@ -1,9 +1,10 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from config import setup_logger, setup_sync_logger
+from config.log_config import setup_logger, setup_sync_logger
 
 from ..universal_keyboards import interrupt_or_return_button, RETURN_TO_START_BUTTON, training_types_list_kb
+from  ..constants import *
 
 logger, sync_logger = setup_logger(__name__), setup_sync_logger(__name__)
 

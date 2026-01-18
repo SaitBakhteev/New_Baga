@@ -1,13 +1,11 @@
-import os
-
 from aiogram import Router, F
 from aiogram.filters import Command
 
-from app.operations.trainings_operations import *
+from ..keyboards.constants import START, TRAININIG_TYPES_FOR_CHOOSE_EVENT, SHOW_EVENTS
 
-from config import setup_logger
-
+from ..operations.often_ops_and_classes import *
 from ..handlers.rare_handlers import registration_router
+
 
 logger = setup_logger(__name__)
 
@@ -22,9 +20,22 @@ main_router.callback_query.middleware(AdminMiddleware())
 main_router.include_routers(registration_router)
 
 
-@main_router.callback_query(F.data.startswith('return_to'))
-async def call_return_to(call: CallbackQuery, is_admin: bool):
-    await return_to(call, is_admin)
+# БЛОК ОБРАЬОТКИ КНОПОК НАЗАД, ОТМЕНЫ И Т.Д.
+# =========================================
+
+@main_router.callback_query(F.data.startswith(START))
+async def call_return_to_start(call: CallbackQuery, state: FSMContext, is_admin: bool):
+    await cmd_start(call, state, is_admin, user_cache)
+
+
+@main_router.callback_query(F.data.startswith(TRAININIG_TYPES_FOR_CHOOSE_EVENT))
+async def call_return_to_traininig_type_for_choose_event(call: CallbackQuery, state: FSMContext):
+    await choose_training_types(call.message, state)
+
+
+@main_router.callback_query(F.data.startswith(SHOW_EVENTS))
+async def call_return_to_show_events(call: CallbackQuery, state: FSMContext, is_admin: bool):
+    await show_events(call, state, is_admin)
 
 
 # БЛОК ВЫБОРА ТРЕНИРОВОК

@@ -3,7 +3,8 @@ from typing import Union
 
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from config.constants import TRAINING_TYPES, RETURN_TO_START
+from config.constants import TRAINING_TYPES
+from app.keyboards.constants import START
 
 
 # Универсальная кнопка прерываний различных действий, возврата назад, отмены и прочее
@@ -14,7 +15,7 @@ def interrupt_or_return_button(
     return InlineKeyboardMarkup(inline_keyboard=[[button]]) if this_markup else button
 
 
-RETURN_TO_START_BUTTON = interrupt_or_return_button(text=RETURN_TO_START[0], callback_data=RETURN_TO_START[1],
+RETURN_TO_START_BUTTON = interrupt_or_return_button(text=START[0], callback_data=START[1],
                                                     this_markup=False)
 
 

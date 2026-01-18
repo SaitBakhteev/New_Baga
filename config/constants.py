@@ -20,17 +20,6 @@ DEDLINE_TYPE = (("24 часа", "24"))
 DAYS = ('Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс')
 REPER_HOURS = (8, 13, 17, 22)
 
-# Константы callback_data для кнопок возврата, отмены и прочее
-_BACK_TEXT = '↩️ Назад'
-RETURN_TO_START = ('🏠 В начало', 'return_to_start')
-RETURN_TO_TRAININIG_TYPE_FOR_CHOOSE_EVENT = (_BACK_TEXT, 'return_to_traininig_type_for_choose_event')
-RETURN_TO_SHOW_EVENTS = (_BACK_TEXT, 'return_to_show_events')
-RETURN_TO_EVENT = (_BACK_TEXT, 'return_to_event')
-RETURN_TO_EVENT_WITH_ADMIN_MANAGE = (_BACK_TEXT,'return_to_event_with_admin_manage')
-RETURN_TO_PROFILE = (_BACK_TEXT,'return_to_profile')
-RETURN_TO_STATISTIC_PANEL = (_BACK_TEXT,'return_to_statistic_panel')
-RETURN_TO_ADMIN_PANEL = (_BACK_TEXT,'return_to_admin_panel')
-
 # Кэш список пользователей и дедлайнов
 user_cache, dedlines, dedline_notifications = dict(), [], []
 

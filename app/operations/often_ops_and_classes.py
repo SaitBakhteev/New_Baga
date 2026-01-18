@@ -110,18 +110,6 @@ async def cmd_start(call_mess: CallbackQuery | Message, state: FSMContext, is_ad
         return
 
 
-# Обработчик кнопок назад, отмены и прочее
-async def return_to(call: CallbackQuery, state: FSMContext, is_admin: bool):
-    user_id = user_cache[call.from_user.id].id
-    if call.data == RETURN_TO_START[1]:
-        await cmd_start(call, state, is_admin, user_cache)
-    elif call.data == RETURN_TO_TRAININIG_TYPE_FOR_CHOOSE_EVENT[1]:
-        await choose_training_types(call.message, state)
-    elif call.data.startswith(RETURN_TO_EVENT[1]):
-        event_id = int(call.data.split(':')[1])
-        await show_formed_info_about_event(call, is_admin, event_id, user_id)
-    elif call.data.startswith(RETURN_TO_START[0]):
-
 
 # БЛОК ФУНКЦИЙ ПО ОТОБРАЖЕНИЮ ТРЕНИРОВКИ
 # =====================================

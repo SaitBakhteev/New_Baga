@@ -1,8 +1,10 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from app.keyboards.universal_keyboards import RETURN_TO_START_BUTTON, interrupt_or_return_button, training_types_list_kb
-from config import DAYS, setup_sync_logger
+from app.keyboards.constants import START, TRAININIG_TYPES_FOR_CHOOSE_EVENT, SHOW_EVENTS, EVENT
+from app.keyboards.universal_keyboards import interrupt_or_return_button, training_types_list_kb
+from .constants import *
+from config.log_config import setup_sync_logger
 
 sync_logger = setup_sync_logger(__name__)
 
@@ -11,8 +13,9 @@ sync_logger = setup_sync_logger(__name__)
 # ===========================================================
 
 def choose_training_type_kb() -> InlineKeyboardMarkup:
-    keyboard = training_types_list_kb('show_events')
-    keyboard.add(RETURN_TO_START_BUTTON)
+    keyboard = training_types_list_kb(SHOW_EVENTS[1])
+    keyboard.add(interrupt_or_return_button(HOME_TEXT, callback_data, False))
+    keyboard.adjust(1)
     return keyboard.as_markup()
 
 
@@ -38,9 +41,9 @@ def show_events_kb(event_user: list, *args) -> InlineKeyboardMarkup:
             day_idx = arg['event_datetime'].weekday()
             day = DAYS[day_idx]
             text = tag + ' (' + day + ') ' + event_date + ', ' + event_time + '; ' + gym
-            keyboard.button(text=text, callback_data=f"choose_event:{arg['id']}")
-        keyboard.add(interrupt_or_return_button('↩️ Назад', 'return_to_choose_training_type',
-                                                False))
+            keyboard.button(text=text, callback_data=f"{EVENT[1]}:{arg['id']}")
+        text, callback_data = TRAININIG_TYPES_FOR_CHOOSE_EVENT
+        keyboard.add(interrupt_or_return_button(text, callback_data, False))
         keyboard.adjust(1)
         return keyboard.as_markup()
     except Exception as e:
@@ -89,7 +92,8 @@ def training_interface_kb(event: dict,
                 text='💠🤵🏻‍♂️ Администрирование тренировки',
                 callback_data=f'training_manage:{event['id']}'
             )
-        keyboard.add(interrupt_or_return_button('↩️ Назад', f'return_to_event:{event["id"]}',
+        text, callback_data = EVENT
+        keyboard.add(interrupt_or_return_button(text, f'{callback_data}:{event["id"]}',
                                                 False))
         keyboard.adjust(1)
         return keyboard.as_markup()
