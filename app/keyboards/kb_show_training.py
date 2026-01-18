@@ -1,74 +1,24 @@
-import logging
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from typing import Union
 
-from config import setup_logger, setup_sync_logger, TRAINING_TYPES, DAYS
+from app.keyboards.universal_keyboards import RETURN_TO_START_BUTTON, interrupt_or_return_button, training_types_list_kb
+from config import DAYS, setup_sync_logger
 
-logger, sync_logger = setup_logger(__name__), setup_sync_logger(__name__)
-
-
-# Универсальная кнопка прерываний различных действий
-def universal_interrupt_or_back_button(
-        text='⛔️ Отменить действие', callback_data='interrupt', this_markup=True
-) -> Union[InlineKeyboardMarkup, InlineKeyboardButton]:
-    button = InlineKeyboardButton(text=text, callback_data=callback_data)
-    return InlineKeyboardMarkup(inline_keyboard=[[button]]) if this_markup else button
+sync_logger = setup_sync_logger(__name__)
 
 
-RETURN_TO_START_BUTTON = universal_interrupt_or_back_button(text='🏠 В начало', callback_data='return_to_start',
-                                                            this_markup=False)
+# КНОПКИ ПО ВЫБОРУ ТИПА ТРЕНИРОВОК В ЗАВИСИМОСТИ ОТ КОНТЕКСТА
+# ===========================================================
 
-
-# Кнопка возврата в список инструкций
-tutorial_list_kb = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='⤴️ В список инструкций', callback_data='tutorial_list'),]
-])
-
-
-# РЕГИСТРАЦИЯ, РЕДАКТИРОВАНИЕ ПРОФИЛЯ, НАСТРОЙКА УВЕДОМЛЕНИЙ
-# ==========================================================
-
-registration_kb = InlineKeyboardMarkup(
-    inline_keyboard=[[InlineKeyboardButton(text='🖍 Регистрация', callback_data='registration')]]
-)
-
-
-# Кнопка редактирования профиля
-profile_edit_kb = InlineKeyboardMarkup(
-    inline_keyboard=[
-        [InlineKeyboardButton(text='Редактировать профиль 🖌', callback_data='profile_edit')],
-        [RETURN_TO_START_BUTTON]
-    ],
-)
-
-
-# Кнока включения/выключения уведомлений
-async def notify(receive_notifications: bool) -> InlineKeyboardMarkup:
-    text = 'Отключить уведомления 🔕' if receive_notifications else 'Включить уведомления 🔔'
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=text, callback_data='on_off_notify')]
-    ])
-    return keyboard
-
-
-# КНОПКИ ПО ТРЕНИРОВКАМ
-# =====================
-
-# Выбор типа тренировки
-def training_types_kb(**kwargs) -> InlineKeyboardMarkup:
-    keyboard = InlineKeyboardBuilder()
-    for i, item in enumerate(TRAINING_TYPES):
-        keyboard.add(InlineKeyboardButton(text=item, callback_data=f'training_type:{i}'))
-    if 'raiting' in kwargs:
-        keyboard.add(InlineKeyboardButton(text='🔥ОБЩИЙ РЕЙТИНГ💫', callback_data='training_type:general'))
-    if 'without_back' not in kwargs:
-        keyboard.add(RETURN_TO_START_BUTTON)
-    keyboard.adjust(1)
+def choose_training_type_kb() -> InlineKeyboardMarkup:
+    keyboard = training_types_list_kb('show_events')
+    keyboard.add(RETURN_TO_START_BUTTON)
     return keyboard.as_markup()
 
 
-# Инлайн-клавиатура для отображения всех запланированных тренировок
+# ОТОБРАЖЕНИЕ ТРЕНИРОВОК
+# =====================
+
 def show_events_kb(event_user: list, *args) -> InlineKeyboardMarkup:
     try:
         keyboard = InlineKeyboardBuilder()
@@ -89,16 +39,15 @@ def show_events_kb(event_user: list, *args) -> InlineKeyboardMarkup:
             day = DAYS[day_idx]
             text = tag + ' (' + day + ') ' + event_date + ', ' + event_time + '; ' + gym
             keyboard.button(text=text, callback_data=f"choose_event:{arg['id']}")
-        keyboard.add(universal_interrupt_or_back_button('↩️ Назад', 'return_to_choose_training_type',
-                                                        False))
+        keyboard.add(interrupt_or_return_button('↩️ Назад', 'return_to_choose_training_type',
+                                                False))
         keyboard.adjust(1)
         return keyboard.as_markup()
     except Exception as e:
-        sync_logger.error(f'Ошибка строка 193 = {e}')
+        sync_logger.error(f'Ошибка show_events_kb = {e}')
         # base_logger.error(f'Ошибка строка 193 = {e}')
 
 
-# Кнопки под списком участников тренировки
 def training_interface_kb(event: dict,
                           event_user: list,
                           user_id: int,
@@ -140,8 +89,8 @@ def training_interface_kb(event: dict,
                 text='💠🤵🏻‍♂️ Администрирование тренировки',
                 callback_data=f'training_manage:{event['id']}'
             )
-        keyboard.add(universal_interrupt_or_back_button('↩️ Назад', f'return_to_event:{event["id"]}',
-                                                        False))
+        keyboard.add(interrupt_or_return_button('↩️ Назад', f'return_to_event:{event["id"]}',
+                                                False))
         keyboard.adjust(1)
         return keyboard.as_markup()
     except Exception as e:

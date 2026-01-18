@@ -1,17 +1,17 @@
-from aiogram.filters import Command
-from aiogram import Router, F
-
 from datetime import datetime, timedelta
 
-from config import bot
-from app.operations.often_useful_funcs import *
+from config import bot, user_cache
+from app.operations.often_ops_and_classes import *
 import app.states as st
-import app.keyboards.keyboards as kb
-
+import app.keyboards.universal_keyboards as kb
 
 logger = setup_logger(__name__)
 
-add_router = Router()  # дополнительный роутер, чтобы разгрузить бизнес-логику
+
+# Локальная инлайн-кнопка отмены действий
+def _change_kb(event_id: int):
+    keyboard = kb.interrupt_or_return_button('⛔️Отменить', f'return_to_event_{event_id}')
+    return keyboard
 
 
 # Записаться на тренировку
@@ -35,17 +35,6 @@ async def sign_up_for_training(call: CallbackQuery, is_admin: bool):
         # stream_logger.error(e)
 
 
-# Родительский класс, чтобы не дублировать метод __init__
-class ParentClassForTrainingOperations:
-    def __init__(self, handler: CallbackQuery | Message, state: FSMContext, is_admin: bool):
-        self._handler, self._state, self._is_admin = handler, state, is_admin
-
-    async def _exception_func(self, text, except_text):
-        await self._handler.message.answer(text, parse_mode='HTML')
-        await cmd_start(self._handler, self._state, self._is_admin, user_cache)
-        await logger.error(except_text)
-
-
 # Уведомить бот об оплате
 class PaymentNotify(ParentClassForTrainingOperations):
     async def dispatch(self):
@@ -65,7 +54,7 @@ class PaymentNotify(ParentClassForTrainingOperations):
                 '❌ (админ не подтвердил оплату).\n'
                 'Если Вы подтверждаете факт оплаты и отправки скрина админу, отправьте в сообщении боту слово <i>"да"</i>?'
             )
-            await self._handler.message.answer(text, reply_markup=kb.universal_interrupt_or_back_button(), parse_mode='HTML')
+            await self._handler.message.answer(text, reply_markup=_change_kb(event_id), parse_mode='HTML')
             await self._state.update_data(event_id=event_id)
             await self._state.set_state(st.PaymenNotify.confirm)
         except Exception as e:
@@ -105,8 +94,8 @@ class DeleteFromTraining(ParentClassForTrainingOperations):
         text =('Если Вы уверены, что хотите удалиться из тренировки напишите в сообщении '
                '<i><b>да</b></i> и отправьте его.\n'
                'Если сомневаетесь, отмените действие нажатием на кнопку или отправьте любое другое сообщение')
-        await self._handler.message.answer(text, reply_markup=kb.universal_interrupt_or_back_button(), parse_mode='HTML')
         event_id, user_id = int(self._handler.data.split(':')[1]), user_cache[self._handler.from_user.id].id
+        await self._handler.message.answer(text, reply_markup=_change_kb(event_id), parse_mode='HTML')
         await self._state.update_data(event_id=event_id, user_id=user_id)
         await self._state.set_state(st.DeleteFromTrainingFSM.delete_from_training)
 
@@ -195,7 +184,7 @@ class AddFriend(ParentClassForTrainingOperations):
     async def _add_friend(self):
         event_id = int(self._handler.data.split(':')[1])
         text = 'Введите никнейм вашего друга.\n<i>Пример</i>: @ivanov1934'
-        await self._handler.message.answer(text, parse_mode='HTML', reply_markup=kb.universal_interrupt_or_back_button())
+        await self._handler.message.answer(text, parse_mode='HTML', reply_markup=_change_kb(event_id))
         await self._state.update_data(event_id=event_id)
         await self._state.set_state(st.AddFriendFSM.add_friend)
 
@@ -338,8 +327,6 @@ class AddFriend(ParentClassForTrainingOperations):
 #         await logger.error(e)
 #         # stream_logger.error(e)
 
-
-'
 
 # Класс отправки чека об оплате
 # class SendCheck():

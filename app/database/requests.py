@@ -119,29 +119,12 @@ async def get_event(id=None, for_telegramm=False,
                           first().values('id', 'payment_dedline', 'stars')) if last_record \
                 else await (Event.filter(payment_dedline__gt=reper_datetime).order_by('payment_dedline').
                             values('id', 'payment_dedline', 'stars'))
-        elif training_type or id:
-            if training_type:
-                if 'is_admin' in kwargs:  # админы видят и прошедшие необработанные по звезлам тренировки
-                    return await (Event.filter(training_type=training_type).order_by('id').
-                    values(
-                        'id', 'payment_dedline', 'event_datetime', 'event_text', 'participants_count', 'stars'
-                    )
-                    )
-                else:
-                    return await (Event.filter(training_type=training_type,
-                                               event_datetime__gt=datetime.now() - timedelta(hours=12)).order_by('id').
-                    values(
-                        'id', 'payment_dedline', 'event_datetime', 'event_text', 'participants_count', 'stars'
-                    )
-                    )
-
-            else:
-                return await (Event.filter(id=id).values(
-                    'id', 'payment_dedline', 'event_datetime', 'event_text', 'participants_count', 'stars',
-                    'training_type'
-                )
-                )
-
+        elif id:
+            return await (Event.filter(id=id).values(
+                'id', 'payment_dedline', 'event_datetime', 'event_text', 'participants_count', 'stars',
+                'training_type'
+            )
+            )
         else:
             return await Event.get(id=id) if id else \
                 await (
@@ -151,6 +134,21 @@ async def get_event(id=None, for_telegramm=False,
                 )
     except DoesNotExist:
         return
+
+
+# Запрос для отображения списка тренировок по выбранному типу
+async def get_events_by_training_type(training_type, is_admin):
+    if is_admin is False:  # админы видят и прошедшие необработанные по звезлам тренировки
+        return await (
+            Event.filter(training_type=training_type,
+                         event_datetime__gt=datetime.now() - timedelta(hours=12)).order_by('id').
+            values('id', 'payment_dedline', 'event_datetime', 'event_text', 'participants_count', 'stars')
+        )
+    else:
+        return await (
+            Event.filter(training_type=training_type).order_by('id').
+            values('id', 'payment_dedline', 'event_datetime', 'event_text', 'participants_count', 'stars')
+        )
 
 
 async def update_event(event_id: int, data, **kwargs):

@@ -11,10 +11,10 @@ from apscheduler.triggers.cron import CronTrigger
 from tortoise import Tortoise, connections
 from tortoise.exceptions import DBConnectionError, OperationalError
 
-from app.handlers.user import user_router, user_cache  #, dedlines, dedline_notifications
+from app.handlers.main_handler import main_router
 from app.database.requests import get_all_users
 
-from config import REPER_HOURS, TOKEN, TORTOISE_ORM, season_index, setup_logger, setup_base_logger
+from config import *
 from app.schedule import delete_events, check_payment_dedline
 
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
@@ -131,7 +131,7 @@ async def shutdown(dispatcher: Dispatcher):
 
 async def main():
     dp = Dispatcher()
-    dp.include_router(user_router)
+    dp.include_router(main_router)
     dp.startup.register(startup)
     dp.shutdown.register(shutdown)
     await dp.start_polling(bot)

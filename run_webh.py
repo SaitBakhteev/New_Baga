@@ -23,7 +23,7 @@ from tortoise import Tortoise, connections
 from tortoise.exceptions import DBConnectionError, OperationalError
 
 
-from app.handlers.user import user_router, user_cache  #, dedlines, dedline_notifications
+from app.handlers.main_handler import main_router, user_cache  #, dedlines, dedline_notifications
 from app.database.requests import get_all_users
 
 with open("/tmp/bot_debug.log", "a") as f:
@@ -191,7 +191,7 @@ async def main():
     print(f"DEBUG: WEBHOOK_TOKEN = {WEBHOOK_TOKEN}")
 
     dp = Dispatcher()
-    dp.include_router(user_router)
+    dp.include_router(main_router)
     
     # РЕГИСТРИРУЕМ startup/shutdown
     dp.startup.register(startup)
