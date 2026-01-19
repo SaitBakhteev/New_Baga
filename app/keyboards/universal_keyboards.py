@@ -4,18 +4,18 @@ from typing import Union
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from config.constants import TRAINING_TYPES
-from app.keyboards.constants import START
 
+BACK_TEXT_KB = '⤴️ Назад'
 
 # Универсальная кнопка прерываний различных действий, возврата назад, отмены и прочее
 def interrupt_or_return_button(
-        text='⛔️ Прервать процесс', callback_data='interrupt', this_markup=True
+        callback_data: str, text='⛔️ Прервать процесс', this_markup=True
 ) -> Union[InlineKeyboardMarkup, InlineKeyboardButton]:
     button = InlineKeyboardButton(text=text, callback_data=callback_data)
     return InlineKeyboardMarkup(inline_keyboard=[[button]]) if this_markup else button
 
 
-RETURN_TO_START_BUTTON = interrupt_or_return_button(text=START[0], callback_data=START[1],
+RETURN_TO_START_BUTTON = interrupt_or_return_button(text='🏠 В начало', callback_data='to_start',
                                                     this_markup=False)
 
 
@@ -24,5 +24,5 @@ def training_types_list_kb(prefix: str) -> InlineKeyboardBuilder:
     '''Prefix определяет контекст работы кнопок'''
     keyboard = InlineKeyboardBuilder()
     for i, item in enumerate(TRAINING_TYPES):
-        keyboard.add(InlineKeyboardButton(text=item, callback_data=f'training_type_for_{prefix}:{i}'))
+        keyboard.add(InlineKeyboardButton(text=item, callback_data=f'{prefix}:{i}'))
     return keyboard

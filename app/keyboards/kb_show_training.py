@@ -1,10 +1,10 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from app.keyboards.constants import START, TRAININIG_TYPES_FOR_CHOOSE_EVENT, SHOW_EVENTS, EVENT
-from app.keyboards.universal_keyboards import interrupt_or_return_button, training_types_list_kb
-from .constants import *
+from app.keyboards.universal_keyboards import interrupt_or_return_button, training_types_list_kb, RETURN_TO_START_BUTTON
+
 from config.log_config import setup_sync_logger
+from config.constants import DAYS
 
 sync_logger = setup_sync_logger(__name__)
 
@@ -13,8 +13,8 @@ sync_logger = setup_sync_logger(__name__)
 # ===========================================================
 
 def choose_training_type_kb() -> InlineKeyboardMarkup:
-    keyboard = training_types_list_kb(SHOW_EVENTS[1])
-    keyboard.add(interrupt_or_return_button(HOME_TEXT, callback_data, False))
+    keyboard = training_types_list_kb('training_type')
+    keyboard.add(RETURN_TO_START_BUTTON)
     keyboard.adjust(1)
     return keyboard.as_markup()
 
@@ -41,9 +41,9 @@ def show_events_kb(event_user: list, *args) -> InlineKeyboardMarkup:
             day_idx = arg['event_datetime'].weekday()
             day = DAYS[day_idx]
             text = tag + ' (' + day + ') ' + event_date + ', ' + event_time + '; ' + gym
-            keyboard.button(text=text, callback_data=f"{EVENT[1]}:{arg['id']}")
-        text, callback_data = TRAININIG_TYPES_FOR_CHOOSE_EVENT
-        keyboard.add(interrupt_or_return_button(text, callback_data, False))
+            keyboard.button(text=text, callback_data=f"to_event:{arg['id']}")
+        _text, _callback_data = '⤴️ Назад', '/event'
+        keyboard.add(interrupt_or_return_button(_text, _callback_data, False))
         keyboard.adjust(1)
         return keyboard.as_markup()
     except Exception as e:
