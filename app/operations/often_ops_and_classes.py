@@ -77,6 +77,7 @@ class AdminMiddleware(BaseMiddleware):
 class ParentClassForTrainingOperations:
     def __init__(self, handler: CallbackQuery | Message, state: FSMContext, is_admin: bool):
         self._handler, self._state, self._is_admin = handler, state, is_admin
+        self._user_id = user_cache[handler.from_user.id].id
 
     async def _exception_func(self, text, except_text):
         await self._handler.message.answer(text, parse_mode='HTML')

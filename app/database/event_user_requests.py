@@ -78,9 +78,13 @@ async def get_event_user(event_id=None, user_tg_id=None,
         await logger.error(f'get_event_user: {e}')
 
 
-# Проверка не состоит ди уже в записи участник, во избежание багов
+# Проверка не состоит ли уже в записи участник, во избежание багов
 async def get_event_user_for_check_existing(event_id, user_id):
     return await EventUser.filter(event_id=event_id, user_id=user_id).exists()
+
+
+async def get_event_user_for_check_pay_notify(event_id, user_id):
+    return await EventUser.filter(event_id=event_id, user_id=user_id, paid_check='paid').exists()
 
 
 async def get_event_user_before_delete(event_id):

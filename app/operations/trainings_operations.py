@@ -1,16 +1,18 @@
+import asyncio
 from datetime import datetime, timedelta
 
-from config import bot, user_cache
+from config.constants import bot, user_cache
 from app.operations.often_ops_and_classes import *
 import app.states as st
-import app.keyboards.universal_keyboards as kb
+from ..keyboards.universal_keyboards import interrupt_or_return_button, RETURN_TO_START_BUTTON
+from ..keyboards.kb_confirm import add_friend_confirm_kb, payment_notify_confirm_kb
 
 logger = setup_logger(__name__)
 
 
 # Локальная инлайн-кнопка отмены действий
-def _change_kb(event_id: int):
-    keyboard = kb.interrupt_or_return_button('⛔️Отменить', f'return_to_event_{event_id}')
+def _cancel_kb(event_id: int):
+    keyboard = interrupt_or_return_button('⛔️Отменить', f'return_to_event_{event_id}')
     return keyboard
 
 
@@ -39,7 +41,7 @@ async def sign_up_for_training(call: CallbackQuery, is_admin: bool):
 class PaymentNotify(ParentClassForTrainingOperations):
     async def dispatch(self):
         if isinstance(self._handler, CallbackQuery):
-            if self._handler.data.startswith('payment_notify'):
+            if self._handler.data.startswith('payment_notify_by_event_is'):
                 event_id = int(self._handler.data.split(':')[1])
                 await self._show_payment_notify_message(event_id)
         elif self._state.get_state() == st.PaymenNotify.confirm:
@@ -47,16 +49,26 @@ class PaymentNotify(ParentClassForTrainingOperations):
 
     async def _show_payment_notify_message(self, event_id):
         try:
-            text = (
-                'ВНИМАНИЕ❗️\n'
-                'Уведомлять об оплате можно только ОДИН (!!) раз. '
-                'Через сутки (или раньше) статус ✔️ переходит либо в статус ✅ (админ подтвердил оплату), либо в '
-                '❌ (админ не подтвердил оплату).\n'
-                'Если Вы подтверждаете факт оплаты и отправки скрина админу, отправьте в сообщении боту слово <i>"да"</i>?'
+            # Проверка не уведомил ли уже участник бота об оплате
+            is_paid_check = await db_rq_event_user.get_event_user_for_check_pay_notify(
+                event_id=event_id, user_id=self._user_id
             )
-            await self._handler.message.answer(text, reply_markup=_change_kb(event_id), parse_mode='HTML')
-            await self._state.update_data(event_id=event_id)
-            await self._state.set_state(st.PaymenNotify.confirm)
+            if is_paid_check is not None:
+                text = (
+                    'ВНИМАНИЕ❗️\n'
+                    'Уведомлять об оплате можно только ОДИН (!!) раз. '
+                    'Через сутки (или раньше) статус ✔️ переходит либо в статус ✅ (админ подтвердил оплату), либо в '
+                    '❌ (админ не подтвердил оплату).\n'
+                    'Если Вы подтверждаете факт оплаты и отправки скрина админу, отправьте в сообщении боту слово <i>"да"</i>?'
+                )
+                await self._handler.message.answer(text, reply_markup=_cancel_kb(event_id), parse_mode='HTML')
+                await self._state.update_data(event_id=event_id)
+                await self._state.set_state(st.PaymenNotify.confirm)
+            else:
+                await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
+                await self._handler.message.answer("☝🏽 Вы уже уведомили бот об оплате")
+                asyncio.create_task(delete_bkg(self._handler))
+
         except Exception as e:
             text, except_text = ('⭕️ Возникла ошибка. Возможно, что Вы ранее уже уведомляли бот об оплате',
                                  f'Ошибка _payment_notify_confirm: {e}')
@@ -95,7 +107,7 @@ class DeleteFromTraining(ParentClassForTrainingOperations):
                '<i><b>да</b></i> и отправьте его.\n'
                'Если сомневаетесь, отмените действие нажатием на кнопку или отправьте любое другое сообщение')
         event_id, user_id = int(self._handler.data.split(':')[1]), user_cache[self._handler.from_user.id].id
-        await self._handler.message.answer(text, reply_markup=_change_kb(event_id), parse_mode='HTML')
+        await self._handler.message.answer(text, reply_markup=_cancel_kb(event_id), parse_mode='HTML')
         await self._state.update_data(event_id=event_id, user_id=user_id)
         await self._state.set_state(st.DeleteFromTrainingFSM.delete_from_training)
 
@@ -184,7 +196,7 @@ class AddFriend(ParentClassForTrainingOperations):
     async def _add_friend(self):
         event_id = int(self._handler.data.split(':')[1])
         text = 'Введите никнейм вашего друга.\n<i>Пример</i>: @ivanov1934'
-        await self._handler.message.answer(text, parse_mode='HTML', reply_markup=_change_kb(event_id))
+        await self._handler.message.answer(text, parse_mode='HTML', reply_markup=_cancel_kb(event_id))
         await self._state.update_data(event_id=event_id)
         await self._state.set_state(st.AddFriendFSM.add_friend)
 
@@ -200,7 +212,8 @@ class AddFriend(ParentClassForTrainingOperations):
                         friend_id, friend, friend_tg_id = user_cache[k].id, user_cache[k].tg_username, user_cache[k].tg_id
                         break
                 if friend is not None:
-                    friend_signed_up  = await db_rq_event_user.get_event_user_for_check_friend(event_id, friend_id=friend_id)
+                    friend_signed_up  = await db_rq_event_user.get_event_user_for_check_friend(event_id,
+                                                                                               friend_id=friend_id)
                     my_prev_friend = await db_rq_event_user.get_event_user_for_check_friend(
                         event_id, i_am_friend=self._handler.from_user.username
                     )
@@ -212,13 +225,13 @@ class AddFriend(ParentClassForTrainingOperations):
                                         'Вы подтверждаете запись друга?')
                         await self._state.update_data(friend_id=friend_id, friend=friend, friend_tg_id=friend_tg_id)
                         await self._state.set_state(st.AddFriendFSM.add_friend_confirm)
-                        return await self._handler.answer(message_text, reply_markup=kb.add_friend_confirm_kb,
+                        return await self._handler.answer(message_text, reply_markup=add_friend_confirm_kb,
                                                           parse_mode='HTML')
                     elif not friend_signed_up and self._is_admin is True:  # админы могут добавлять хоть сколько друзей
                         message_text = ('Вы подтверждаете запись друга?')
                         await self._state.update_data(friend_id=friend_id, friend=friend, friend_tg_id=friend_tg_id)
                         await self._state.set_state(st.AddFriendFSM.add_friend_confirm)
-                        return await self._handler.answer(message_text, reply_markup=kb.add_friend_confirm_kb, parse_mode='HTML')
+                        return await self._handler.answer(message_text, reply_markup=add_friend_confirm_kb, parse_mode='HTML')
                     elif friend_signed_up:
                         message_text = f'☑️ Ваш друг с никнеймом <i>{friend}</i> уже состоит в записи на тренировку'
                     elif my_prev_friend and self._is_admin is not True:
@@ -227,7 +240,7 @@ class AddFriend(ParentClassForTrainingOperations):
                     message_text = f'🤷🏻‍♂️ Пользователь с никнеймом <i>{text}</i> не зарегистрирован в боте'
             else:
                 message_text = '☝🏽Вы не можете добавить себя вместо друга'
-            await self._handler.answer(message_text, parse_mode='HTML', reply_markup=kb.return_to_start_markup())
+            await self._handler.answer(message_text, parse_mode='HTML', reply_markup=return_to_start_markup())
         except Exception as e:
             text, except_text = '⭕️ Возникла ошибка.', f'Ошибка _add_friend_check_friend: {e}'
             await self._exception_func(text, except_text)
