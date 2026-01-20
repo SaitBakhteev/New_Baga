@@ -6,13 +6,13 @@ from aiogram.types import TelegramObject, Message, CallbackQuery
 
 from typing import Callable, Dict, Any, Awaitable
 
-import app.keyboards.kb_registr_and_profile
-import app.keyboards.kb_show_training
-from app import states as st
-from app.database import requests as db_req
-from app.database import event_user_requests as db_rq_event_user
 
-from app.keyboards import universal_keyboards as kb
+from ..keyboards.kb_show_training import training_interface_kb, show_events_kb
+
+from ..database import requests as db_req
+from ..database import event_user_requests as db_rq_event_user
+
+from ..keyboards.universal_keyboards import interrupt_or_return_button
 from ..keyboards.kb_show_training import choose_training_type_kb
 
 from ..operations.regisration_ops import registration
@@ -114,7 +114,7 @@ async def cmd_start(call_mess: CallbackQuery | Message, state: FSMContext, is_ad
 # БЛОК ФУНКЦИЙ ПО ОТОБРАЖЕНИЮ ТРЕНИРОВКИ
 # =====================================
 
-async def choose_training_types(message: Message, state: FSMContext):
+async def show_training_types(message: Message, state: FSMContext):
     await state.clear()
     await message.answer('Выберите тип тренировки', reply_markup=choose_training_type_kb())
 
@@ -129,12 +129,12 @@ async def show_events(call: CallbackQuery, state: FSMContext, is_admin: bool):
     if not events:
         message_text = 'Запланированных тренировок пока нет.'
         button_text, callback_data = '↩️ Назад', 'return_to_choose_training_type'
-        keyboard = kb.interrupt_or_return_button(button_text, callback_data)
+        keyboard = interrupt_or_return_button(button_text, callback_data)
         await call.answer(message_text, reply_markup=keyboard)
     else:
         message_text = (f'Ближайшие тренировки по дисциплине <b><i>{training_type}</i></b>.\n'
                         f'Тренировки, на которые Вы уже записаны, отмечены 🟢.')
-        keyboard = app.keyboards.kb_show_training.show_events_kb(event_user, *events)
+        keyboard = show_events_kb(event_user, *events)
         await call.answer(message_text, reply_markup=keyboard, parse_mode='HTML')
         await state.update_data(events=events)
 
@@ -194,7 +194,7 @@ async def show_formed_info_about_event(call_mess: Message | CallbackQuery,
         event = db_req.get_event(id=event_id)
         event_user = await db_rq_event_user.get_event_user(event_id=event_id)
 
-        keyboard = app.keyboards.kb_show_training.training_interface_kb(event, event_user, user_id, is_admin)
+        keyboard = training_interface_kb(event, event_user, user_id, is_admin)
         text = _show_text_about_event(event, event_user, user_id)
         mess_handler = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
         await mess_handler.answer(text, parse_mode='HTML', reply_markup=keyboard)

@@ -1,6 +1,6 @@
 import uuid
 from uuid import uuid1
-from config import setup_logger
+from config.log_config import setup_logger
 
 from tortoise.exceptions import DoesNotExist
 

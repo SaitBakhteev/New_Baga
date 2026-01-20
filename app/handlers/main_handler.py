@@ -1,8 +1,6 @@
 from aiogram import Router, F
 from aiogram.filters import Command
 
-from ..keyboards.constants import START, TRAININIG_TYPES_FOR_CHOOSE_EVENT, SHOW_EVENTS
-
 from ..operations.often_ops_and_classes import *
 from ..handlers.rare_handlers import registration_router
 
@@ -20,56 +18,19 @@ main_router.callback_query.middleware(AdminMiddleware())
 main_router.include_routers(registration_router)
 
 
-# БЛОК ОБРАЬОТКИ КНОПОК НАЗАД, ОТМЕНЫ И Т.Д.
-# =========================================
-
-@main_router.callback_query(F.data.startswith(START))
-async def call_return_to_start(call: CallbackQuery, state: FSMContext, is_admin: bool):
-    await cmd_start(call, state, is_admin, user_cache)
-
-
-@main_router.callback_query(F.data.startswith(TRAININIG_TYPES_FOR_CHOOSE_EVENT))
-async def call_return_to_traininig_type_for_choose_event(call: CallbackQuery, state: FSMContext):
-    await choose_training_types(call.message, state)
-
-
-@main_router.callback_query(F.data.startswith(SHOW_EVENTS))
-async def call_return_to_show_events(call: CallbackQuery, state: FSMContext, is_admin: bool):
-    await show_events(call, state, is_admin)
-
-
 # БЛОК ВЫБОРА ТРЕНИРОВОК
 # ======================
-
 @main_router.message(Command('event'))
-async def show_training_types(message: Message, state: FSMContext):
-    await choose_training_types(message, state)
+async def call_show_traininig_types(call: CallbackQuery, state: FSMContext):
+    await show_training_types(call.message, state)
 
 
-@main_router.message(F.data.startswith('training_type_for_show_events'))
+@main_router.callback_query(F.data.startswith('to_training_type_is'))
 async def call_show_events(call: CallbackQuery, state: FSMContext, is_admin: bool):
     await show_events(call, state, is_admin)
 
-#
-#
-# @user_router.message(Command('event'))
-# @user_router.callback_query(F.data == 'show_training_types')
-#
-# # Кнопка прерывания
-# @user_router.callback_query(F.data == 'process_interrupt')
-# async def process_interrupt(call: CallbackQuery, state: FSMContext, is_admin: bool):
-#     if is_admin:
-#         current_state = await state.get_state()
-#         match current_state:
-#             case st.CreateEventFSM.dedline_type | st.CreateEventFSM.training_type | st.CreateEventFSM.template:
-#                 await state.clear()
-#                 await admin_panel(call, state, is_admin)
-#             case st.ChooseEventFSM.training_type:
-#                 await state.clear()
-#                 await choose_training_types(call.message, state, is_admin)
-#     else:
-#         pass
-#     asyncio.create_task(delete_bkg(call))
+
+
 #
 #
 # # Просмотр рейтинга

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from tortoise.exceptions import DoesNotExist
 
-from config import setup_logger
+from config.log_config import setup_logger
 from app.database.models import EventUser, User
 
 

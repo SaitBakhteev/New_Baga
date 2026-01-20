@@ -15,7 +15,7 @@ def interrupt_or_return_button(
     return InlineKeyboardMarkup(inline_keyboard=[[button]]) if this_markup else button
 
 
-RETURN_TO_START_BUTTON = interrupt_or_return_button(text='🏠 В начало', callback_data='to_start',
+RETURN_TO_START_BUTTON = interrupt_or_return_button(text='🏠 В начало', callback_data='start',
                                                     this_markup=False)
 
 

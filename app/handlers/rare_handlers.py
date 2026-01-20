@@ -6,14 +6,14 @@ from aiogram.dispatcher.router import Router
 
 import app.keyboards
 from app import states as st
+
 from app.keyboards import universal_keyboards as kb
 from app.operations.often_ops_and_classes import cmd_start
 from app.operations.regisration_ops import registration_and_welcome
 from app.tutorial import GENERAL_TUTORIAL, SIGN_UP_FOR_TRAINING_TUTORIAL, MARKS_DESCRIPTION
-from config import user_cache
+from config.constants import user_cache
 
 registration_router = Router()
-
 
 
 @registration_router.message(CommandStart())
@@ -24,6 +24,8 @@ async def call_cmd_start(handler: Message, state: FSMContext, is_admin: bool):
 @registration_router.callback_query(F.data == 'registration')
 async def call_registration(call: CallbackQuery):
     await registration_and_welcome(call)
+
+
 
 
 # @main_router.message(Command('dev'))

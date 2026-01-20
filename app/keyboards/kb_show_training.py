@@ -6,6 +6,8 @@ from app.keyboards.universal_keyboards import interrupt_or_return_button, traini
 from config.log_config import setup_sync_logger
 from config.constants import DAYS
 
+from .universal_keyboards import BACK_TEXT_KB
+
 sync_logger = setup_sync_logger(__name__)
 
 
@@ -13,7 +15,7 @@ sync_logger = setup_sync_logger(__name__)
 # ===========================================================
 
 def choose_training_type_kb() -> InlineKeyboardMarkup:
-    keyboard = training_types_list_kb('training_type')
+    keyboard = training_types_list_kb('to_training_type_is')
     keyboard.add(RETURN_TO_START_BUTTON)
     keyboard.adjust(1)
     return keyboard.as_markup()
@@ -41,9 +43,9 @@ def show_events_kb(event_user: list, *args) -> InlineKeyboardMarkup:
             day_idx = arg['event_datetime'].weekday()
             day = DAYS[day_idx]
             text = tag + ' (' + day + ') ' + event_date + ', ' + event_time + '; ' + gym
-            keyboard.button(text=text, callback_data=f"to_event:{arg['id']}")
-        _text, _callback_data = '⤴️ Назад', '/event'
-        keyboard.add(interrupt_or_return_button(_text, _callback_data, False))
+            keyboard.button(text=text, callback_data=f"to_event_is:{arg['id']}")
+        _text, _callback_data = BACK_TEXT_KB, '/event'
+        keyboard.add(interrupt_or_return_button(BACK_TEXT_KB, _callback_data, False))
         keyboard.adjust(1)
         return keyboard.as_markup()
     except Exception as e:
@@ -51,10 +53,7 @@ def show_events_kb(event_user: list, *args) -> InlineKeyboardMarkup:
         # base_logger.error(f'Ошибка строка 193 = {e}')
 
 
-def training_interface_kb(event: dict,
-                          event_user: list,
-                          user_id: int,
-                          admin_permissions: bool) -> InlineKeyboardMarkup:
+def training_interface_kb(event: dict, event_user: list, user_id: int, admin_permissions: bool) -> InlineKeyboardMarkup:
     try:
         # Условия по записи и доступности уведомления об оплате
         signed_up_for_training = True if any(item['user_id'] == user_id for item in event_user) else False
@@ -71,30 +70,30 @@ def training_interface_kb(event: dict,
                     user_place_on_list <= participants_count
                     and paid_check is None and payment_confirmed is None)\
                 else False
-        ''' Находим критерии, которые определят интерфейс по кнопкам'''
+
+        # БЛОК ФОРМИРОВАНИЯ ИНТЕРФЕЙСА ТРЕНИРОВКИ
+        # =======================================
 
         keyboard = InlineKeyboardBuilder()
-
         text = '🔴 Удалиться из тренировки' if signed_up_for_training else '🟢 Записаться на тренировку'
-        callback_data = f'sign_up_for_training:{event['id']}' if signed_up_for_training \
-            else f'delete_from_training:{event['id']}'
+        callback_data = f'sign_up_to_training_is:{event['id']}' if signed_up_for_training \
+            else f'delete_from_training_is:{event['id']}'
         keyboard.add(InlineKeyboardButton(text=text, callback_data=callback_data))
 
         # Кнопка уведомления об оплате или её отмена доступна, только если участник не в резерве
         if availible_notify_by_payment:
-            text, call = '✔️ Оповестить бот об оплате', f'payment_notify:{event['id']}'
+            text, call = '✔️ Оповестить бот об оплате', f'payment_notify_by_event_is:{event['id']}'
             keyboard.button(text=text, callback_data=call)
 
-        keyboard.button(text='🤜🏽Записать друга🤛🏽', callback_data=f'add_friend_to_event:{event['id']}')
+        keyboard.button(text='🤜🏽Записать друга🤛🏽', callback_data=f'add_friend_to_event_is:{event['id']}')
 
         if admin_permissions:
             keyboard.button(
                 text='💠🤵🏻‍♂️ Администрирование тренировки',
-                callback_data=f'training_manage:{event['id']}'
+                callback_data=f'training_manage_of_event_is:{event['id']}'
             )
-        text, callback_data = EVENT
-        keyboard.add(interrupt_or_return_button(text, f'{callback_data}:{event["id"]}',
-                                                False))
+
+        keyboard.add(interrupt_or_return_button(BACK_TEXT_KB, f'to_event_is:{event["id"]}', False))
         keyboard.adjust(1)
         return keyboard.as_markup()
     except Exception as e:
