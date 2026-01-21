@@ -30,9 +30,13 @@ async def call_show_events(call: CallbackQuery, state: FSMContext, is_admin: boo
     await show_events(call, state, is_admin)
 
 
+@main_router.callback_query(F.data.startswith('to_event_is'))
+async def show_training_types(call: CallbackQuery, is_admin: bool):
+    event_id = int(call.data.split(':')[1])
+    user_id = user_cache[call.from_user.id].id
+    await show_formed_info_about_event(call, is_admin, event_id, user_id)
 
-#
-#
+
 # # Просмотр рейтинга
 # @user_router.message(Command('rait'))
 # async def choose_raiting(message: Message, state: FSMContext):

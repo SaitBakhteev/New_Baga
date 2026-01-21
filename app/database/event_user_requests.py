@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta
+from logging import exception
+
 from tortoise.exceptions import DoesNotExist
 
 from config.log_config import setup_logger
@@ -112,28 +114,30 @@ async def update_event_user_for_payment_verify(id_list: list, is_confirm=True):
     elif is_confirm == False:  # если админ опровергает оплату
         await EventUser.filter(id__in=id_list).update(payment_confirmed=False)
     else:  # если админ отменяет верификацию оплаты
-        print(f'is_conf = {is_confirm}')
         await EventUser.filter(id__in=id_list).update(payment_confirmed=None)
 
 
-# Запрос к БД для обновления записей EventUser при нажатии пользователем кнопки оповещения об оплате ✔️
+async def update_event_user_for_payment_notify(even_id: id, user_id: int):
+    try:
+        await EventUser.filter(event_id=even_id, user_id=user_id).update(
+            paid_check='paid', paid_check_datetime=datetime.now()
+        )
+    except exception as e:
+        await logger.error(f'Ошибка в update_event_user_for_payment_notify: {e}')
+
+
 async def update_event_user(user_id: int, event_id: int,
                             payment_notify: bool = False,
                             replace_to_end: bool = None):
     try:
         if payment_notify:
-            await (EventUser.filter(user_id=user_id,
-                                    event_id=event_id).
-                   update(paid_check='paid'))
+            await (EventUser.filter(user_id=user_id, event_id=event_id).update(
+                paid_check='paid', paid_check_datetime=datetime.now()
+            ))
         elif replace_to_end:
-            await (EventUser.filter(user_id=user_id,
-                                    event_id=event_id).
-                   update(created_at=datetime.now()))
-
+            await (EventUser.filter(user_id=user_id, event_id=event_id).update(modified_at=datetime.now()))
         else:
-            await (EventUser.filter(user_id=user_id,
-                                    event_id=event_id).
-                   update(paid_check=None, payment_confirmed=None))
+            await (EventUser.filter(user_id=user_id, event_id=event_id).update(paid_check=None, payment_confirmed=None))
     except DoesNotExist:
         await logger.error(f'update_event_user: Does Not exist')
     except Exception as e:

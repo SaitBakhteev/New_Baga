@@ -26,7 +26,8 @@ from datetime import date, datetime, timedelta
 
 from app.database.models import Event, EventUser, Statistic, User
 
-from config import reper_dedline_definiton, setup_logger, SEASON_INDEX
+from config.log_config import setup_logger
+from config.constants import SEASON_INDEX
 
 logger, stream_logger = setup_logger(__name__), logging.getLogger(__name__)
 

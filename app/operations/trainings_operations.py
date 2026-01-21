@@ -78,10 +78,10 @@ class PaymentNotify(ParentClassForTrainingOperations):
         try:
             message = self._handler.text
             data = await self._state.get_data()
-            event_id, user_id = data['event_id'], user_cache[self._handler.from_user.id].id
+            event_id = data['event_id']
 
             if message.replace('"', '').lower() == "да":
-                await db_rq_event_user.update_event_user(user_id, event_id, True)
+                await db_rq_event_user.update_event_user_for_payment_notify(event_id, self._user_id)
                 text = '✔️ Вы успешно уведомили бот об оплате. Ожидайте в течение суток подтверждения оплаты админом.'
             else:
                 text = '⚠️ Вы отменили уведомление бота об оплате.'
@@ -92,94 +92,6 @@ class PaymentNotify(ParentClassForTrainingOperations):
             text, except_text = '⭕️ Возникла ошибка.', f'Ошибка _payment_notify_confirm: {e}'
             await self._exception_func(text, except_text)
         asyncio.create_task(delete_bkg(self._handler))
-
-
-class DeleteFromTraining(ParentClassForTrainingOperations):
-    def dispatch(self):
-        if isinstance(self._handler, CallbackQuery):
-            if self._handler.data.startswith('delete_from_training'):
-                self._delete_from_training()
-        elif self._state.get_state() == st.DeleteFromTrainingFSM.delete_from_training:
-            self._delete_from_training_confirm()
-
-    async def _delete_from_training(self):
-        text =('Если Вы уверены, что хотите удалиться из тренировки напишите в сообщении '
-               '<i><b>да</b></i> и отправьте его.\n'
-               'Если сомневаетесь, отмените действие нажатием на кнопку или отправьте любое другое сообщение')
-        event_id, user_id = int(self._handler.data.split(':')[1]), user_cache[self._handler.from_user.id].id
-        await self._handler.message.answer(text, reply_markup=_cancel_kb(event_id), parse_mode='HTML')
-        await self._state.update_data(event_id=event_id, user_id=user_id)
-        await self._state.set_state(st.DeleteFromTrainingFSM.delete_from_training)
-
-    async def _delete_from_training_confirm(self):
-        try:
-            data = await self._state.get_data()
-            event_id, user_id = data.get('event_id'), data.get('user_id')
-            if self._handler.text.lower().strip() == 'да':
-                await cmd_start(self._handler, self._state, self._is_admin, user_cache)
-                current_event_user = await db_rq_event_user.get_event_user_before_delete(event_id=event_id)
-
-                seconds, update_list = -1, []
-                now = datetime.now().replace(tzinfo=None)
-                participants_count = current_event_user[0].event.participants_count
-                for _user in current_event_user[participants_count:]:
-                    seconds += 1
-                    _user.modified_at = now + timedelta(seconds=seconds)
-                    update_list.append(_user)
-                    await db_rq_event_user.update_event_user_after_delete(update_list)
-
-                await self.__send_messages(current_event_user, now, data)
-                await db_rq_event_user.delete_event_user(user_id, event_id)
-                await self._handler.answer('Вы удалились из записи на тренировку.')
-            else:
-                await show_formed_info_about_event(self._handler, self._is_admin, event_id, user_id)
-                await self._handler.answer('Удаление прервано')
-        except Exception as e:
-            text, except_text = ('⭕️ Возникла ошибка.', f'Ошибка _payment_notify_confirm: {e}')
-            await self._exception_func(text, except_text)
-        asyncio.create_task(delete_bkg(self._handler))
-
-    # Рассылка уведомлений после удаления
-    async def __send_messages(self, current_event_user, now,data):
-        res_prtcpt = None
-        participants_count = current_event_user[0].event.participants_count
-        if len(current_event_user) > participants_count:
-            user_pos = next(
-                i for i, item in enumerate(current_event_user) if item.user.tg_id == self._handler.from_user.id
-            )
-            res_prtcpt = current_event_user[participants_count] if user_pos < participants_count else None
-            text = (f"❗️⚡️ <b>ВНИМАНИЕ АДМИНАМ</b>\n"
-                    f"Пользователь с никнеймом @<i>{self._handler.from_user.username}</i> "
-                    f"удалился из следующей тренировки\n\n"
-                    f"Дисциплина: <b><i>{data['training_type']}</i></b>\n"
-                    f"{current_event_user[0].event.event_text}")
-        if res_prtcpt:
-            res_tg_username, res_tg_id, res_id = (res_prtcpt.user.tg_username, res_prtcpt.user.tg_id,
-                                                  res_prtcpt.user.id)
-            text += (f'\n\n<b><i>🔆ВАЖНО!</i></b>\n'
-                     f"Пользователь с никнеймом <i>@{res_tg_username}</i> поднялся из резерва в основной список "
-                     f"и ему было выслано соответствующее уведомление")
-            # Обновляем времена поднявшегося из резерева и других резервистов
-
-            if now + timedelta(hours=5) > current_event_user[0].event.event_datetime:
-                for k in user_cache:  # Информирование админов
-                    if user_cache[k].admin_permissions == True:
-                        tg_id = user_cache[k].tg_id
-                        await bot.send_message(chat_id=tg_id, text=text, parse_mode='HTML')
-
-            # Информаривание пользователя, поднявшегося из резерва
-            text = (f'⚡️⚡️<b>ВАЖНАЯ ИНФОРМАЦИЯ ДЛЯ ВАС</b>\n'
-                    f'Вы перешли из резерва в основной список следующей тренировки:\n\n'
-                    f"Дисциплина: <b><i>{data['training_type']}</i></b>\n"
-                    f"{current_event_user[0].event.event_text}")
-
-            # < ---------- ЗДЕСЬ БУДЕТ УСТАНОВКА ДЕДЛАЙНА ОПЛАТЫ ---------------- >
-
-            text += (f'\n\n <b>ВНИМАНИЕ❗️</b> \n'
-                     f'<i>У Вас другой дедлайн оплаты.\n'
-                     f' Вам необходимо оплатить за тренировку до</i>'
-                     f' <b><i> ... </i></b>')
-            await bot.send_message(chat_id=res_tg_id, text=text, parse_mode='HTML')
 
 
 class AddFriend(ParentClassForTrainingOperations):
@@ -284,6 +196,97 @@ class AddFriend(ParentClassForTrainingOperations):
             text, except_text = '⭕️ Возникла ошибка.', f'Ошибка _add_friend_confirm: {e}'
             await self._exception_func(text, except_text)
         asyncio.create_task(delete_bkg(self._handler))
+
+
+class DeleteFromTraining(ParentClassForTrainingOperations):
+    def dispatch(self):
+        if isinstance(self._handler, CallbackQuery):
+            if self._handler.data.startswith('delete_from_training'):
+                self._delete_from_training()
+        elif self._state.get_state() == st.DeleteFromTrainingFSM.delete_from_training:
+            self._delete_from_training_confirm()
+
+    async def _delete_from_training(self):
+        text =('Если Вы уверены, что хотите удалиться из тренировки напишите в сообщении '
+               '<i><b>да</b></i> и отправьте его.\n'
+               'Если сомневаетесь, отмените действие нажатием на кнопку или отправьте любое другое сообщение')
+        event_id, user_id = int(self._handler.data.split(':')[1]), user_cache[self._handler.from_user.id].id
+        await self._handler.message.answer(text, reply_markup=_cancel_kb(event_id), parse_mode='HTML')
+        await self._state.update_data(event_id=event_id, user_id=user_id)
+        await self._state.set_state(st.DeleteFromTrainingFSM.delete_from_training)
+
+    async def _delete_from_training_confirm(self):
+        try:
+            data = await self._state.get_data()
+            event_id, user_id = data.get('event_id'), data.get('user_id')
+            if self._handler.text.lower().strip() == 'да':
+                await cmd_start(self._handler, self._state, self._is_admin, user_cache)
+                current_event_user = await db_rq_event_user.get_event_user_before_delete(event_id=event_id)
+
+                seconds, update_list = -1, []
+                now = datetime.now().replace(tzinfo=None)
+                participants_count = current_event_user[0].event.participants_count
+                for _user in current_event_user[participants_count:]:
+                    seconds += 1
+                    _user.modified_at = now + timedelta(seconds=seconds)
+                    update_list.append(_user)
+                    await db_rq_event_user.update_event_user_after_delete(update_list)
+
+                await self.__send_messages(current_event_user, now, data)
+                await db_rq_event_user.delete_event_user(user_id, event_id)
+                await self._handler.answer('Вы удалились из записи на тренировку.')
+            else:
+                await show_formed_info_about_event(self._handler, self._is_admin, event_id, user_id)
+                await self._handler.answer('Удаление прервано')
+        except Exception as e:
+            text, except_text = ('⭕️ Возникла ошибка.', f'Ошибка _payment_notify_confirm: {e}')
+            await self._exception_func(text, except_text)
+        asyncio.create_task(delete_bkg(self._handler))
+
+    # Рассылка уведомлений после удаления
+    async def __send_messages(self, current_event_user, now,data):
+        res_prtcpt = None
+        participants_count = current_event_user[0].event.participants_count
+        if len(current_event_user) > participants_count:
+            user_pos = next(
+                i for i, item in enumerate(current_event_user) if item.user.tg_id == self._handler.from_user.id
+            )
+            res_prtcpt = current_event_user[participants_count] if user_pos < participants_count else None
+            text = (f"❗️⚡️ <b>ВНИМАНИЕ АДМИНАМ</b>\n"
+                    f"Пользователь с никнеймом @<i>{self._handler.from_user.username}</i> "
+                    f"удалился из следующей тренировки\n\n"
+                    f"Дисциплина: <b><i>{data['training_type']}</i></b>\n"
+                    f"{current_event_user[0].event.event_text}")
+        if res_prtcpt:
+            res_tg_username, res_tg_id, res_id = (res_prtcpt.user.tg_username, res_prtcpt.user.tg_id,
+                                                  res_prtcpt.user.id)
+            text += (f'\n\n<b><i>🔆ВАЖНО!</i></b>\n'
+                     f"Пользователь с никнеймом <i>@{res_tg_username}</i> поднялся из резерва в основной список "
+                     f"и ему было выслано соответствующее уведомление")
+            # Обновляем времена поднявшегося из резерева и других резервистов
+
+            if now + timedelta(hours=5) > current_event_user[0].event.event_datetime:
+                for k in user_cache:  # Информирование админов
+                    if user_cache[k].admin_permissions == True:
+                        tg_id = user_cache[k].tg_id
+                        await bot.send_message(chat_id=tg_id, text=text, parse_mode='HTML')
+
+            # Информаривание пользователя, поднявшегося из резерва
+            text = (f'⚡️⚡️<b>ВАЖНАЯ ИНФОРМАЦИЯ ДЛЯ ВАС</b>\n'
+                    f'Вы перешли из резерва в основной список следующей тренировки:\n\n'
+                    f"Дисциплина: <b><i>{data['training_type']}</i></b>\n"
+                    f"{current_event_user[0].event.event_text}")
+
+            # < ---------- ЗДЕСЬ БУДЕТ УСТАНОВКА ДЕДЛАЙНА ОПЛАТЫ ---------------- >
+
+            text += (f'\n\n <b>ВНИМАНИЕ❗️</b> \n'
+                     f'<i>У Вас другой дедлайн оплаты.\n'
+                     f' Вам необходимо оплатить за тренировку до</i>'
+                     f' <b><i> ... </i></b>')
+            await bot.send_message(chat_id=res_tg_id, text=text, parse_mode='HTML')
+
+
+
 
 
 # НЕИСПОЛЬЗУЕМЫЕ ФИЧИ

@@ -205,3 +205,16 @@ async def show_formed_info_about_event(call_mess: Message | CallbackQuery,
         # stream_logger.error(f'Ошибка в choose_event: {e}')
 
 
+# Установка сообщения по дедлайну для пользователей
+async def set_payment_dedline_text(payment_dedline, event_datetime, now):
+    delta_12, delta_3, delta_2 = timedelta(hours=12), timedelta(hours=3), timedelta(hours=2)
+    if now + delta_12 < payment_dedline:
+        text = 'Вам необходимо оплатить до начального дедлайна.'
+    else:
+        if now + delta_12 < event_datetime:
+            text = 'Вам необходимо оплатить в течение 12 часов.'
+        elif (event_datetime - now) > timedelta(hours=2) and (event_datetime - now) < timedelta(hours=3):
+            text = 'Вам необходимо оплатить до начального дедлайна.'
+        elif now + timedelta(hours=12) < payment_dedline:
+            pass
+    return text
