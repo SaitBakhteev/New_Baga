@@ -53,6 +53,9 @@ class EventUser(Model):
 
     payment_confirmed = fields.BooleanField(default=None, null=True)  # подтверждение оплаты, доступное только админу
 
+    # Последняя дата и время отправки напоминания об оплате
+    last_payment_notify = fields.DatetimeField(null=True, timezone=timezone('Europe/Moscow'))
+
     # По идее это поле должно быть bool и по умолчанию быть False, но из-за ограничений SQLite оставляем как есть
     friend = fields.CharField(max_length=50, null=True, on_delete=fields.NO_ACTION)
 

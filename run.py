@@ -14,7 +14,9 @@ from tortoise.exceptions import DBConnectionError, OperationalError
 from app.handlers.main_handler import main_router
 from app.database.requests import get_all_users
 
-from config import *
+from config.constants import *
+from config.db_config import TORTOISE_ORM
+from config.log_config import setup_base_logger, setup_logger
 from app.schedule import delete_events, check_payment_dedline
 
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
@@ -78,7 +80,7 @@ async def startup(dispatcher: Dispatcher):
                               id=f"scan_by_{i}",
                               kwargs={'notify': False, 'bot': bot, 'user_cache': user_cache})
         scheduler.add_job(check_payment_dedline, CronTrigger(hour=21, minute=50), id=f"scan_test", kwargs={'notify': False, 'bot': bot, 'user_cache':user_cache})
-        print(84)
+
 
         # # Заглушки
         # test_now = datetime.now()

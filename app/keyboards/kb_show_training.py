@@ -4,7 +4,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from app.keyboards.universal_keyboards import interrupt_or_return_button, training_types_list_kb, RETURN_TO_START_BUTTON
 
 from config.log_config import setup_sync_logger
-from config.constants import DAYS
+from config.constants import DAYS, TRAINING_TYPES
 
 from .universal_keyboards import BACK_TEXT_KB
 
@@ -45,7 +45,7 @@ def show_events_kb(event_user: list, *args) -> InlineKeyboardMarkup:
             text = tag + ' (' + day + ') ' + event_date + ', ' + event_time + '; ' + gym
             keyboard.button(text=text, callback_data=f"to_event_is:{arg['id']}")
         _text, _callback_data = BACK_TEXT_KB, '/event'
-        keyboard.add(interrupt_or_return_button(BACK_TEXT_KB, _callback_data, False))
+        keyboard.add(interrupt_or_return_button(text=BACK_TEXT_KB, callback_data=_callback_data, this_markup=False))
         keyboard.adjust(1)
         return keyboard.as_markup()
     except Exception as e:
@@ -56,16 +56,15 @@ def show_events_kb(event_user: list, *args) -> InlineKeyboardMarkup:
 def training_interface_kb(event: dict, event_user: list, user_id: int, admin_permissions: bool) -> InlineKeyboardMarkup:
     try:
         # Условия по записи и доступности уведомления об оплате
-        signed_up_for_training = True if any(item['user_id'] == user_id for item in event_user) else False
+        signed_up_for_training = True if any(item['user__id'] == user_id for item in event_user) else False
         availible_notify_by_payment = None
         if signed_up_for_training:  # если пользователь записан на тренировку
             paid_check, payment_confirmed = (next((item['paid_check'], item['payment_confirmed'])
-                                                  for item in event_user if item['user_id'] == user_id))
-
+                                                  for item in event_user if item['user__id'] == user_id))
             # Определение критериев доступности кнопки оповещения бота об оплате
             participants_count = int(event['participants_count'])
             user_place_on_list = next(i + 1 for i, item in enumerate(event_user)
-                                      if item['user_id'] == user_id)
+                                      if item['user__id'] == user_id)
             availible_notify_by_payment = True if (
                     user_place_on_list <= participants_count
                     and paid_check is None and payment_confirmed is None)\
@@ -75,9 +74,12 @@ def training_interface_kb(event: dict, event_user: list, user_id: int, admin_per
         # =======================================
 
         keyboard = InlineKeyboardBuilder()
-        text = '🔴 Удалиться из тренировки' if signed_up_for_training else '🟢 Записаться на тренировку'
-        callback_data = f'sign_up_to_training_is:{event['id']}' if signed_up_for_training \
-            else f'delete_from_training_is:{event['id']}'
+        if signed_up_for_training:
+            text = '🔴 Удалиться из тренировки'
+            callback_data = f'delete_from_training_is:{event['id']}'
+        else:
+            text = '🟢 Записаться на тренировку'
+            callback_data = f'sign_up_to_training_is:{event['id']}'
         keyboard.add(InlineKeyboardButton(text=text, callback_data=callback_data))
 
         # Кнопка уведомления об оплате или её отмена доступна, только если участник не в резерве
@@ -92,8 +94,9 @@ def training_interface_kb(event: dict, event_user: list, user_id: int, admin_per
                 text='💠🤵🏻‍♂️ Администрирование тренировки',
                 callback_data=f'training_manage_of_event_is:{event['id']}'
             )
-
-        keyboard.add(interrupt_or_return_button(BACK_TEXT_KB, f'to_event_is:{event["id"]}', False))
+        _index = TRAINING_TYPES.index(event["training_type"])
+        callback_data = f'to_training_type_is:{_index}'
+        keyboard.add(interrupt_or_return_button(text=BACK_TEXT_KB, callback_data=callback_data, this_markup=False))
         keyboard.adjust(1)
         return keyboard.as_markup()
     except Exception as e:

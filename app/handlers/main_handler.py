@@ -2,8 +2,10 @@ from aiogram import Router, F
 from aiogram.filters import Command
 
 from ..operations.often_ops_and_classes import *
+from ..operations.trainings_operations import *
 from ..handlers.rare_handlers import registration_router
 
+from .. import states as st
 
 logger = setup_logger(__name__)
 
@@ -20,9 +22,11 @@ main_router.include_routers(registration_router)
 
 # БЛОК ВЫБОРА ТРЕНИРОВОК
 # ======================
+@main_router.callback_query(F.data=='/event')
 @main_router.message(Command('event'))
-async def call_show_traininig_types(call: CallbackQuery, state: FSMContext):
-    await show_training_types(call.message, state)
+async def call_show_traininig_types(call: Message | CallbackQuery, state: FSMContext):
+    __handler = call.message if isinstance(call, CallbackQuery) else call
+    await show_training_types(__handler, state)
 
 
 @main_router.callback_query(F.data.startswith('to_training_type_is'))
@@ -31,10 +35,20 @@ async def call_show_events(call: CallbackQuery, state: FSMContext, is_admin: boo
 
 
 @main_router.callback_query(F.data.startswith('to_event_is'))
-async def show_training_types(call: CallbackQuery, is_admin: bool):
+async def call_show_training(call: CallbackQuery, is_admin: bool):
     event_id = int(call.data.split(':')[1])
     user_id = user_cache[call.from_user.id].id
     await show_formed_info_about_event(call, is_admin, event_id, user_id)
+
+
+# БЛОК ВЫЗОВА МНОГОШАГОВЫХ ОПЕРАЦИЙ
+# ==================================
+
+@main_router.callback_query(F.data.startswith('delete_from_training_is'))
+@main_router.message(st.DeleteFromTrainingFSM.delete_from_training)
+async def call_delete_from_training(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
+    dlt_from_trn = DeleteFromTraining(handler=call, state=state, is_admin=is_admin)
+    await dlt_from_trn.dispatch()
 
 
 # # Просмотр рейтинга

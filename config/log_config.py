@@ -31,17 +31,17 @@ def setup_base_logger():
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     # Хендлер для INFO и выше (general.log)
-    info_handler = logging.FileHandler('../logs/general.log')
+    info_handler = logging.FileHandler('logs/general.log')
     info_handler.setLevel(logging.INFO)
     info_handler.setFormatter(formatter)
 
     # Хендлер для ERROR и выше (error.log)
-    error_handler = logging.FileHandler('../logs/error.log')
+    error_handler = logging.FileHandler('logs/error.log')
     error_handler.setLevel(logging.ERROR)
     error_handler.setFormatter(formatter)
 
     # Хендлер для CRITICAL (bot.log)
-    critical_handler = logging.FileHandler('../logs/bot.log')
+    critical_handler = logging.FileHandler('logs/bot.log')
     critical_handler.setLevel(logging.CRITICAL)
     critical_handler.setFormatter(formatter)
 

@@ -22,6 +22,7 @@ from config.constants import *
 logger = setup_logger(__name__)
 
 
+
 # Мидлварь для проверки прав пользователя
 class AdminMiddleware(BaseMiddleware):
     async def __call__(
@@ -31,7 +32,6 @@ class AdminMiddleware(BaseMiddleware):
             data: Dict[str, Any]
     ) -> Any:
         # Проверяем, является ли пользователь администратором
-        data['user_cache'] = user_cache
         if isinstance(event, (Message, CallbackQuery)):
             user_tg_id = event.from_user.id
 
@@ -80,7 +80,8 @@ class ParentClassForTrainingOperations:
         self._user_id = user_cache[handler.from_user.id].id
 
     async def _exception_func(self, text, except_text):
-        await self._handler.message.answer(text, parse_mode='HTML')
+        _handler = self._handler.message if isinstance(self._handler, CallbackQuery) else self._handler
+        await _handler.answer(text, parse_mode='HTML')
         await cmd_start(self._handler, self._state, self._is_admin, user_cache)
         await logger.error(except_text)
 
@@ -121,29 +122,32 @@ async def show_training_types(message: Message, state: FSMContext):
 
 
 async def show_events(call: CallbackQuery, state: FSMContext, is_admin: bool):
-    training_type = call.data.split(':')
-    events = await db_req.get_event(training_type=training_type, is_admin=is_admin)
-    events = sorted(events, key=lambda x: x['event_datetime'].replace(tzinfo=None))
-    event_ids = [i['id'] for i in events]
-    event_user = await db_rq_event_user.get_event_user(user_tg_id=call.chat.id, event_ids=event_ids)
+    _index = int(call.data.split(':')[1])  # индекс тренировки
+    training_type = TRAINING_TYPES[_index]
+    events = await db_req.get_events_by_training_types(training_type=training_type, is_admin=is_admin)
 
     if not events:
         message_text = 'Запланированных тренировок пока нет.'
-        button_text, callback_data = '↩️ Назад', 'return_to_choose_training_type'
-        keyboard = interrupt_or_return_button(button_text, callback_data)
-        await call.answer(message_text, reply_markup=keyboard)
+        button_text, callback_data = '↩️ Назад', '/event'
+        keyboard = interrupt_or_return_button(text=button_text, callback_data=callback_data)
+        await call.message.answer(message_text, reply_markup=keyboard)
     else:
+        event_ids = [i['id'] for i in events]
+        event_user = await db_rq_event_user.get_event_user(user_tg_id=call.from_user.id, event_ids=event_ids)
         message_text = (f'Ближайшие тренировки по дисциплине <b><i>{training_type}</i></b>.\n'
                         f'Тренировки, на которые Вы уже записаны, отмечены 🟢.')
         keyboard = show_events_kb(event_user, *events)
-        await call.answer(message_text, reply_markup=keyboard, parse_mode='HTML')
+        await call.message.answer(message_text, reply_markup=keyboard, parse_mode='HTML')
         await state.update_data(events=events)
 
 
 # Формирование текста по тренировке со списком участников
 def _show_text_about_event(event: dict, event_user: list, user_id: int) -> str:
-    text, participants_count = event['event_text'], int(event['participants_count'])
-        # Находим границы фрагмента по дате трени
+    text = f"<b>{event['training_type']}</b>\n\n"
+    text += event['event_text']
+    participants_count = int(event['participants_count'])
+
+    # Находим границы фрагмента по дате трени
     idx_0, idx_end = text.find('<b>Дата тренировки</b>:'), text.find('<b>Длительность</b>')
     ev_dt_info = text[idx_0:idx_end]
     # Находим день недели по индексу от datetime
@@ -192,7 +196,7 @@ async def show_formed_info_about_event(call_mess: Message | CallbackQuery,
                                        event_id: int,
                                        user_id: int):
     try:
-        event = db_req.get_event(id=event_id)
+        event = await db_req.get_event(id=event_id)
         event_user = await db_rq_event_user.get_event_user(event_id=event_id)
 
         keyboard = training_interface_kb(event, event_user, user_id, is_admin)
@@ -207,14 +211,21 @@ async def show_formed_info_about_event(call_mess: Message | CallbackQuery,
 
 # Установка сообщения по дедлайну для пользователей
 async def set_payment_dedline_text(payment_dedline, event_datetime, now):
-    delta_12, delta_3, delta_2 = timedelta(hours=12), timedelta(hours=3), timedelta(hours=2)
+    delta_12, delta_3, delta_2, delta_1 = timedelta(hours=12), timedelta(hours=3), timedelta(hours=2), timedelta(hours=1)
+    delta_30m, delta_10m = timedelta(minutes=30), timedelta(minutes=10)
     if now + delta_12 < payment_dedline:
         text = 'Вам необходимо оплатить до начального дедлайна.'
     else:
-        if now + delta_12 < event_datetime:
+        _delta = event_datetime - now
+        if now + delta_12 <= event_datetime - delta_3:
             text = 'Вам необходимо оплатить в течение 12 часов.'
-        elif (event_datetime - now) > timedelta(hours=2) and (event_datetime - now) < timedelta(hours=3):
-            text = 'Вам необходимо оплатить до начального дедлайна.'
-        elif now + timedelta(hours=12) < payment_dedline:
-            pass
+        elif _delta > delta_2 and _delta <= delta_3:
+            text = 'Вам необходимо оплатить в течение часа.'
+        elif _delta > delta_1 and _delta <= delta_2:
+            text = 'Вам необходимо оплатить в течение получаса.'
+        elif _delta > delta_30m and _delta <= delta_1:
+            text = 'Вам необходимо оплатить в течение 10 минут.'
+        elif _delta > delta_10m and _delta <= delta_30m:
+            text = 'Вам необходимо оплатить в течение 5 минут.'
+    text += '\nПо истечении этого срока оплаты при наличии резерва Вы можете быть задвинуты в конец очереди'
     return text

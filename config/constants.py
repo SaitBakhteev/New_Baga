@@ -28,12 +28,12 @@ SEASON_INDEX = [0]  # спец переменная, означающая нач
 
 # Спец функция для считывания индекса сезона и перезаписи его
 async def season_index(write_mode: bool = False):
-    with open('../season_index.txt', 'r') as f:
+    with open('season_index.txt', 'r') as f:
         global SEASON_INDEX
         SEASON_INDEX[0] = int(f.read().strip())
         if write_mode:
             SEASON_INDEX[0] += 1
-            with open('../season_index.txt', 'w') as f:
+            with open('season_index.txt', 'w') as f:
                 f.write(str(SEASON_INDEX[0]))
     return SEASON_INDEX[0]
 

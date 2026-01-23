@@ -12,22 +12,31 @@ logger = setup_logger(__name__)
 
 # Локальная инлайн-кнопка отмены действий
 def _cancel_kb(event_id: int):
-    keyboard = interrupt_or_return_button('⛔️Отменить', f'return_to_event_{event_id}')
+    text, callback_data = '⛔️Отменить', f'to_event_is:{event_id}'
+    keyboard = interrupt_or_return_button(text=text, callback_data=callback_data)
     return keyboard
 
 
 # Записаться на тренировку
 async def sign_up_for_training(call: CallbackQuery, is_admin: bool):
+    '''Данная функция реализована за счет следующих этапов:
+    - считываем данные тренировки, на которую записываемся
+    - проверяем, остается до начала трени более 10 минут'''
     try:
         user_id = user_cache[call.from_user.id].id
         event_id = int(call.data.split(':')[1])
         now = datetime.now().replace(tzinfo=None)
-        data = {'user_id': user_id, 'event_id': event_id,
-                'created_at': now, 'modified_at': now}
-        await db_rq_event_user.create_event_user(data)
-        await show_formed_info_about_event(call, is_admin, event_id, user_id)
-        text = ('Вы записались на тренировку.\n'
-                'Если у вас уже оплачена эта тренировка, нажмите на кнопку <i>"✔️ Тренировка оплачена"</i>')
+        event = db_req.get_event(id=event_id)
+        if (event['event_datetime'] - now) > timedelta(minutes=10):
+            data = {'user_id': user_id, 'event_id': event_id,
+                    'created_at': now, 'modified_at': now}
+            await db_rq_event_user.create_event_user(data)
+            await show_formed_info_about_event(call, is_admin, event_id, user_id)
+            text = ('Вы записались на тренировку.\n'
+                    'Если у вас уже оплачена эта тренировка, нажмите на кнопку <i>"✔️ Тренировка оплачена"</i>')
+
+        else:
+            text = 'Новых участников, менее, чем за 10 минут до начала тренировки, могут записывать только админы.'
 
         ### ----- !!  ЗДЕСЬ БУДЕТ ЕЩЁ КОД ПО ОТОБРАЖЕНИЮ СООБЩЕНИЯ ДЛЯ ПОЛЬЗЩОВТАЕЛЯ ПО ДЕДЛАЙНУ  !! --- #####
 
@@ -199,12 +208,12 @@ class AddFriend(ParentClassForTrainingOperations):
 
 
 class DeleteFromTraining(ParentClassForTrainingOperations):
-    def dispatch(self):
+    async def dispatch(self):
         if isinstance(self._handler, CallbackQuery):
             if self._handler.data.startswith('delete_from_training'):
-                self._delete_from_training()
-        elif self._state.get_state() == st.DeleteFromTrainingFSM.delete_from_training:
-            self._delete_from_training_confirm()
+                await self._delete_from_training()
+        elif await self._state.get_state() == st.DeleteFromTrainingFSM.delete_from_training:
+            await self._delete_from_training_confirm()
 
     async def _delete_from_training(self):
         text =('Если Вы уверены, что хотите удалиться из тренировки напишите в сообщении '
@@ -239,8 +248,9 @@ class DeleteFromTraining(ParentClassForTrainingOperations):
                 await show_formed_info_about_event(self._handler, self._is_admin, event_id, user_id)
                 await self._handler.answer('Удаление прервано')
         except Exception as e:
-            text, except_text = ('⭕️ Возникла ошибка.', f'Ошибка _payment_notify_confirm: {e}')
+            text, except_text = ('⭕️ Возникла ошибка.', f'Ошибка _delete_from_training_confirm: {e}')
             await self._exception_func(text, except_text)
+        await self._state.clear()
         asyncio.create_task(delete_bkg(self._handler))
 
     # Рассылка уведомлений после удаления

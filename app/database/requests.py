@@ -104,7 +104,7 @@ async def create_event(data):  # добавить событие
 
 async def get_event(id=None, for_telegramm=False,
                     for_schedule=False, last_record=False,
-                    training_type=None, **kwargs) -> Event():
+                    **kwargs) -> Event():
     try:
         if for_telegramm:
             return await (
@@ -120,11 +120,12 @@ async def get_event(id=None, for_telegramm=False,
                 else await (Event.filter(payment_dedline__gt=reper_datetime).order_by('payment_dedline').
                             values('id', 'payment_dedline', 'stars'))
         elif id:
-            return await (Event.filter(id=id).values(
+            event = await (Event.filter(id=id).values(
                 'id', 'payment_dedline', 'event_datetime', 'event_text', 'participants_count', 'stars',
                 'training_type'
             )
             )
+            return event[0]
         else:
             return await Event.get(id=id) if id else \
                 await (
@@ -134,6 +135,16 @@ async def get_event(id=None, for_telegramm=False,
                 )
     except DoesNotExist:
         return
+
+
+# Запрос для получения тренировок по указанному типу
+async def get_events_by_training_types(training_type, is_admin):
+    now = datetime.now()
+    if is_admin is not True:
+        return await Event.filter(training_type=training_type).all().order_by('event_datetime').values()
+    else:
+        return await (Event.filter(training_type=training_type, event_datetime__lt=now).all().
+                      order_by('event_datetime').values())
 
 
 # Запрос для отображения списка тренировок по выбранному типу

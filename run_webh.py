@@ -29,7 +29,9 @@ from app.database.requests import get_all_users
 with open("/tmp/bot_debug.log", "a") as f:
     f.write("=== line 32 ===\n")
 
-from config import TOKEN, WEBHOOK_TOKEN, URL, REPER_HOURS, TORTOISE_ORM, season_index, setup_logger, setup_base_logger
+from config.log_config import *
+from config.constants import *
+from config.db_config import *
 
 with open("/tmp/bot_debug.log", "a") as f:
     f.write("=== line 36 ===\n")
