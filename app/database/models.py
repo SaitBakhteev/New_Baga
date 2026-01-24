@@ -61,6 +61,7 @@ class EventUser(Model):
 
     class Meta:
         table = 'EventUser'
+        unique_together = ('event', 'user')
 
     async def upload_check(self):
         self.paid_check = 'paid'
