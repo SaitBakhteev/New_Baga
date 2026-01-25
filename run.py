@@ -11,7 +11,7 @@ from apscheduler.triggers.cron import CronTrigger
 from tortoise import Tortoise, connections
 from tortoise.exceptions import DBConnectionError, OperationalError
 
-from app.handlers.main_handler import main_router
+from app.handlers.main import main_router
 from app.database.requests import get_all_users
 
 from config.constants import *

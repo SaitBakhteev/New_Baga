@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS "user" (
     "tg_name" VARCHAR(150),
     "created_at" TIMESTAMP NOT NULL  DEFAULT CURRENT_TIMESTAMP,
     "admin_permissions" INT NOT NULL  DEFAULT 0,
-    "receive_notifications" INT NOT NULL  DEFAULT 0
+    "receive_notifications" INT NOT NULL  DEFAULT 0,
+    "subscription" VARCHAR(64)
 );
 CREATE TABLE IF NOT EXISTS "event" (
     "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -30,9 +31,10 @@ CREATE TABLE IF NOT EXISTS "event" (
 );
 CREATE TABLE IF NOT EXISTS "EventUser" (
     "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-    "modified_at" TIMESTAMP NOT NULL  DEFAULT CURRENT_TIMESTAMP,
     "created_at" TIMESTAMP NOT NULL  DEFAULT CURRENT_TIMESTAMP,
-    "paid_check" VARCHAR(4),
+    "modified_at" TIMESTAMP NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+    "individual_dedline" TIMESTAMP NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+    "paid_check" INT,
     "paid_check_dedline" TIMESTAMP,
     "payment_confirmed" INT,
     "last_payment_notify" TIMESTAMP,
@@ -49,6 +51,7 @@ CREATE TABLE IF NOT EXISTS "statistic" (
     "training_type" VARCHAR(30) NOT NULL,
     "visit_count" INT NOT NULL,
     "star_count" INT NOT NULL,
+    "likes" INT NOT NULL,
     "user_id" INT NOT NULL REFERENCES "user" ("id") ON DELETE NO ACTION
 );
 CREATE TABLE IF NOT EXISTS "voting" (

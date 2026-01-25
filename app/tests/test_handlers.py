@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 
 from unittest.mock import AsyncMock
 
-from app.handlers.main_handler import main_router
+from app.handlers.main import main_router
 from app.operations.regisration_ops import registration_and_welcome
 
 

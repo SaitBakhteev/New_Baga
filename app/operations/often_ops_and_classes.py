@@ -103,8 +103,7 @@ async def cmd_start(call_mess: CallbackQuery | Message, state: FSMContext, is_ad
         await state.clear()
         call_mess = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
         await call_mess.answer(
-            f"Для работы с ботом воспользуйтесь командами меню, расположенными "
-            f"слева внизу (если у вас на устройстве стандатная раскладка).\n↙️"
+            f"Для работы воспользуйтесь меню внизу слева \n↙️"
         )
     except Exception as e:
         await logger.error(f'Ошибка в cmd_start: {e}')
@@ -207,25 +206,3 @@ async def show_formed_info_about_event(call_mess: Message | CallbackQuery,
     except Exception as e:
         await logger.error(f'Ошибка в choose_event: {e}')
         # stream_logger.error(f'Ошибка в choose_event: {e}')
-
-
-# Установка сообщения по дедлайну для пользователей
-async def set_payment_dedline_text(payment_dedline, event_datetime, now):
-    delta_12, delta_3, delta_2, delta_1 = timedelta(hours=12), timedelta(hours=3), timedelta(hours=2), timedelta(hours=1)
-    delta_30m, delta_10m = timedelta(minutes=30), timedelta(minutes=10)
-    if now + delta_12 < payment_dedline:
-        text = 'Вам необходимо оплатить до начального дедлайна.'
-    else:
-        _delta = event_datetime - now
-        if now + delta_12 <= event_datetime - delta_3:
-            text = 'Вам необходимо оплатить в течение 12 часов.'
-        elif _delta > delta_2 and _delta <= delta_3:
-            text = 'Вам необходимо оплатить в течение часа.'
-        elif _delta > delta_1 and _delta <= delta_2:
-            text = 'Вам необходимо оплатить в течение получаса.'
-        elif _delta > delta_30m and _delta <= delta_1:
-            text = 'Вам необходимо оплатить в течение 10 минут.'
-        elif _delta > delta_10m and _delta <= delta_30m:
-            text = 'Вам необходимо оплатить в течение 5 минут.'
-    text += '\nПо истечении этого срока оплаты при наличии резерва Вы можете быть задвинуты в конец очереди'
-    return text

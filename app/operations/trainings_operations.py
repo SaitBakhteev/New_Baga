@@ -17,6 +17,28 @@ def _cancel_kb(event_id: int):
     return keyboard
 
 
+# Реализация методов установки параметров отправки уведомлений боту о платеже в зависимости от контекста
+class SetParametersOfSendPaymentNotify():
+    def __init__(self, context: str):
+        self._context = context
+
+    def dispatch(self, **kwargs):
+        if self._context == 'set_init_availability':  # определение начальной доступности оправки уведомлений об оплате
+            return self._set_init_availability(**kwargs)
+
+    def _set_init_availability(self, **kwargs):
+        '''
+        Логика установки значения поля is_paid. Реперная точка в 27 часов получилась исходя из:
+        - сутки нужны админу на проверку оплаты
+        - за 3 и менее часа до начала трени работает другая логика по дедлайну оплаты
+        :param kwargs:
+        :return True/False/None:
+        '''
+        now, event_datetime = kwargs['now'], kwargs['event_datetime']
+        return False if now > event_datetime - timedelta(hours=27) else None
+
+
+
 # Записаться на тренировку
 async def sign_up_for_training(call: CallbackQuery, is_admin: bool):
     '''Данная функция реализована за счет следующих этапов:
@@ -46,6 +68,37 @@ async def sign_up_for_training(call: CallbackQuery, is_admin: bool):
         # stream_logger.error(e)
 
 
+def _set_individual_payment_dedline(now, event_datetime, payment_dedline):
+    pass
+
+
+async def _define_state_and_text_of_payment_dedline(payment_dedline, event_datetime, now):
+    delta_12, delta_3, delta_2, delta_1 = timedelta(hours=12), timedelta(hours=3), timedelta(hours=2), timedelta(hours=1)
+    delta_30m, delta_10m = timedelta(minutes=30), timedelta(minutes=10)
+    if now + delta_12 < payment_dedline:
+        text = 'Вам необходимо оплатить до начального дедлайна.'
+    else:
+        _delta = event_datetime - now
+        if now + delta_12 <= event_datetime - delta_3:
+            text = 'Вам необходимо оплатить в течение 12 часов.'
+        elif _delta > delta_2 and _delta <= delta_3:
+            text = 'Вам необходимо оплатить в течение часа.'
+        elif _delta > delta_1 and _delta <= delta_2:
+            text = 'Вам необходимо оплатить в течение получаса.'
+        elif _delta > delta_30m and _delta <= delta_1:
+            text = 'Вам необходимо оплатить в течение 10 минут.'
+        elif _delta > delta_10m and _delta <= delta_30m:
+            text = 'Вам необходимо оплатить в течение 5 минут.'
+    text += '\nПо истечении этого срока оплаты при наличии резерва Вы можете быть задвинуты в конец очереди'
+    return text
+
+
+# Установка значений полей по уведомлению об оплате
+def _set_values_of_notify_fields(now, payment_dedline):
+
+    return False if now + timedelta(hours=12) < payment_dedline else None
+
+
 # Уведомить бот об оплате
 class PaymentNotify(ParentClassForTrainingOperations):
     async def dispatch(self):
@@ -62,7 +115,7 @@ class PaymentNotify(ParentClassForTrainingOperations):
             is_paid_check = await db_rq_event_user.get_event_user_for_check_pay_notify(
                 event_id=event_id, user_id=self._user_id
             )
-            if is_paid_check is not None:
+            if is_paid_check is None:
                 text = (
                     'ВНИМАНИЕ❗️\n'
                     'Уведомлять об оплате можно только ОДИН (!!) раз. '
@@ -133,8 +186,9 @@ class AddFriend(ParentClassForTrainingOperations):
                         friend_id, friend, friend_tg_id = user_cache[k].id, user_cache[k].tg_username, user_cache[k].tg_id
                         break
                 if friend is not None:
-                    friend_signed_up  = await db_rq_event_user.get_event_user_for_check_friend(event_id,
-                                                                                               friend_id=friend_id)
+                    friend_signed_up  = await db_rq_event_user.get_event_user_for_check_friend(
+                        event_id, friend_id=friend_id
+                    )
                     my_prev_friend = await db_rq_event_user.get_event_user_for_check_friend(
                         event_id, i_am_friend=self._handler.from_user.username
                     )

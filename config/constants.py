@@ -11,6 +11,7 @@ from aiogram.enums import ParseMode
 load_dotenv(find_dotenv())
 
 TOKEN, WEBHOOK_TOKEN = os.getenv("TOKEN"), os.getenv("WEBHOOK_TOKEN")
+BOT_NAME = os.getenv("BOT_NAME")
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
 TRAINING_TYPES = ('🏐 Волейбол', '🏖 Пляжный волейбол', '❄️ Снежный волейбол',

@@ -91,7 +91,7 @@ async def create_event(data):  # добавить событие
     try:
         await Event.create(
             training_type=data['training_type'],
-            created_at=data['created_at'],
+            created_at=datetime.now(),
             payment_dedline=data['payment_dedline'],
             event_datetime=data['event_datetime'],
             participants_count=data['participants_count'],

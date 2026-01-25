@@ -23,7 +23,7 @@ from tortoise import Tortoise, connections
 from tortoise.exceptions import DBConnectionError, OperationalError
 
 
-from app.handlers.main_handler import main_router, user_cache  #, dedlines, dedline_notifications
+from app.handlers.main import main_router, user_cache  #, dedlines, dedline_notifications
 from app.database.requests import get_all_users
 
 with open("/tmp/bot_debug.log", "a") as f:

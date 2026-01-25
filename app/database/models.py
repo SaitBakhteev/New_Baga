@@ -20,6 +20,9 @@ class User(Model):
     admin_permissions = fields.BooleanField(default=False)
     receive_notifications = fields.BooleanField(default=False)  # получать или не получать уведомления
 
+    # На какие типы тренировок должны приходить уведомления
+    subscription = fields.CharField(null=True, max_length=64)
+
     def __str__(self):
         return self.tg_username
 
@@ -44,11 +47,12 @@ class EventUser(Model):
     id = fields.IntField(primary_key=True)
     event = fields.ForeignKeyField('models.Event', on_delete=fields.CASCADE)
     user = fields.ForeignKeyField('models.User', on_delete=fields.CASCADE)
-    modified_at = fields.DatetimeField(auto_now_add=True, timezone=timezone('Europe/Moscow'))
     created_at = fields.DatetimeField(auto_now_add=True, timezone=timezone('Europe/Moscow'))
+    modified_at = fields.DatetimeField(auto_now_add=True, timezone=timezone('Europe/Moscow'))
+    individual_dedline = fields.DatetimeField(auto_now_add=True, timezone=timezone('Europe/Moscow'))
 
-    # Два поля по уведомлению об оплате: установка, время жизни,
-    paid_check = fields.CharField(null=True, max_length=4)  # поле оповещения пользователем боту об оплате
+    # Два поля по уведомлению об оплате: состояния уведомления, время жизни ✔️
+    paid_check = fields.BooleanField(null=True)
     paid_check_dedline = fields.DatetimeField(null=True, timezone=timezone('Europe/Moscow'))
 
     payment_confirmed = fields.BooleanField(default=None, null=True)  # подтверждение оплаты, доступное только админу
@@ -92,6 +96,7 @@ class Statistic(Model):
     training_type = fields.CharField(max_length=30)
     visit_count = fields.IntField()
     star_count = fields.IntField()
+    likes = fields.IntField()
 
 
 # Голосование

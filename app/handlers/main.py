@@ -1,9 +1,9 @@
 from aiogram import Router, F
 from aiogram.filters import Command
 
-from ..operations.often_ops_and_classes import *
 from ..operations.trainings_operations import *
-from ..handlers.rare_handlers import registration_router
+from app.handlers.rare_handlers.rare import rare_router
+from ..handlers.admin_handlers.admin import admin_router
 
 from .. import states as st
 
@@ -17,7 +17,7 @@ main_router = Router()
 
 main_router.message.middleware(AdminMiddleware())
 main_router.callback_query.middleware(AdminMiddleware())
-main_router.include_routers(registration_router)
+main_router.include_routers(rare_router, admin_router)
 
 
 # БЛОК ВЫБОРА ТРЕНИРОВОК
