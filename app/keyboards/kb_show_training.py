@@ -11,6 +11,12 @@ from .universal_keyboards import BACK_TEXT_KB
 sync_logger = setup_sync_logger(__name__)
 
 
+def cancel_kb(event_id: int):
+    text, callback_data = '⛔️Отменить', f'to_event_is:{event_id}'
+    keyboard = interrupt_or_return_button(text=text, callback_data=callback_data)
+    return keyboard
+
+
 # КНОПКИ ПО ВЫБОРУ ТИПА ТРЕНИРОВОК В ЗАВИСИМОСТИ ОТ КОНТЕКСТА
 # ===========================================================
 

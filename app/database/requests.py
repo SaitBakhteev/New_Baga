@@ -138,28 +138,13 @@ async def get_event(id=None, for_telegramm=False,
 
 
 # Запрос для получения тренировок по указанному типу
-async def get_events_by_training_types(training_type, is_admin):
+async def get_events_by_training_type(training_type, is_admin):
     now = datetime.now()
     if is_admin is not True:
         return await Event.filter(training_type=training_type).all().order_by('event_datetime').values()
     else:
         return await (Event.filter(training_type=training_type, event_datetime__lt=now).all().
                       order_by('event_datetime').values())
-
-
-# Запрос для отображения списка тренировок по выбранному типу
-async def get_events_by_training_type(training_type, is_admin):
-    if is_admin is False:  # админы видят и прошедшие необработанные по звезлам тренировки
-        return await (
-            Event.filter(training_type=training_type,
-                         event_datetime__gt=datetime.now() - timedelta(hours=12)).order_by('id').
-            values('id', 'payment_dedline', 'event_datetime', 'event_text', 'participants_count', 'stars')
-        )
-    else:
-        return await (
-            Event.filter(training_type=training_type).order_by('id').
-            values('id', 'payment_dedline', 'event_datetime', 'event_text', 'participants_count', 'stars')
-        )
 
 
 async def update_event(event_id: int, data, **kwargs):

@@ -1,20 +1,9 @@
-import asyncio
-from datetime import datetime, timedelta
-
-from config.constants import bot, user_cache
 from app.operations.often_ops_and_classes import *
 import app.states as st
-from ..keyboards.universal_keyboards import interrupt_or_return_button, RETURN_TO_START_BUTTON
-from ..keyboards.kb_confirm import add_friend_confirm_kb, payment_notify_confirm_kb
+from ..keyboards.kb_show_training import cancel_kb
+from ..keyboards.kb_confirm import add_friend_confirm_kb
 
 logger = setup_logger(__name__)
-
-
-# Локальная инлайн-кнопка отмены действий
-def _cancel_kb(event_id: int):
-    text, callback_data = '⛔️Отменить', f'to_event_is:{event_id}'
-    keyboard = interrupt_or_return_button(text=text, callback_data=callback_data)
-    return keyboard
 
 
 # Реализация методов установки параметров отправки уведомлений боту о платеже в зависимости от контекста
@@ -23,20 +12,41 @@ class SetParametersOfSendPaymentNotify():
         self._context = context
 
     def dispatch(self, **kwargs):
-        if self._context == 'set_init_availability':  # определение начальной доступности оправки уведомлений об оплате
+        if self._context == 'on_sign_up':
+            # Определение начальной доступности оправки уведомлений об оплате
             return self._set_init_availability(**kwargs)
 
     def _set_init_availability(self, **kwargs):
         '''
-        Логика установки значения поля is_paid. Реперная точка в 27 часов получилась исходя из:
-        - сутки нужны админу на проверку оплаты
+        Логика установки значения поля is_paid. Реперная точка в 17 часов получилась исходя из:
+        - у участника есть 12 часов на оплату, время и так поджимает до начала трени;
         - за 3 и менее часа до начала трени работает другая логика по дедлайну оплаты
         :param kwargs:
         :return True/False/None:
         '''
         now, event_datetime = kwargs['now'], kwargs['event_datetime']
-        return False if now > event_datetime - timedelta(hours=27) else None
+        return False if now > event_datetime - timedelta(hours=17) else None
 
+    async def _define_state_and_text_of_payment_dedline(self, payment_dedline, event_datetime, now):
+        delta_12, delta_3, delta_2, delta_1 = timedelta(hours=12), timedelta(hours=3), timedelta(hours=2), timedelta(
+            hours=1)
+        delta_30m, delta_10m = timedelta(minutes=30), timedelta(minutes=10)
+        if now + delta_12 < payment_dedline:
+            text = 'Вам необходимо оплатить до начального дедлайна.'
+        else:
+            _delta = event_datetime - now
+            if now + delta_12 <= event_datetime - delta_3:
+                text = 'Вам необходимо оплатить в течение 12 часов.'
+            elif _delta > delta_2 and _delta <= delta_3:
+                text = 'Вам необходимо оплатить в течение часа.'
+            elif _delta > delta_1 and _delta <= delta_2:
+                text = 'Вам необходимо оплатить в течение получаса.'
+            elif _delta > delta_30m and _delta <= delta_1:
+                text = 'Вам необходимо оплатить в течение 10 минут.'
+            elif _delta > delta_10m and _delta <= delta_30m:
+                text = 'Вам необходимо оплатить в течение 5 минут.'
+        text += '\nПо истечении этого срока оплаты при наличии резерва Вы можете быть задвинуты в конец очереди'
+        return text
 
 
 # Записаться на тренировку
@@ -72,27 +82,6 @@ def _set_individual_payment_dedline(now, event_datetime, payment_dedline):
     pass
 
 
-async def _define_state_and_text_of_payment_dedline(payment_dedline, event_datetime, now):
-    delta_12, delta_3, delta_2, delta_1 = timedelta(hours=12), timedelta(hours=3), timedelta(hours=2), timedelta(hours=1)
-    delta_30m, delta_10m = timedelta(minutes=30), timedelta(minutes=10)
-    if now + delta_12 < payment_dedline:
-        text = 'Вам необходимо оплатить до начального дедлайна.'
-    else:
-        _delta = event_datetime - now
-        if now + delta_12 <= event_datetime - delta_3:
-            text = 'Вам необходимо оплатить в течение 12 часов.'
-        elif _delta > delta_2 and _delta <= delta_3:
-            text = 'Вам необходимо оплатить в течение часа.'
-        elif _delta > delta_1 and _delta <= delta_2:
-            text = 'Вам необходимо оплатить в течение получаса.'
-        elif _delta > delta_30m and _delta <= delta_1:
-            text = 'Вам необходимо оплатить в течение 10 минут.'
-        elif _delta > delta_10m and _delta <= delta_30m:
-            text = 'Вам необходимо оплатить в течение 5 минут.'
-    text += '\nПо истечении этого срока оплаты при наличии резерва Вы можете быть задвинуты в конец очереди'
-    return text
-
-
 # Установка значений полей по уведомлению об оплате
 def _set_values_of_notify_fields(now, payment_dedline):
 
@@ -123,7 +112,7 @@ class PaymentNotify(ParentClassForTrainingOperations):
                     '❌ (админ не подтвердил оплату).\n'
                     'Если Вы подтверждаете факт оплаты и отправки скрина админу, отправьте в сообщении боту слово <i>"да"</i>?'
                 )
-                await self._handler.message.answer(text, reply_markup=_cancel_kb(event_id), parse_mode='HTML')
+                await self._handler.message.answer(text, reply_markup=cancel_kb(event_id), parse_mode='HTML')
                 await self._state.update_data(event_id=event_id)
                 await self._state.set_state(st.PaymenNotify.confirm)
             else:
@@ -170,7 +159,7 @@ class AddFriend(ParentClassForTrainingOperations):
     async def _add_friend(self):
         event_id = int(self._handler.data.split(':')[1])
         text = 'Введите никнейм вашего друга.\n<i>Пример</i>: @ivanov1934'
-        await self._handler.message.answer(text, parse_mode='HTML', reply_markup=_cancel_kb(event_id))
+        await self._handler.message.answer(text, parse_mode='HTML', reply_markup=cancel_kb(event_id))
         await self._state.update_data(event_id=event_id)
         await self._state.set_state(st.AddFriendFSM.add_friend)
 
@@ -274,7 +263,7 @@ class DeleteFromTraining(ParentClassForTrainingOperations):
                '<i><b>да</b></i> и отправьте его.\n'
                'Если сомневаетесь, отмените действие нажатием на кнопку или отправьте любое другое сообщение')
         event_id, user_id = int(self._handler.data.split(':')[1]), user_cache[self._handler.from_user.id].id
-        await self._handler.message.answer(text, reply_markup=_cancel_kb(event_id), parse_mode='HTML')
+        await self._handler.message.answer(text, reply_markup=cancel_kb(event_id), parse_mode='HTML')
         await self._state.update_data(event_id=event_id, user_id=user_id)
         await self._state.set_state(st.DeleteFromTrainingFSM.delete_from_training)
 

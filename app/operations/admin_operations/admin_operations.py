@@ -9,7 +9,7 @@ from app.database import requests as db_rq
 
 from config.constants import *
 
-from ..often_ops_and_classes import delete_bkg, ParentClassForTrainingOperations
+from ..often_ops_and_classes import delete_bkg, ParentClassForTrainingOperations, show_formed_info_about_event
 from ...keyboards.admin_keyboards.admin_keyboards import *
 
 
@@ -160,3 +160,31 @@ class CreateEvent(ParentClassForTrainingOperations):
                         f'<b>{data["training_type"]}</b>\n{data["event_text"]}')
         await self._handler.message.answer(message_text, parse_mode='HTML')
         await show_admin_panel(self._handler, self._state)
+
+
+class EditEvent(CreateEvent):
+    async def dispatch(self):
+        if isinstance(self._handler, CallbackQuery):
+            if self._handler.data.startswith('edit_event_is'):
+                await self._show_current_template_kb()
+        elif await self._state.get_state() == st.EditEvent.insert_template:
+                await self._save_event()
+
+    async def _show_current_template_kb(self):
+        event_id = int(self._handler.data.split(':')[1])
+        event = db_rq.get_event(id=event_id)
+        text = 'Вставьте текущий шаблон этой тренировки, после чего отредактируйте и отправьте в сообщении боту'
+        await self._handler.message.answer(text, reply_markup=current_template_kb(event['event_text']))
+        await self._state.update_data(event_id=event_id)
+        await self._state.set_state(st.EditEvent.insert_template)
+
+    async def _save_event(self):
+        data = await self._state.get_data()
+        text = self._handler.text.replace(f"{BOT_NAME}", "").strip()
+        event_id, event_info = data['event_id'], self._parse_template_text(text)
+        data['event_datetime'], data['event_text'] = event_info['event_datetime'], event_info['event_text']
+        data['participants_count'], data['boss_id'] = event_info['participants_count'], event_info['boss_id']
+        await db_rq.update_event(event_id, data)
+        await self._state.clear()
+        await self._handler.answer('Тренировка успешно отредактирована')
+        await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
