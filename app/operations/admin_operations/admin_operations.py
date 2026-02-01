@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime, date, time, timedelta
+from datetime import date, time
 
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
@@ -188,3 +188,7 @@ class EditEvent(CreateEvent):
         await self._state.clear()
         await self._handler.answer('Тренировка успешно отредактирована')
         await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
+
+
+class DeleteEvent():
+    pass

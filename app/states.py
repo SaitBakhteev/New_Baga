@@ -84,3 +84,7 @@ class ShowRaitingFSM(StatesGroup):
 
 class SendCheckFSM(StatesGroup):
     send_check = State()
+
+
+class PayConfirmationFSM(StatesGroup):
+    write_participants = State()

@@ -25,8 +25,8 @@ main_router.include_routers(rare_router, admin_router)
 @main_router.callback_query(F.data=='/event')
 @main_router.message(Command('event'))
 async def call_show_traininig_types(call: Message | CallbackQuery, state: FSMContext):
-    __handler = call.message if isinstance(call, CallbackQuery) else call
-    await show_training_types(__handler, state)
+    _handler = call.message if isinstance(call, CallbackQuery) else call
+    await show_training_types(_handler, state)
 
 
 @main_router.callback_query(F.data.startswith('to_training_type_is'))
@@ -39,6 +39,11 @@ async def call_show_training(call: CallbackQuery, is_admin: bool):
     event_id = int(call.data.split(':')[1])
     user_id = user_cache[call.from_user.id].id
     await show_formed_info_about_event(call, is_admin, event_id, user_id)
+
+
+@main_router.callback_query(F.data.startswith('sign_up_to_training_is'))
+async def call_sign_up_to_training(call: CallbackQuery, state: FSMContext, is_admin: bool):
+    await sign_up_to_training(call, state, is_admin)
 
 
 # БЛОК ВЫЗОВА МНОГОШАГОВЫХ ОПЕРАЦИЙ

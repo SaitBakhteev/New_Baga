@@ -1,4 +1,5 @@
 import asyncio
+from datetime import timedelta
 
 from aiogram import BaseMiddleware
 from aiogram.fsm.context import FSMContext
@@ -6,7 +7,7 @@ from aiogram.types import TelegramObject, Message, CallbackQuery
 
 from typing import Callable, Dict, Any, Awaitable
 
-
+from config.constants import bot, user_cache
 from ..keyboards.kb_show_training import training_interface_kb, show_events_kb
 
 from ..database import requests as db_req
@@ -141,7 +142,7 @@ async def show_events(call: CallbackQuery, state: FSMContext, is_admin: bool):
 
 
 # Формирование текста по тренировке со списком участников
-def _show_text_about_event(event: dict, event_user: list, user_id: int) -> str:
+def show_text_about_event(event: dict, event_user: list, user_id: int) -> str:
     text = f"<b>{event['training_type']}</b>\n\n"
     text += event['event_text']
     participants_count = int(event['participants_count'])
@@ -199,10 +200,72 @@ async def show_formed_info_about_event(call_mess: Message | CallbackQuery,
         event_user = await db_rq_event_user.get_event_user(event_id=event_id)
 
         keyboard = training_interface_kb(event, event_user, user_id, is_admin)
-        text = _show_text_about_event(event, event_user, user_id)
+        text = show_text_about_event(event, event_user, user_id)
         mess_handler = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
         await mess_handler.answer(text, parse_mode='HTML', reply_markup=keyboard)
         asyncio.create_task(delete_bkg(call_mess))
     except Exception as e:
-        await logger.error(f'Ошибка в choose_event: {e}')
+        await logger.error(f'Ошибка в show_formed_info_about_event: {e}')
         # stream_logger.error(f'Ошибка в choose_event: {e}')
+
+
+def set_individual_dedline(payment_dedline, event_datetime, now):
+    delta_12, delta_3, delta_2, delta_1 = (timedelta(hours=12), timedelta(hours=3),
+                                           timedelta(hours=2), timedelta(hours=1))
+    delta_30m, delta_10m = timedelta(minutes=30), timedelta(minutes=10)
+    if now + delta_12 < payment_dedline:
+        individual_dedline = payment_dedline
+    elif now + delta_12 <= event_datetime - delta_3:
+        individual_dedline = now + delta_12
+    else:
+        _delta, = event_datetime - now
+        if _delta > delta_3:
+            individual_dedline = event_datetime - delta_2
+        elif _delta > delta_2 and _delta <= delta_3:
+            individual_dedline = now + delta_1
+        elif _delta > delta_1 and _delta <= delta_2:
+            individual_dedline = now + delta_30m
+        elif _delta > delta_30m and _delta <= delta_1:
+            individual_dedline = now + delta_10m
+        elif _delta > delta_10m and _delta <= delta_30m:
+            individual_dedline = now + timedelta(minutes=5)
+
+    _lenght_of_dedline = (individual_dedline - now)
+    if _lenght_of_dedline >= delta_2:
+        text = f"Вам необходимо оплатить до <b><i>{individual_dedline.strftime('%H:%M %d.%m.%Y')}</i></b>.\n"
+    else:
+        text = (f"ВНИМАНИЕ ‼️🔥\n У Вас весьма ограниченный дедлайн на оплату⏳.\n"
+                 f"Вам необходимов течение {_lenght_of_dedline.strftime('%M')} минут.\n")
+
+    text += 'По истечении этого срока оплаты при наличии резерва Вы можете быть задвинуты в конец очереди'
+    return {'text': text, 'individual_dedline':individual_dedline}
+
+
+# Класс с метолдами отправки уведомлений в зависимости от контекста
+class MessageSending():
+
+    # Метод применяется при записи, удалении, перемещении админом и прочее
+    async def to_one_receiver(self, text, tg_id):
+        await bot.send_message(tg_id, text)
+
+    async def send_to_admins(self, text, now, event_datetime):
+        '''
+        Данная функция сработает, если сообщения будут по тренировке, до начала
+        которой остаются считанные часы (менее 12)
+        :param text:
+        :param now:
+        :param event_datetime:
+        :return:
+        '''
+        if event_datetime - now < timedelta(hours=12):
+            for k in user_cache:
+                if user_cache[k].admin_permissions:
+                    await bot.send_message(int(k), text)
+
+    async def when_scheduler_move_to_main_list(self, tg_ids: list, text):
+        '''
+        Метод предназначен для рассылки нескольким участникам при работе планировщика
+        :param tg_ids: список tg_id получателдей уведомления
+        '''
+        for tg_id in tg_ids:
+            await bot.send_message(tg_id, text)

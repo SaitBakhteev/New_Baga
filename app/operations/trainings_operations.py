@@ -1,91 +1,44 @@
+import asyncio
+
 from app.operations.often_ops_and_classes import *
 import app.states as st
+from .often_ops_and_classes import set_individual_dedline
 from ..keyboards.kb_show_training import cancel_kb
 from ..keyboards.kb_confirm import add_friend_confirm_kb
+from config.constants import bot, user_cache
 
 logger = setup_logger(__name__)
 
 
-# Реализация методов установки параметров отправки уведомлений боту о платеже в зависимости от контекста
-class SetParametersOfSendPaymentNotify():
-    def __init__(self, context: str):
-        self._context = context
-
-    def dispatch(self, **kwargs):
-        if self._context == 'on_sign_up':
-            # Определение начальной доступности оправки уведомлений об оплате
-            return self._set_init_availability(**kwargs)
-
-    def _set_init_availability(self, **kwargs):
-        '''
-        Логика установки значения поля is_paid. Реперная точка в 17 часов получилась исходя из:
-        - у участника есть 12 часов на оплату, время и так поджимает до начала трени;
-        - за 3 и менее часа до начала трени работает другая логика по дедлайну оплаты
-        :param kwargs:
-        :return True/False/None:
-        '''
-        now, event_datetime = kwargs['now'], kwargs['event_datetime']
-        return False if now > event_datetime - timedelta(hours=17) else None
-
-    async def _define_state_and_text_of_payment_dedline(self, payment_dedline, event_datetime, now):
-        delta_12, delta_3, delta_2, delta_1 = timedelta(hours=12), timedelta(hours=3), timedelta(hours=2), timedelta(
-            hours=1)
-        delta_30m, delta_10m = timedelta(minutes=30), timedelta(minutes=10)
-        if now + delta_12 < payment_dedline:
-            text = 'Вам необходимо оплатить до начального дедлайна.'
-        else:
-            _delta = event_datetime - now
-            if now + delta_12 <= event_datetime - delta_3:
-                text = 'Вам необходимо оплатить в течение 12 часов.'
-            elif _delta > delta_2 and _delta <= delta_3:
-                text = 'Вам необходимо оплатить в течение часа.'
-            elif _delta > delta_1 and _delta <= delta_2:
-                text = 'Вам необходимо оплатить в течение получаса.'
-            elif _delta > delta_30m and _delta <= delta_1:
-                text = 'Вам необходимо оплатить в течение 10 минут.'
-            elif _delta > delta_10m and _delta <= delta_30m:
-                text = 'Вам необходимо оплатить в течение 5 минут.'
-        text += '\nПо истечении этого срока оплаты при наличии резерва Вы можете быть задвинуты в конец очереди'
-        return text
-
-
 # Записаться на тренировку
-async def sign_up_for_training(call: CallbackQuery, is_admin: bool):
+async def sign_up_to_training(call: CallbackQuery, state: FSMContext, is_admin: bool):
     '''Данная функция реализована за счет следующих этапов:
     - считываем данные тренировки, на которую записываемся
     - проверяем, остается до начала трени более 10 минут'''
     try:
+        await state.clear()
         user_id = user_cache[call.from_user.id].id
         event_id = int(call.data.split(':')[1])
         now = datetime.now().replace(tzinfo=None)
-        event = db_req.get_event(id=event_id)
-        if (event['event_datetime'] - now) > timedelta(minutes=10):
-            data = {'user_id': user_id, 'event_id': event_id,
-                    'created_at': now, 'modified_at': now}
+        event = await db_req.get_event(id=event_id)
+        payment_dedline, event_datetime = event['payment_dedline'], event['event_datetime']
+        payment_dedline, event_datetime = payment_dedline.replace(tzinfo=None), event_datetime.replace(tzinfo=None)
+        if (event_datetime - now) > timedelta(minutes=10):
+            dedline_info = set_individual_dedline(payment_dedline=payment_dedline,
+                                                  event_datetime=event_datetime, now=now)
+            data = {'user_id': user_id, 'event_id': event_id, 'created_at': now, 'modified_at': now,
+                    'individual_dedline':dedline_info['individual_dedline']}
             await db_rq_event_user.create_event_user(data)
             await show_formed_info_about_event(call, is_admin, event_id, user_id)
             text = ('Вы записались на тренировку.\n'
-                    'Если у вас уже оплачена эта тренировка, нажмите на кнопку <i>"✔️ Тренировка оплачена"</i>')
-
+                    'Если у вас уже оплачена эта тренировка, нажмите на кнопку <i>"✔️ Тренировка оплачена"</i>\n')
+            text += dedline_info['text']
         else:
             text = 'Новых участников, менее, чем за 10 минут до начала тренировки, могут записывать только админы.'
-
-        ### ----- !!  ЗДЕСЬ БУДЕТ ЕЩЁ КОД ПО ОТОБРАЖЕНИЮ СООБЩЕНИЯ ДЛЯ ПОЛЬЗЩОВТАЕЛЯ ПО ДЕДЛАЙНУ  !! --- #####
-
         await call.message.answer(text, parse_mode='HTML')
     except Exception as e:
         await logger.error(e)
         # stream_logger.error(e)
-
-
-def _set_individual_payment_dedline(now, event_datetime, payment_dedline):
-    pass
-
-
-# Установка значений полей по уведомлению об оплате
-def _set_values_of_notify_fields(now, payment_dedline):
-
-    return False if now + timedelta(hours=12) < payment_dedline else None
 
 
 # Уведомить бот об оплате
@@ -204,7 +157,7 @@ class AddFriend(ParentClassForTrainingOperations):
                     message_text = f'🤷🏻‍♂️ Пользователь с никнеймом <i>{text}</i> не зарегистрирован в боте'
             else:
                 message_text = '☝🏽Вы не можете добавить себя вместо друга'
-            await self._handler.answer(message_text, parse_mode='HTML', reply_markup=return_to_start_markup())
+            await self._handler.answer(message_text, parse_mode='HTML', reply_markup=cancel_kb(event_id))
         except Exception as e:
             text, except_text = '⭕️ Возникла ошибка.', f'Ошибка _add_friend_check_friend: {e}'
             await self._exception_func(text, except_text)
@@ -215,28 +168,22 @@ class AddFriend(ParentClassForTrainingOperations):
             call_data = self._handler.data.split(':')[1]
             if call_data == 'yes':
                 data = await self._state.get_data()
-                data['created_at'] = datetime.now()
                 friend_id, friend, friend_tg_id, event_id = (data['friend_id'], data['friend'], data['friend_tg_id'],
                                                              data['event_id'])
-                await db_rq_event_user.create_event_user(data, friend_id=friend_id, i_am_friend=self._handler.from_user.username)
-
                 event = await db_req.get_event(id=event_id)
                 training_type, event_text = event[0]['training_type'], event[0]['event_text']
+                now, payment_dedline, event_datetime = (datetime.now(), event[0]['payment_dedline'],
+                                                        event[0]['event_datetime'])
+                dedline_info = set_individual_dedline(payment_dedline, event_datetime, now)
+                data['created_at'], data['individual_dedline']= now, dedline_info['individual_dedline']
+                await db_rq_event_user.create_event_user(data, friend_id=friend_id,
+                                                         i_am_friend=self._handler.from_user.username)
                 text = (f'️⚡️ ️⚡️ <b>ВАЖНАЯ ИНФОРМАЦИЯ</b>\n'
                         f'Вас записали на следующую тренировку\n'
-                        f'<b>Тип тренировки</b>:{training_type}\n{event_text}')
-
-                ''' ----------------------  ЗДЕСЬ НУЖНА ЗАМЕНА!!! ------------------------------ '''
-                # reper_dedline, dedline_type = reper_dedline_definiton(
-                #     real_dedline=event[0]['payment_dedline'].replace(tzinfo=None),
-                #     now=data['created_at'], event_datetime=event[0]['event_datetime'].replace(tzinfo=None),
-                # )
-                # if dedline_type == 'individ_dedline':
-                #     text += (f'\n\n <b>ВНИМАНИЕ❗️</b>\n'
-                #              f' У Вас другой дедлайн оплаты, Вам необходимо оплатить '
-                #              f'за тренировку до <b><i>{reper_dedline}</i></b>')
-
-                await bot.send_message(chat_id=friend_tg_id, text=text, parse_mode='HTML')
+                        f'<b>Тип тренировки</b>:{training_type}\n{event_text}\n\n')
+                text += dedline_info['text']
+                _msg_send = MessageSending()
+                asyncio.create_task(_msg_send.to_one_receiver(text=text, tg_id=friend_tg_id))
                 text = f'Вы успешно записали друга с никнеймом <i>{friend}</i> на тренировку 🖍'
                 await self._handler.message.answer(text, parse_mode='HTML')
             else:
@@ -272,9 +219,7 @@ class DeleteFromTraining(ParentClassForTrainingOperations):
             data = await self._state.get_data()
             event_id, user_id = data.get('event_id'), data.get('user_id')
             if self._handler.text.lower().strip() == 'да':
-                await cmd_start(self._handler, self._state, self._is_admin, user_cache)
                 current_event_user = await db_rq_event_user.get_event_user_before_delete(event_id=event_id)
-
                 seconds, update_list = -1, []
                 now = datetime.now().replace(tzinfo=None)
                 participants_count = current_event_user[0].event.participants_count
@@ -284,9 +229,10 @@ class DeleteFromTraining(ParentClassForTrainingOperations):
                     update_list.append(_user)
                     await db_rq_event_user.update_event_user_after_delete(update_list)
 
-                await self.__send_messages(current_event_user, now, data)
+                await self._send_messages(current_event_user, now, data)
                 await db_rq_event_user.delete_event_user(user_id, event_id)
                 await self._handler.answer('Вы удалились из записи на тренировку.')
+                await cmd_start(self._handler, self._state, self._is_admin, user_cache)
             else:
                 await show_formed_info_about_event(self._handler, self._is_admin, event_id, user_id)
                 await self._handler.answer('Удаление прервано')
@@ -297,7 +243,7 @@ class DeleteFromTraining(ParentClassForTrainingOperations):
         asyncio.create_task(delete_bkg(self._handler))
 
     # Рассылка уведомлений после удаления
-    async def __send_messages(self, current_event_user, now,data):
+    async def _send_messages(self, current_event_user, now, data):
         res_prtcpt = None
         participants_count = current_event_user[0].event.participants_count
         if len(current_event_user) > participants_count:
@@ -337,9 +283,6 @@ class DeleteFromTraining(ParentClassForTrainingOperations):
                      f' Вам необходимо оплатить за тренировку до</i>'
                      f' <b><i> ... </i></b>')
             await bot.send_message(chat_id=res_tg_id, text=text, parse_mode='HTML')
-
-
-
 
 
 # НЕИСПОЛЬЗУЕМЫЕ ФИЧИ

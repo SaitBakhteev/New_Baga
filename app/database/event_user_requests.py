@@ -19,7 +19,8 @@ async def create_event_user(data, **kwargs):
             user_id=data['user_id'],
             event_id=data['event_id'],
             created_at=data['created_at'],
-            modified_at=data['modified_at']
+            modified_at=data['modified_at'],
+            individual_dedline=data['individual_dedline']
         )
     else:
         await EventUser.create(
@@ -27,7 +28,8 @@ async def create_event_user(data, **kwargs):
             event_id=data['event_id'],
             friend=kwargs['i_am_friend'],
             created_at=data['created_at'],
-            modified_at=data['modified_at']
+            modified_at=data['modified_at'],
+            individual_dedline=data['individual_dedline']
         )
 
 
@@ -108,13 +110,11 @@ async def get_event_user_for_check_friend(event_id, friend_id=None, i_am_friend=
 ''' --------------------------------------- UPDATE --------------------------------------- '''
 
 # Запрос к БД для обновления записей EventUser при проверке админом оплаты
-async def update_event_user_for_payment_verify(id_list: list, is_confirm=True):
-    if is_confirm:  # если админ подтверждает оплату
-        await EventUser.filter(id__in=id_list).update(payment_confirmed=True)
-    elif is_confirm == False:  # если админ опровергает оплату
-        await EventUser.filter(id__in=id_list).update(payment_confirmed=False)
-    else:  # если админ отменяет верификацию оплаты
-        await EventUser.filter(id__in=id_list).update(payment_confirmed=None)
+async def update_event_user_for_payment_verify(id_list: list, verification_mode: str):
+    match verification_mode:
+        case 'confirm': await EventUser.filter(id__in=id_list).update(payment_confirmed=True)
+        case 'refute': await EventUser.filter(id__in=id_list).update(payment_confirmed=False)
+        case 'cancel': await EventUser.filter(id__in=id_list).update(payment_confirmed=None)
 
 
 async def update_event_user_for_payment_notify(even_id: id, user_id: int):

@@ -9,6 +9,8 @@ from aiogram.types import CallbackQuery
 from app import states as st
 from app.operations.admin_operations.admin_operations import *
 
+from app.operations.admin_operations.manage_operations import show_event_with_manage_interface
+
 admin_router = Router()
 
 
@@ -27,6 +29,10 @@ async def call_input_template(call: CallbackQuery | Message, state: FSMContext, 
     create_event = CreateEvent(handler=call, state=state, is_admin=is_admin)
     await create_event.dispatch()
 
+
+@admin_router.callback_query(F.data.startswith('to_manage_of_event_is'))
+async def call_show_event_with_manage_interface(call: CallbackQuery):
+    await show_event_with_manage_interface(call)
 
 #
 # @admin_router.callback_query(F.data.startswith("dedline_"), st.CreateEventFSM.dedline_type)

@@ -140,10 +140,10 @@ async def get_event(id=None, for_telegramm=False,
 # Запрос для получения тренировок по указанному типу
 async def get_events_by_training_type(training_type, is_admin):
     now = datetime.now()
-    if is_admin is not True:
+    if is_admin:
         return await Event.filter(training_type=training_type).all().order_by('event_datetime').values()
     else:
-        return await (Event.filter(training_type=training_type, event_datetime__lt=now).all().
+        return await (Event.filter(training_type=training_type, event_datetime__gt=now).all().
                       order_by('event_datetime').values())
 
 
