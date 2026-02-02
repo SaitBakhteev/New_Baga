@@ -98,7 +98,7 @@ def training_interface_kb(event: dict, event_user: list, user_id: int, admin_per
         if admin_permissions:
             keyboard.button(
                 text='💠🤵🏻‍♂️ Администрирование тренировки',
-                callback_data=f'training_manage_of_event_is:{event['id']}'
+                callback_data=f'to_manage_of_event_is:{event['id']}'
             )
         _index = TRAINING_TYPES.index(event["training_type"])
         callback_data = f'to_training_type_is:{_index}'

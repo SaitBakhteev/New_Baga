@@ -92,7 +92,8 @@ async def delete_bkg(call_mess: Message | CallbackQuery):
     try:
         call_mess = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
         await call_mess.bot.delete_message(call_mess.chat.id, call_mess.message_id)
-    except Exception:
+    except Exception as e:
+        await logger.error(f'Ошибка в delete_bkg: {e}')
         return
 
 
@@ -175,13 +176,17 @@ def show_text_about_event(event: dict, event_user: list, user_id: int) -> str:
                 tag = '⚠️'
         else:
             tag = ''
+        if len(tag) > 0 and tag != '✅':
+            _dedline = f": ⏳ <b><i>{item['individual_dedline'].strftime('%H:%M %d.%m.')}</i></b>"
+        else:
+            _dedline = ''
         fullname = f"{item["user__tg_name"]} @{item['user__tg_username']}"
         star = "⭐️" if star_tpl is not None and item['user__id'] in star_tpl else ''
 
         # Чтобы пользователь видел себя выделенным шрифтом в списке на тренировку
         fullname = f'<b><i>{fullname}</i></b>' if item['user__id'] == user_id else fullname
 
-        text+=f"{star}{i+1}. {fullname} {tag}\n"
+        text+=f"{star}{i+1}. {fullname} {tag}{_dedline}\n"
         if i + 1 == participants_count:
             text += "\n 📌📌 <b><i>Резерв</i></b>: \n"
 
@@ -237,7 +242,7 @@ def set_individual_dedline(payment_dedline, event_datetime, now):
         text = (f"ВНИМАНИЕ ‼️🔥\n У Вас весьма ограниченный дедлайн на оплату⏳.\n"
                  f"Вам необходимов течение {_lenght_of_dedline.strftime('%M')} минут.\n")
 
-    text += 'По истечении этого срока оплаты при наличии резерва Вы можете быть задвинуты в конец очереди'
+    text += 'По истечении дедлайна есть риск оказаться в конце очереди при наличии резерва'
     return {'text': text, 'individual_dedline':individual_dedline}
 
 

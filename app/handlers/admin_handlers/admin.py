@@ -9,7 +9,7 @@ from aiogram.types import CallbackQuery
 from app import states as st
 from app.operations.admin_operations.admin_operations import *
 
-from app.operations.admin_operations.manage_operations import show_event_with_manage_interface
+from app.operations.admin_operations.manage_operations import *
 
 admin_router = Router()
 
@@ -31,8 +31,17 @@ async def call_input_template(call: CallbackQuery | Message, state: FSMContext, 
 
 
 @admin_router.callback_query(F.data.startswith('to_manage_of_event_is'))
-async def call_show_event_with_manage_interface(call: CallbackQuery):
-    await show_event_with_manage_interface(call)
+async def call_show_event_with_manage_interface(call: CallbackQuery, state: FSMContext):
+    await show_event_with_manage_interface(call, state)
+
+
+@admin_router.callback_query(F.data.startswith('confirm_payment_of_event_is'))
+@admin_router.callback_query(F.data.startswith('refute_payment_of_event_is'))
+@admin_router.callback_query(F.data.startswith('cancel_verify_payment_of_event_is'))
+@admin_router.message(st.PayConfirmationFSM.write_participants)
+async def call_payment_verify(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
+    pay_vrfy = PaymentVerification(call, state, is_admin)
+    await pay_vrfy.dispatch()
 
 #
 # @admin_router.callback_query(F.data.startswith("dedline_"), st.CreateEventFSM.dedline_type)

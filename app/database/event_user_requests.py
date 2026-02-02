@@ -72,14 +72,20 @@ async def get_event_user(event_id=None, user_tg_id=None,
                                    'paid_check',
                                    'friend',
                                    'created_at',
+                                   'modified_at',
+                                   'individual_dedline',
                                    'event__participants_count'))
-            result = sorted(result, key=lambda x: x['created_at'].replace(tzinfo=None))
+            result = sorted(result, key=lambda x: x['modified_at'].replace(tzinfo=None))
             return result
 
     except DoesNotExist:
         await logger.error('get_event_user: User DoesNotExist')
     except Exception as e:
         await logger.error(f'get_event_user: {e}')
+
+
+async def get_event_user_by_current_user(event_id, user_id):
+    return await EventUser.filter(event_id=event_id, user_id=user_id).select_related('event').first()
 
 
 # Проверка не состоит ли уже в записи участник, во избежание багов

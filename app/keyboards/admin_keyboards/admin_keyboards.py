@@ -118,8 +118,9 @@ def admin_train_manag_kb(event_id) -> InlineKeyboardMarkup:
     keyboard.add(InlineKeyboardButton(text='💠 Редактировать тренировку ✏️', callback_data=f'edit_event_is:{event_id}'))
     keyboard.add(InlineKeyboardButton(text='💠 🚫 ОТМЕНИТЬ ТРЕНИРОВКУ 💥',
                                       callback_data=f'cancel_training:{event_id}'))
-    keyboard.add(interrupt_or_return_button('↩️ Назад', f'to_event_is:{event_id}',
-                                            False))
+    keyboard.add(interrupt_or_return_button(text='↩️ Назад',
+                                            callback_data= f'to_event_is:{event_id}',
+                                            this_markup=False))
     keyboard.adjust(1)
     return keyboard.as_markup()
 

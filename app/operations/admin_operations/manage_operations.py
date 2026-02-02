@@ -23,14 +23,17 @@ _verification_text = (
 )
 
 
-async def show_event_with_manage_interface(call: CallbackQuery, state: FSMContext):
+async def show_event_with_manage_interface(call: CallbackQuery | Message, state: FSMContext,
+                                           event_id = None):
     try:
         await state.clear()
-        event_id, user_id = int(call.data.split(':')[1]), user_cache[call.from_user.id].id
+        event_id = int(call.data.split(':')[1]) if isinstance(call, CallbackQuery) else event_id
+        _call = call.message if isinstance(call, CallbackQuery) else call
+        user_id = user_cache[call.from_user.id].id
         event, event_user = await db_rq.get_event(id=event_id), await db_event_user_rq.get_event_user(event_id=event_id)
         keyboard = admin_train_manag_kb(event_id)
         text = show_text_about_event(event, event_user, user_id)
-        await call.message.answer(text, parse_mode='HTML', reply_markup=keyboard)
+        await _call.answer(text, parse_mode='HTML', reply_markup=keyboard)
         asyncio.create_task(delete_bkg(call))
     except Exception as e:
         await logger.error(f'Ошибка в show_event_with_manage_interface: {e}')
@@ -46,10 +49,11 @@ class PaymentVerification(ParentClassForTrainingOperations):
                 await self._show_interface(verification_mode='refute')
             elif self._handler.data.startswith("cancel_verify_payment_of_event_is"):
                 await self._show_interface(verification_mode='cancel')
-        elif self._state.get_state() == st.PayConfirmationFSM.write_participants:
+        elif await self._state.get_state() == st.PayConfirmationFSM.write_participants:
             await self._write_participants()
 
     async def _show_interface(self, verification_mode):
+        await self._state.clear()
         match verification_mode:
             case "confirm": _verif_mode_text = '✅ Подтвердить оплату'
             case "refute": _verif_mode_text = '❌ Опровергнуть оплату'
@@ -62,7 +66,7 @@ class PaymentVerification(ParentClassForTrainingOperations):
                 callback_data=f'to_manage_of_event_is:{event_id}'
             )
         )
-        event, event_user = db_rq.get_event(event_id), db_event_user_rq.get_event_user(event_id)
+        event, event_user = await db_rq.get_event(event_id), await db_event_user_rq.get_event_user(event_id)
         await self._state.update_data(event=event, event_user=event_user, verification_mode=verification_mode)
         await self._state.set_state(st.PayConfirmationFSM.write_participants)
 
@@ -78,10 +82,10 @@ class PaymentVerification(ParentClassForTrainingOperations):
             # Формирование списка id объектов EventUser для обновления в БД значений поля 'payment_confirmed'
             match verification_mode:
                 case 'confirm': id_list = [event_user[i]['id'] for i in index_list]
-                case 'refute': id_list = [event_user[i]['id'] for i in index_list if event_user[i]['payment_confirmed']
-                                          is not True]
+                case 'refute': id_list = [event_user[i]['id'] for i in index_list if event_user[i]['paid_check']
+                                          is True and event_user[i]['payment_confirmed'] is None]
                 case 'cancel': id_list = [event_user[i]['id'] for i in index_list if event_user[i]['payment_confirmed']
-                                          is None and event_user[i]['paid_check'] is not None]
+                                          is not None]
 
             # Обновление в БД
             if len(id_list) > 0:
@@ -93,11 +97,11 @@ class PaymentVerification(ParentClassForTrainingOperations):
                 report = '🛑 Статусы <b>не обновлены</b>. Причины описаны в <b>/admin</b>.'
 
             await self._handler.answer(report, parse_mode='HTML')
-            await show_event_with_manage_interface(self._handler, self._state)
-            asyncio.create_task(delete_bkg(self._handler))
+            await show_event_with_manage_interface(self._handler, self._state, event_id=event['id'])
+            # asyncio.create_task(delete_bkg(self._handler))
         except Exception as e:
-            text = 'Произошла ошибка верификайции оплаты'
-            await self._exception_func()
+            text, except_text = 'Произошла ошибка верификации оплаты', f'Ошибка в _write_participants: {e}'
+            await self._exception_func(text, except_text)
             await logger.error(e)
             # stream_logger.error(e)
 

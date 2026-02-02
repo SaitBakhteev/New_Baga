@@ -1,5 +1,7 @@
 import asyncio
 
+from tortoise.exceptions import IntegrityError
+
 from app.operations.often_ops_and_classes import *
 import app.states as st
 from .often_ops_and_classes import set_individual_dedline
@@ -29,73 +31,90 @@ async def sign_up_to_training(call: CallbackQuery, state: FSMContext, is_admin: 
             data = {'user_id': user_id, 'event_id': event_id, 'created_at': now, 'modified_at': now,
                     'individual_dedline':dedline_info['individual_dedline']}
             await db_rq_event_user.create_event_user(data)
-            await show_formed_info_about_event(call, is_admin, event_id, user_id)
             text = ('Вы записались на тренировку.\n'
-                    'Если у вас уже оплачена эта тренировка, нажмите на кнопку <i>"✔️ Тренировка оплачена"</i>\n')
+                    'Если у вас уже оплачена эта тренировка, нажмите на кнопку оповещения бота ✔️\n')
             text += dedline_info['text']
         else:
             text = 'Новых участников, менее, чем за 10 минут до начала тренировки, могут записывать только админы.'
-        await call.message.answer(text, parse_mode='HTML')
+    except IntegrityError:
+        text = 'Вы уже ранее записались на тренировку'
+        pass
     except Exception as e:
         await logger.error(e)
         # stream_logger.error(e)
+        text = '📛 Возникла неизвестная ошибка'
+        pass
+    await show_formed_info_about_event(call, is_admin, event_id, user_id)
+    await call.message.answer(text, parse_mode='HTML')
 
 
 # Уведомить бот об оплате
 class PaymentNotify(ParentClassForTrainingOperations):
+    _add_text = 'Если Вы оплатили за тренировку, срочно ❗️ свяжитесь с админом для подтверждения оплаты!'
+
     async def dispatch(self):
         if isinstance(self._handler, CallbackQuery):
             if self._handler.data.startswith('payment_notify_by_event_is'):
-                event_id = int(self._handler.data.split(':')[1])
-                await self._show_payment_notify_message(event_id)
-        elif self._state.get_state() == st.PaymenNotify.confirm:
+                await self._show_payment_notify_message()
+        elif await self._state.get_state() == st.PaymenNotify.confirm:
             await self._payment_notify_confirm()
 
-    async def _show_payment_notify_message(self, event_id):
+    async def _show_payment_notify_message(self):
         try:
-            # Проверка не уведомил ли уже участник бота об оплате
-            is_paid_check = await db_rq_event_user.get_event_user_for_check_pay_notify(
-                event_id=event_id, user_id=self._user_id
-            )
-            if is_paid_check is None:
+            event_id = int(self._handler.data.split(':')[1])
+            _check_state = await self._check_availability(event_id)
+            if isinstance(_check_state, str):
+                text = _check_state
+                await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
+                await self._handler.message.answer(text, parse_mode='HTML')
+            else:
                 text = (
                     'ВНИМАНИЕ❗️\n'
-                    'Уведомлять об оплате можно только ОДИН (!!) раз. '
-                    'Через сутки (или раньше) статус ✔️ переходит либо в статус ✅ (админ подтвердил оплату), либо в '
+                    'Уведомлять бот об оплате можно только ОДИН (!!) раз. Данное действие продлевает дедлайн оплаты '
+                    'до 1,5 суток <i><u>с момента попадания в ОСНОВНОЙ список тренировки</u></i>.\n'
+                    'До этого времени статус ✔️ переходит либо в статус ✅ (админ подтвердил оплату), либо в '
                     '❌ (админ не подтвердил оплату).\n'
-                    'Если Вы подтверждаете факт оплаты и отправки скрина админу, отправьте в сообщении боту слово <i>"да"</i>?'
+                    'Если Вы подтверждаете факт оплаты и отправки скрина админу, '
+                    'отправьте в сообщении боту слово <i>"да"</i>?'
                 )
                 await self._handler.message.answer(text, reply_markup=cancel_kb(event_id), parse_mode='HTML')
-                await self._state.update_data(event_id=event_id)
+                await self._state.update_data(event_id=event_id, event_user=_check_state)
                 await self._state.set_state(st.PaymenNotify.confirm)
-            else:
-                await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
-                await self._handler.message.answer("☝🏽 Вы уже уведомили бот об оплате")
-                asyncio.create_task(delete_bkg(self._handler))
-
         except Exception as e:
             text, except_text = ('⭕️ Возникла ошибка. Возможно, что Вы ранее уже уведомляли бот об оплате',
                                  f'Ошибка _payment_notify_confirm: {e}')
             await self._exception_func(text, except_text)
 
+    # Проверка доступности продления дедлайна
+    async def _check_availability(self, event_id):
+        event_user = await db_rq_event_user.get_event_user_by_current_user(event_id, self._user_id)
+        if event_user.paid_check is False:
+            return (f'🔴 Вы не можете воспользоваться данной функцией, поскольку Вы находились в ОСНОВНОМ '
+                    f'списке <b><u>БЕЗ подтвержденной оплаты</u></b> более <i>1,5 суток</i>.\n'
+                    f'{self._add_text}')
+        elif event_user.paid_check is True:
+            return f'🔴 Вы ранее уже пользовались этой функцией.\n{self._add_text}'
+        new_individual_dedline = event_user.modified_at + timedelta(days=1, hours=12)
+        event_user.individual_dedline, event_user.paid_check = new_individual_dedline, True
+        return event_user
+
     async def _payment_notify_confirm(self):
         try:
             message = self._handler.text
             data = await self._state.get_data()
-            event_id = data['event_id']
-
+            event_id, event_user = data['event_id'], data['event_user']
             if message.replace('"', '').lower() == "да":
-                await db_rq_event_user.update_event_user_for_payment_notify(event_id, self._user_id)
-                text = '✔️ Вы успешно уведомили бот об оплате. Ожидайте в течение суток подтверждения оплаты админом.'
+                await event_user.save()
+                _new_dedl_txt = event_user.individual_dedline.strftime('%H:%M %d.%m')
+                text = f'✔️ Вы успешно уведомили бот об оплате и продлили дедлайн до {_new_dedl_txt}'
             else:
                 text = '⚠️ Вы отменили уведомление бота об оплате.'
-            await self._handler.message.answer(text, parse_mode='HTML')
+            await self._handler.answer(text, parse_mode='HTML')
             await self._state.clear()
-            await show_formed_info_about_event(self._handler, self._is_admin, event_id, user_id)
+            await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
         except Exception as e:
             text, except_text = '⭕️ Возникла ошибка.', f'Ошибка _payment_notify_confirm: {e}'
             await self._exception_func(text, except_text)
-        asyncio.create_task(delete_bkg(self._handler))
 
 
 class AddFriend(ParentClassForTrainingOperations):
@@ -104,9 +123,9 @@ class AddFriend(ParentClassForTrainingOperations):
             if self._handler.data.startswith('add_friend_to_event'):
                 await self._add_friend()
             elif (self._handler.data.startswith('add_friend_confirm') and
-                  self._state.get_state() == st.AddFriendFSM.add_friend_confirm):
+                  await self._state.get_state() == st.AddFriendFSM.add_friend_confirm):
                 await self._add_friend_confirm()
-        elif self._state.get_state() == st.AddFriendFSM.add_friend:
+        elif await self._state.get_state() == st.AddFriendFSM.add_friend:
             await self._add_friend_check_friend()
 
     async def _add_friend(self):
@@ -240,7 +259,6 @@ class DeleteFromTraining(ParentClassForTrainingOperations):
             text, except_text = ('⭕️ Возникла ошибка.', f'Ошибка _delete_from_training_confirm: {e}')
             await self._exception_func(text, except_text)
         await self._state.clear()
-        asyncio.create_task(delete_bkg(self._handler))
 
     # Рассылка уведомлений после удаления
     async def _send_messages(self, current_event_user, now, data):
