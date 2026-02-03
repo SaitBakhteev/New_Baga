@@ -4,6 +4,8 @@ from datetime import date, time
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
+from functools import reduce
+
 from app import states as st
 from app.database import requests as db_rq
 
@@ -174,9 +176,32 @@ class EditEvent(CreateEvent):
         event_id = int(self._handler.data.split(':')[1])
         event = await db_rq.get_event(id=event_id)
         text = 'Вставьте текущий шаблон этой тренировки, после чего отредактируйте и отправьте в сообщении боту'
-        await self._handler.message.answer(text, reply_markup=current_template_kb(event['event_text']))
+        _template = self._form_current_template(event['event_text'])
+        await self._handler.message.answer(text, reply_markup=current_template_kb(_template))
         await self._state.update_data(event_id=event_id)
         await self._state.set_state(st.EditEvent.insert_template)
+
+    # Переделка текущего шаблона редактируемой трени для последующей вставки
+    async def _form_current_template(self, event_text):
+        template = event_text
+
+        # Более приемлемый способ для множественной замены в большой строке
+        replacements = {"<b>": "", "</b>": "", "<i>": "", "</i>": "",
+                        "Дата тренировки": "❗️Дата тренировки",
+                        "Время": "❗️Время",
+                        "Квота участников": "❗️Квота участников",
+                        'Босс тренировки': '❗️Босс тренировки',
+                        # "ИНФОРМАЦИЯ ОБ ОПЛАТЕ:\n": "Как оплатить: ",
+                        "\n\n": "\n"}
+
+        # Переделка текущего текста тренировки под шаблон для создания
+        template = reduce(lambda fragment, kv: fragment.replace(*kv), replacements.items(), template)
+        end_fragment = template[template.find('Начальный дедлайн оплаты'):]
+        end_idx = template.find(end_fragment)
+        template = template[:end_idx]  # урезаем до фразы срок оплаты
+
+        return template
+
 
     async def _save_event(self):
         data = await self._state.get_data()
@@ -188,6 +213,7 @@ class EditEvent(CreateEvent):
         await self._state.clear()
         await self._handler.answer('Тренировка успешно отредактирована')
         await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
+
 
 
 class DeleteEvent():
