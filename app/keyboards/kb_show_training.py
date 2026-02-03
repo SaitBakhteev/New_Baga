@@ -61,20 +61,23 @@ def show_events_kb(event_user: list, *args) -> InlineKeyboardMarkup:
 
 def training_interface_kb(event: dict, event_user: list, user_id: int, admin_permissions: bool) -> InlineKeyboardMarkup:
     try:
-        # Условия по записи и доступности уведомления об оплате
-        signed_up_for_training = True if any(item['user__id'] == user_id for item in event_user) else False
-        availible_notify_by_payment = None
-        if signed_up_for_training:  # если пользователь записан на тренировку
-            paid_check, payment_confirmed = (next((item['paid_check'], item['payment_confirmed'])
-                                                  for item in event_user if item['user__id'] == user_id))
-            # Определение критериев доступности кнопки оповещения бота об оплате
-            participants_count = int(event['participants_count'])
-            user_place_on_list = next(i + 1 for i, item in enumerate(event_user)
-                                      if item['user__id'] == user_id)
-            availible_notify_by_payment = True if (
-                    user_place_on_list <= participants_count
-                    and paid_check is None and payment_confirmed is None)\
-                else False
+        signed_up_for_training = availible_notify_by_payment = None
+        if event_user:
+            # Условия по записи и доступности уведомления об оплате
+            signed_up_for_training = True if any(item['user__id'] == user_id for item in event_user) else False
+            if signed_up_for_training:  # если пользователь записан на тренировку
+                paid_check, payment_confirmed = (next((item['paid_check'], item['payment_confirmed'])
+                                                      for item in event_user if item['user__id'] == user_id))
+                # Определение критериев доступности кнопки оповещения бота об оплате
+                participants_count = int(event['participants_count'])
+                user_place_on_list = next(i + 1 for i, item in enumerate(event_user)
+                                          if item['user__id'] == user_id)
+                availible_notify_by_payment = True if (
+                        user_place_on_list <= participants_count
+                        and paid_check is None and payment_confirmed is None)\
+                    else False
+            else:
+                signed_up_for_training = availible_notify_by_payment = None
 
         # БЛОК ФОРМИРОВАНИЯ ИНТЕРФЕЙСА ТРЕНИРОВКИ
         # =======================================

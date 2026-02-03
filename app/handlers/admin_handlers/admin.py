@@ -30,6 +30,13 @@ async def call_input_template(call: CallbackQuery | Message, state: FSMContext, 
     await create_event.dispatch()
 
 
+@admin_router.callback_query(F.data.startswith('edit_event_is'))
+@admin_router.message(st.EditEvent.insert_template)
+async def call_edit_event(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
+    edit_event = EditEvent(call, state, is_admin)
+    await edit_event.dispatch()
+
+
 @admin_router.callback_query(F.data.startswith('to_manage_of_event_is'))
 async def call_show_event_with_manage_interface(call: CallbackQuery, state: FSMContext):
     await show_event_with_manage_interface(call, state)

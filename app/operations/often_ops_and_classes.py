@@ -164,33 +164,34 @@ def show_text_about_event(event: dict, event_user: list, user_id: int) -> str:
     else:
         star_tpl = None
     text += '\n\n<b>ОСНОВНОЙ СПИСОК</b>\n'
-    for i, item in enumerate(event_user):
-        if i + 1 <= participants_count:
-            if item['payment_confirmed'] is False:
-                tag = '❌'
-            elif not item['payment_confirmed'] and item['paid_check']:
-                tag = '✔️'
-            elif item['payment_confirmed']:
-                tag = '✅'
+    if event_user:
+        for i, item in enumerate(event_user):
+            if i + 1 <= participants_count:
+                if item['payment_confirmed'] is False:
+                    tag = '❌'
+                elif not item['payment_confirmed'] and item['paid_check']:
+                    tag = '✔️'
+                elif item['payment_confirmed']:
+                    tag = '✅'
+                else:
+                    tag = '⚠️'
             else:
-                tag = '⚠️'
-        else:
-            tag = ''
-        if len(tag) > 0 and tag != '✅':
-            _dedline = f": ⏳ <b><i>{item['individual_dedline'].strftime('%H:%M %d.%m.')}</i></b>"
-        else:
-            _dedline = ''
-        fullname = f"{item["user__tg_name"]} @{item['user__tg_username']}"
-        star = "⭐️" if star_tpl is not None and item['user__id'] in star_tpl else ''
+                tag = ''
+            if len(tag) > 0 and tag != '✅':
+                _dedline = f": ⏳ <b><i>{item['individual_dedline'].strftime('%H:%M %d.%m.')}</i></b>"
+            else:
+                _dedline = ''
+            fullname = f"{item["user__tg_name"]} @{item['user__tg_username']}"
+            star = "⭐️" if star_tpl is not None and item['user__id'] in star_tpl else ''
 
-        # Чтобы пользователь видел себя выделенным шрифтом в списке на тренировку
-        fullname = f'<b><i>{fullname}</i></b>' if item['user__id'] == user_id else fullname
+            # Чтобы пользователь видел себя выделенным шрифтом в списке на тренировку
+            fullname = f'<b><i>{fullname}</i></b>' if item['user__id'] == user_id else fullname
 
-        text+=f"{star}{i+1}. {fullname} {tag}{_dedline}\n"
-        if i + 1 == participants_count:
-            text += "\n 📌📌 <b><i>Резерв</i></b>: \n"
+            text+=f"{star}{i+1}. {fullname} {tag}{_dedline}\n"
+            if i + 1 == participants_count:
+                text += "\n 📌📌 <b><i>Резерв</i></b>: \n"
 
-    text += '\n<b>❗️ВАЖНЫЕ РЕКОМЕНДАЦИИ</b> в <b>/rec</b>'
+        text += '\n<b>❗️ВАЖНЫЕ РЕКОМЕНДАЦИИ</b> в <b>/rec</b>'
 
     return text
 

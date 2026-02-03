@@ -172,7 +172,7 @@ class EditEvent(CreateEvent):
 
     async def _show_current_template_kb(self):
         event_id = int(self._handler.data.split(':')[1])
-        event = db_rq.get_event(id=event_id)
+        event = await db_rq.get_event(id=event_id)
         text = 'Вставьте текущий шаблон этой тренировки, после чего отредактируйте и отправьте в сообщении боту'
         await self._handler.message.answer(text, reply_markup=current_template_kb(event['event_text']))
         await self._state.update_data(event_id=event_id)
