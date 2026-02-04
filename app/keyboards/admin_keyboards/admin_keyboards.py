@@ -140,13 +140,16 @@ drop_participant_confirm_kb = InlineKeyboardMarkup(inline_keyboard=[
 ])
 
 
-# Клавиатура для вставки текущего шаблона редактируемой тренировки
-def insert_template_on_edit_admin(template: str) -> InlineKeyboardMarkup:
+# Кнопка для сохранения изменений редактируемой тренировки
+def finish_edit_event_kb(event_id) -> InlineKeyboardMarkup:
+    _cancel_btn = interrupt_or_return_button(callback_data=f'to_manage_of_event_is:{event_id}',
+                                             this_markup=False)
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='Вставить текущий шаблон тренировки',
-                              switch_inline_query_current_chat=template)]
+        [InlineKeyboardButton(text='Сохранить изменения 🖊', callback_data='finish_edit_event')],
+        [_cancel_btn]
     ])
-    return keyboard
+    keyboard.adjust(1)
+    return keyboard.as_markup()
 
 
 # БЛОК РЕДКИХ АДМИНСКИХ ОПЕРАЦИЙ

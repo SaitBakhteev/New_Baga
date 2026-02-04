@@ -53,31 +53,38 @@ class CreateEvent(ParentClassForTrainingOperations):
         а потом уже выводим кнопки выбора шаблона'''
         index = int(self._handler.data.split(':')[1])
         await self._state.update_data(training_type=TRAINING_TYPES[index])
-
         templates = await db_rq.get_templates()
         _keyboard = input_template_kb(templates=templates)
         await self._handler.message.answer('Выберите шаблон', reply_markup=_keyboard)
         await self._state.set_state(st.CreateEventFSM.template)
 
-    async def _input_template(self):
+    async def _input_template(self, is_create_event=True):
         text = self._handler.text.replace(f"{BOT_NAME}", "").strip()
         try:
-            event_info = self._parse_template_text(text)
+            now = datetime.now()
+            event_info = self._parse_template_text(text, now)
             await self._state.update_data(event_text=event_info['event_text'],
                                           participants_count=event_info['participants_count'],
                                           boss_id=event_info['boss_id'],
                                           event_datetime=event_info['event_datetime'],
-                                          payment_dedline=event_info['payment_dedline'],
                                           current_template=text)
-            text= "Если хотите сохранить текущий шаблон, нажмите на кнопку сохранения шаблона"
-            await self._handler.answer(text, reply_markup=finish_create_event_kb)
+            if is_create_event:
+                payment_dedline = self._set_payment_dedline(now, event_info['event_datetime'])
+                await self._state.update_data(payment_dedline=payment_dedline)
+                text= "Если хотите сохранить текущий шаблон, нажмите на кнопку сохранения шаблона"
+                _keyboard = finish_create_event_kb
+            else:
+                text = "Для завершения редактирования нажмите на кнопку сохранения изменений"
+                data = await self._state.get_data()
+                _keyboard = finish_edit_event_kb(data['event_id'])
+            await self._handler.answer(text, reply_markup=_keyboard)
         except ValueError as e:
             error_message = self._handle_template_error(str(e))
             user_message = f"{error_message}.\nПовторите действия, начиная со вставки шаблона."
             await self._handler.answer(user_message, reply_markup=current_template_kb(text), parse_mode='HTML')
             asyncio.create_task(delete_bkg(self._handler))
 
-    def _parse_template_text(self, text):
+    def _parse_template_text(self, text, now):
         event_text = ""
         for index, fragment in enumerate(text.split("\n")):
             reper_index = fragment.find(":")  # реперный индекс двоеточия
@@ -92,7 +99,7 @@ class CreateEvent(ParentClassForTrainingOperations):
                     hour, minute = value.replace(" ", "").split(":")
                     event_time = time(hour=int(hour), minute=int(minute))
                     event_datetime = datetime.combine(date=event_date, time=event_time)
-                    now, delta_90 = datetime.now(), timedelta(days=90)
+                    delta_90 = timedelta(days=90)
                     if (event_datetime < now or event_datetime > now + delta_90):
                         raise ValueError("unreal date")
                 case 4:
@@ -114,10 +121,8 @@ class CreateEvent(ParentClassForTrainingOperations):
                 value.replace('@@', '@')  # ещё одна перестраховка
                 event_text += f"<b>{key}</b>: {value}\n"
         event_text = event_text.replace("❗️", "")
-        payment_dedline = self._set_payment_dedline(now, event_datetime)
         return {'event_text': event_text, 'participants_count': participants_count, 'boss_id': boss_id,
-                'event_datetime': event_datetime, 'payment_dedline': payment_dedline,
-                'current_template': text,}
+                'event_datetime': event_datetime, 'current_template': text,}
 
     def _handle_template_error(self, error_text: str):
         match error_text:
@@ -169,8 +174,11 @@ class EditEvent(CreateEvent):
         if isinstance(self._handler, CallbackQuery):
             if self._handler.data.startswith('edit_event_is'):
                 await self._show_current_template_kb()
-        elif await self._state.get_state() == st.EditEvent.insert_template:
+            elif (self._handler.data == 'finish_edit_event' and
+                  await self._state.get_state() == st.EditEvent.insert_template):
                 await self._save_event()
+        elif await self._state.get_state() == st.EditEvent.insert_template:
+                await self._input_template(is_create_event=False)
 
     async def _show_current_template_kb(self):
         event_id = int(self._handler.data.split(':')[1])
@@ -182,7 +190,7 @@ class EditEvent(CreateEvent):
         await self._state.set_state(st.EditEvent.insert_template)
 
     # Переделка текущего шаблона редактируемой трени для последующей вставки
-    async def _form_current_template(self, event_text):
+    def _form_current_template(self, event_text):
         template = event_text
 
         # Более приемлемый способ для множественной замены в большой строке
@@ -202,18 +210,13 @@ class EditEvent(CreateEvent):
 
         return template
 
-
     async def _save_event(self):
         data = await self._state.get_data()
-        text = self._handler.text.replace(f"{BOT_NAME}", "").strip()
-        event_id, event_info = data['event_id'], self._parse_template_text(text)
-        data['event_datetime'], data['event_text'] = event_info['event_datetime'], event_info['event_text']
-        data['participants_count'], data['boss_id'] = event_info['participants_count'], event_info['boss_id']
+        event_id = data['event_id']
         await db_rq.update_event(event_id, data)
         await self._state.clear()
         await self._handler.answer('Тренировка успешно отредактирована')
         await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
-
 
 
 class DeleteEvent():
