@@ -175,10 +175,10 @@ class EditEvent(CreateEvent):
             if self._handler.data.startswith('edit_event_is'):
                 await self._show_current_template_kb()
             elif (self._handler.data == 'finish_edit_event' and
-                  await self._state.get_state() == st.EditEvent.insert_template):
+                  await self._state.get_state() == st.EditEventFSM.insert_template):
                 await self._save_event()
-        elif await self._state.get_state() == st.EditEvent.insert_template:
-                await self._input_template(is_create_event=False)
+        elif await self._state.get_state() == st.EditEventFSM.insert_template:
+            await self._input_template(is_create_event=False)
 
     async def _show_current_template_kb(self):
         event_id = int(self._handler.data.split(':')[1])
@@ -187,7 +187,7 @@ class EditEvent(CreateEvent):
         _template = self._form_current_template(event['event_text'])
         await self._handler.message.answer(text, reply_markup=current_template_kb(_template))
         await self._state.update_data(event_id=event_id)
-        await self._state.set_state(st.EditEvent.insert_template)
+        await self._state.set_state(st.EditEventFSM.insert_template)
 
     # Переделка текущего шаблона редактируемой трени для последующей вставки
     def _form_current_template(self, event_text):
@@ -204,9 +204,6 @@ class EditEvent(CreateEvent):
 
         # Переделка текущего текста тренировки под шаблон для создания
         template = reduce(lambda fragment, kv: fragment.replace(*kv), replacements.items(), template)
-        end_fragment = template[template.find('Начальный дедлайн оплаты'):]
-        end_idx = template.find(end_fragment)
-        template = template[:end_idx]  # урезаем до фразы срок оплаты
 
         return template
 

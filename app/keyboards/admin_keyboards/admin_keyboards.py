@@ -148,8 +148,7 @@ def finish_edit_event_kb(event_id) -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text='Сохранить изменения 🖊', callback_data='finish_edit_event')],
         [_cancel_btn]
     ])
-    keyboard.adjust(1)
-    return keyboard.as_markup()
+    return keyboard
 
 
 # БЛОК РЕДКИХ АДМИНСКИХ ОПЕРАЦИЙ

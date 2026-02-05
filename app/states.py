@@ -28,7 +28,7 @@ class PaymenNotify(StatesGroup):
     confirm = State()
 
 
-class EditEvent(StatesGroup):
+class EditEventFSM(StatesGroup):
     insert_template = State()
 
 
