@@ -248,13 +248,23 @@ def set_individual_dedline(payment_dedline, event_datetime, now):
 
 
 # Класс с метолдами отправки уведомлений в зависимости от контекста
-class MessageSending():
-
+class SendMessages():
     # Метод применяется при записи, удалении, перемещении админом и прочее
-    async def to_one_receiver(self, text, tg_id):
-        await bot.send_message(tg_id, text)
+    @classmethod
+    async def to_one_receiver(cls, text, tg_id):
+        await bot.send_message(tg_id, text, parse_mode='HTML')
 
-    async def send_to_admins(self, text, now, event_datetime):
+    @classmethod
+    async def to_several_receivers(cls, tg_ids: list, text):
+        '''
+        Метод предназначен для рассылки нескольким участникам при работе планировщика
+        :param tg_ids: список tg_id получателдей уведомления
+        '''
+        for tg_id in tg_ids:
+            await bot.send_message(tg_id, text, parse_mode='HTML')
+
+    @classmethod
+    async def to_admins(cls, text, now, event_datetime):
         '''
         Данная функция сработает, если сообщения будут по тренировке, до начала
         которой остаются считанные часы (менее 12)
@@ -266,12 +276,4 @@ class MessageSending():
         if event_datetime - now < timedelta(hours=12):
             for k in user_cache:
                 if user_cache[k].admin_permissions:
-                    await bot.send_message(int(k), text)
-
-    async def when_scheduler_move_to_main_list(self, tg_ids: list, text):
-        '''
-        Метод предназначен для рассылки нескольким участникам при работе планировщика
-        :param tg_ids: список tg_id получателдей уведомления
-        '''
-        for tg_id in tg_ids:
-            await bot.send_message(tg_id, text)
+                    await bot.send_message(int(k), text, parse_mode='HTML')

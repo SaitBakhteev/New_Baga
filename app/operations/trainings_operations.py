@@ -201,7 +201,7 @@ class AddFriend(ParentClassForTrainingOperations):
                         f'Вас записали на следующую тренировку\n'
                         f'<b>Тип тренировки</b>:{training_type}\n{event_text}\n\n')
                 text += dedline_info['text']
-                _msg_send = MessageSending()
+                _msg_send = SendMessages()
                 asyncio.create_task(_msg_send.to_one_receiver(text=text, tg_id=friend_tg_id))
                 text = f'Вы успешно записали друга с никнеймом <i>{friend}</i> на тренировку 🖍'
                 await self._handler.message.answer(text, parse_mode='HTML')

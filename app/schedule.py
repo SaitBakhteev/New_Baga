@@ -29,10 +29,144 @@ from app.database.models import Event, EventUser, Statistic, User
 from config.log_config import setup_logger
 from config.constants import SEASON_INDEX
 
+from app.operations.often_ops_and_classes import SendMessages, set_individual_dedline
+
 logger, stream_logger = setup_logger(__name__), logging.getLogger(__name__)
 
 stars_dict = dict()  # словарь рейтинга звезд, распределенный по типам тренировок
 general_raiting = []  # список общего рейтинга
+
+
+# Класс для сканирования и пермещения в конец очереди
+class MoveToEnd():
+    def __init__(self, event_user, now):
+        self._event_user, self._now = event_user, now
+        self._participants_count = self._event_user[0].event.participants_count
+        if len(self._event_user) > self._participants_count:
+            self._reserv_list = self._event_user[self._participants_count:]
+            self._reserv_count = len(self._event_user) - self._participants_count
+            self._update_list = []  # список участников на обновление в БД
+
+    # Главный исполняющий метод класса
+    async def execute(self):
+        if len(self._event_user) > self._participants_count:
+            is_ex_move_to_end_ptcps = self._extract_from_main_lst()
+            self._reserv_list(is_ex_move_to_end_ptcps)
+            if len(self._update_list) > 0:
+                await EventUser.bulk_update(self._update_list, ['modified_at', 'individual_dedline'])
+
+    # Метод, который извлекает в отдельный список участников основного с просроченным дедлайном
+    def _extract_from_main_lst(self):
+        seconds = 0
+        for obj in self._event_user[:self._participants_count]:
+            if len(self._update_list) > self._reserv_count:
+                break
+            if obj.individual_dedline.replace(tzinfo=None) <= self._now and obj.payment_confirmed is not True:
+                seconds += 1
+                modified_at = self._now + timedelta(seconds=seconds)
+                obj.modified_at = modified_at.replace(tzinfo=None)
+                self._update_list.append(obj)
+        return True if len(self._update_list) > 0 else None
+
+    async def _reserve_lst_ops(self, is_ex_move_to_end_ptcps):
+        '''
+        Метод выполняет следующие операции над резервным списком:
+        - выявляет тех, кто перешел из резерва в основной список
+        - обновляет modified_at всем резервникам со знаком "-"
+        - вызывает класс по рассылке тем, кто перешел из резерва
+        :return: список тех, кто перешел из резерва
+        '''
+        if is_ex_move_to_end_ptcps:  # если есть из основного списка те, кто перемещен в конец
+            # Устанавливаем индвидуальный дедлайн
+            payment_dedline = self._event_user[0].event.payment_dedline
+            event_datetime  = self._event_user[0].event.event_datetime
+            individual_dedline = set_individual_dedline(payment_dedline, event_datetime, self._now)
+            begin_idx, end_idx = self._participants_count, self._participants_count + len(self._update_list)
+
+            # Обновляем individual_dedline для перешедших из резерва
+            transfer_lst_from_reserve = self._reserv_list[begin_idx:end_idx]
+            for obj in transfer_lst_from_reserve:
+                obj.individual_dedline = individual_dedline['individual_dedline'].replace(tzinfo=None)
+            for i, obj in enumerate(self._reserv_list):
+                seconds = len(self._event_user) - i
+                modified_at = self._now - timedelta(seconds=seconds)
+                obj.modified_at = modified_at.replace(tzinfo=None)
+                self._update_list.append(obj)
+            tg_ids = [item.user.tg_id for item in transfer_lst_from_reserve]
+            tg_usernames = [item.user.tg_username for item in transfer_lst_from_reserve]
+            dedline_txt = individual_dedline['text']
+            await self._send_msg(tg_ids, tg_usernames, dedline_txt)
+
+    async def _send_msg(self, tg_ids: list, tg_usernames: list, dedline_txt):
+        '''
+        Функция выполняет слудеюущие действия:
+        - рассылает уведомления участникам, перешедшим из резерва;
+        - формирует список никнеймов, согласно пункту выше
+        - включает список по п. выше в текст рассылки админам
+        :param tg_ids:
+        :param tg_usernames:
+        :param dedline_txt:
+        :return:
+        '''
+
+        # БЛОК ДЛЯ РАССЫЛКИ УЧАСТНИКАМБ ПЕРЕШЕДШИМ ИЗ РЕЗЕРВА
+        # --------------------------------------------------
+        text = (
+            f'️⚡️ ️⚡️ <b>ВАЖНАЯ ИНФОРМАЦИЯ</b>\n'
+            f'Уважаемый участник, вы перемещены из резерва в основной список.\n'
+            f'<b><i>Сведения о тренировке</i></b>:\n'
+            f'<b>Дисциплина</b>: <i>{self._event_user.event.training_type}</i>\n'
+            f'{self._event_user[0].event.event_text}'
+        )
+        text += f'\n{dedline_txt}'
+        await SendMessages.to_several_receivers(text=text, tg_ids=tg_ids)
+
+        # БЛОК ДЛЯ РАССЫЛКИ АДМИНАМ
+        # --------------------------
+        usernames = ''
+        for username in tg_usernames:
+            usernames += f'- @{username}\n'
+
+        adm_txt = (
+            f'🔊⚡️ ВНИМАНИЕ админам❗️\n'
+            f'По тренировке, до которой остается <b>МЕНЕЕ 12 ЧАСОВ</b> планировщик переместил в ОСНОВНОЙ список '
+            f'участников со следующими никнеймами\n{usernames}'
+            f'\n<b>Данные тренировки</b>\n\n'
+            f'<b>Дисциплина</b>: <i>{self._event_user[0].event.training_type}</i>\n'
+            f'{self._event_user[0].event.event_text}'
+        )
+        event_datetime = self._event_user[0].event.event_datetime.replace(tzinfo=None)
+        await SendMessages.to_admins(adm_txt, self._now, event_datetime)
+
+
+class SendReminders():
+    def __init__(self, event_user, now):
+        self._event_user = event_user
+        self._participants_count = self._event_user[0].event.participants_count
+        self._now, self._before_1_hours = now, now + timedelta(hours=1)
+        self._update_list = []
+
+    async def execute(self):
+        for obj in self._event_user[:self._participants_count]:
+            if obj.individual_dedline <= self._before_1_hours:
+                last_payment_notify = self._now
+                obj.last_payment_notify = last_payment_notify.replace(tzinfo=None)
+                self._update_list.append(obj)
+        if len(self._update_list) > 0:
+            await self._send_msg()
+            await EventUser.bulk_update(self._update_list, ['last_payment_notify'])
+
+    async def _send_msg(self):
+        text = (
+            f'❗❗❗ ВАЖНАЯ ИНФОРМАЦИЯ ДЛЯ ВАС ❗❗❗\n'
+            f'Напоминаем, что необходимо внести оплату за тренировку, иначе через час(❗) есть риск '
+            f'оказаться в конце очереди при соответствующем превышении квоты.\n'
+            f'<b><i>Сведения о тренировке</i></b>:\n'
+            f'<b>Дисциплина</b>: <i>{self._event_user[0].event.training_type}</i>\n'
+            f'{self._event_user[0].event.event_text}'
+        )
+        _recepient_list = [item.user.tg_id for item in self._update_list]
+        await SendMessages.to_several_receivers(tg_ids=_recepient_list, text=text)
 
 
 # специальный геттер во избедание проблемы обнуления stars_dict при импорте
@@ -219,7 +353,7 @@ async def check_payment_dedline(user_cache: dict, notify=False, bot: Bot = None)
                     _dict[item.event.id] = []
                 _dict[item.event.id].append(item)
 
-            # Сортировка сформированных списков в словаре по 'created_at'
+            # Сортировка сформированных списков в словаре по 'modified_at'
             sorted_dict = {k: sorted(v, key=lambda obj: obj.modified_at.replace(tzinfo=None)) for k, v in _dict.items()}
             objects_to_update = []
             rep_dedl_for_individ = now - timedelta(hours=12) if notify is False else now - timedelta(hours=11)
@@ -368,6 +502,9 @@ async def check_payment_dedline(user_cache: dict, notify=False, bot: Bot = None)
     except Exception as e:
         await logger.error(f'Иная Ошибка в check_pyment_dedline : {e}')
         # stream_logger.error(f'on_schedule_update: {e}')
+
+
+
 
 
 async def test_for_sch(tst=None, bot=None, user_cache=None):
