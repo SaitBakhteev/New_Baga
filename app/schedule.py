@@ -169,6 +169,63 @@ class SendReminders():
         await SendMessages.to_several_receivers(tg_ids=_recepient_list, text=text)
 
 
+class StatisticOps():
+    def __init__(self, event_user, now):
+        _count = event_user[0].event.participants_count
+        self._event_user = event_user[:_count]
+        self._train_type = event_user[0].event.training_type
+        self._update_list, self._create_list = [], []
+        self._now = now
+
+    async def execute(self):
+        await self._load_stat()
+        self._extract_stars()
+        self._lists_formation()
+        if self._update_list:
+            await Statistic.bulk_update(self._update_list, ['modifed_at', 'star_count', 'visit_count', 'likes'])
+        if self._create_list:
+            await Statistic.bulk_create(self._create_list)
+
+    async def _load_stat(self):
+        _user_ids = [item.user.id for item in self._event_user]
+        stat = await Statistic.filter(
+            user__id__in=_user_ids,
+            training_type__in=self._train_type,
+            season_index=SEASON_INDEX[0]
+        ).prefetch_related('user').all()
+        self._stat = stat
+
+    def _extract_stars(self):
+        if self._event_user[0].event.stars != 'No':
+            _stars = self._event_user[0].event.stars.replace(' ', '').split(',')
+            stars_of_event = tuple(map(lambda x: int(x), _stars))
+            self._stars = stars_of_event
+        else:
+            self._stars = []
+
+    def _lists_formation(self):
+        for item in self._event_user:
+            stat = next((_stat for _stat in self._stat if _stat.user.id==item.user.id),
+                        None)
+            if stat:
+                stat.visit_count += 1
+                stat.modifed_at = self._now
+                stat.likes += item.likes
+                if item.user.id in self._stars:
+                    stat.star_count += 1
+                self._update_list.append(stat)
+
+            else:
+                new_stat = Statistic(
+                    user=item.user, training_type=self._train_type,
+                    visit_count=1, star_count=0, likes=item.likes,
+                    created_at=self._now, modifed_at=self._now
+                )
+                if item.user.id in self._stars:
+                    new_stat.star_count += 1
+                self._create_list.append(new_stat)
+
+
 # специальный геттер во избедание проблемы обнуления stars_dict при импорте
 def stars_dict_getter():
     return stars_dict
