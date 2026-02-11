@@ -277,3 +277,13 @@ class SendMessages():
             for k in user_cache:
                 if user_cache[k].admin_permissions:
                     await bot.send_message(int(k), text, parse_mode='HTML')
+
+    @classmethod
+    async def to_admins_about_non_marked_events(cls, events: list):
+        text = ' 🚫🖊 ВНИМАНИЕ админам❗️\nВы не указали звезд следующих <b>прошедших</b> тренировок:\n\n'
+        for item in events:
+            text += f'{item.event_text}\n\n'
+        text += 'Если на тренировке звезд не было, то нужно отметить прочерком'
+        for k in user_cache:
+            if user_cache[k].admin_permissions:
+                await bot.send_message(int(k), text, parse_mode='HTML')
