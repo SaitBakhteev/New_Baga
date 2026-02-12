@@ -44,8 +44,8 @@ class DropParticipantFromTrainFSM(StatesGroup):
     drop_participant = State()
 
 
-class ChancelTraininigFSM(StatesGroup):
-    chancel_training = State()
+class DeleteEventFSM(StatesGroup):
+    confirm = State()
 
 class WrightBugsFSM(StatesGroup):
     wright_bug = State()

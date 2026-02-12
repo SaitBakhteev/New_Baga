@@ -8,12 +8,12 @@ from app import states as st
 from app.database import requests as db_rq
 from app.database import event_user_requests as db_event_user_rq
 from ..often_ops_and_classes import show_text_about_event
-from app.keyboards.admin_keyboards.admin_keyboards import admin_train_manag_kb
 
 from config.constants import *
 
 from ..often_ops_and_classes import delete_bkg, ParentClassForTrainingOperations, show_formed_info_about_event
 from ...keyboards.admin_keyboards.admin_keyboards import *
+
 
 _verification_text = (
     "Чтобы выполнить это действие, наберите <i><u>через запятую</u></i> порядковые номера "
@@ -138,3 +138,7 @@ class PaymentVerification(ParentClassForTrainingOperations):
             reply_markup=interrupt_or_return_button(callback_data=f"to_manage_of_event_is:{event['id']}")
         )
         raise
+
+
+class GiveStars(ParentClassForTrainingOperations):
+    pass

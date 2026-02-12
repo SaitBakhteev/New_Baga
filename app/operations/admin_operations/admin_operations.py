@@ -11,8 +11,9 @@ from app.database import requests as db_rq
 
 from config.constants import *
 
-from ..often_ops_and_classes import delete_bkg, ParentClassForTrainingOperations, show_formed_info_about_event
+from ..often_ops_and_classes import delete_bkg, ParentClassForTrainingOperations, show_formed_info_about_event, cmd_start
 from ...keyboards.admin_keyboards.admin_keyboards import *
+from app.keyboards.kb_show_training import cancel_kb
 
 
 async def show_admin_panel(call: Message | CallbackQuery, state: FSMContext):
@@ -216,5 +217,30 @@ class EditEvent(CreateEvent):
         await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
 
 
-class DeleteEvent():
-    pass
+class DeleteEvent(ParentClassForTrainingOperations):
+    async def dispatch(self):
+        if isinstance(self._handler, CallbackQuery):
+            if self._handler.data.startswith('cancel_training'):
+                await self._show_confirm_question()
+        elif await self._state.get_state() == st.DeleteEventFSM.confirm:
+            await self._confirm()
+
+    async def _show_confirm_question(self):
+        event_id = int(self._handler.data.split(':')[1])
+        await self._state.update_data(event_id=event_id)
+        await self._state.set_state(st.DeleteEventFSM.confirm)
+        await self._handler.message.answer(
+            '📛 Если Вы уверены в отмене тренировки,  отправьте <b>да</b> в сообщении боту',
+            parse_mode='HTML', reply_markup=cancel_kb(event_id)
+        )
+
+    async def _confirm(self):
+        data = await self._state.get_data()
+        event_id = data['event_id']
+        if self._handler.text.strip().lower() == 'да':
+            await db_rq.delete_event(event_id)
+            await cmd_start(self._handler, self._state, self._is_admin, user_cache)
+        else:
+            await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
+        await self._state.clear()
+        asyncio.create_task(delete_bkg(self._handler))

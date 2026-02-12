@@ -308,7 +308,7 @@ async def stat_execute_func():
         for k in event_user_dct:
             stat_ops = StatisticOps(event_user=event_user_dct[k], now=now)
             await stat_ops.execute()
-        await StatisticOps.delete_events(now)
+    await StatisticOps.delete_events(now)
 
 
 async def test_for_sch(tst=None, bot=None, user_cache=None):
