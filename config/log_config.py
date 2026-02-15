@@ -52,6 +52,6 @@ def setup_base_logger():
 
     # Настраиваем корневой логгер
     logging.basicConfig(
-        level=logging.WARNING,
+        level=logging.INFO,
         handlers=[info_handler, error_handler, critical_handler, stream_handler]
     )

@@ -50,6 +50,7 @@ async def call_payment_verify(call: CallbackQuery | Message, state: FSMContext, 
 @admin_router.message(st.DeleteEventFSM.confirm)
 async def call_cancel_training(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
     del_event = DeleteEvent(call, state, is_admin)
+    await del_event.dispatch()
 
 #
 # @admin_router.callback_query(F.data == 'give_star')

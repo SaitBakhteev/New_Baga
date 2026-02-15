@@ -57,6 +57,7 @@ async def call_payment_notify(call: CallbackQuery | Message, state: FSMContext, 
 
 
 @main_router.callback_query(F.data.startswith('add_friend_to_event'))
+@main_router.callback_query(F.data.startswith('add_friend_confirm_to_event_is'))
 @main_router.message(st.AddFriendFSM.add_friend)
 async def call_add_friend(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
     add_friend = AddFriend(call, state, is_admin)

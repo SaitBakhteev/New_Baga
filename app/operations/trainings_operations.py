@@ -122,11 +122,11 @@ class AddFriend(ParentClassForTrainingOperations):
         if isinstance(self._handler, CallbackQuery):
             if self._handler.data.startswith('add_friend_to_event'):
                 await self._add_friend()
-            elif (self._handler.data.startswith('add_friend_confirm') and
+            elif (self._handler.data.startswith('add_friend_confirm_to_event_is') and
                   await self._state.get_state() == st.AddFriendFSM.add_friend_confirm):
                 await self._add_friend_confirm()
         elif await self._state.get_state() == st.AddFriendFSM.add_friend:
-            await self._add_friend_check_friend()
+            await self._add_friend_check()
 
     async def _add_friend(self):
         event_id = int(self._handler.data.split(':')[1])
@@ -135,81 +135,99 @@ class AddFriend(ParentClassForTrainingOperations):
         await self._state.update_data(event_id=event_id)
         await self._state.set_state(st.AddFriendFSM.add_friend)
 
-    async def _add_friend_check_friend(self):
+    async def _add_friend_check(self):
         try:
             data = await self._state.get_data()
             event_id = data['event_id']
-            text = self._handler.text.strip().replace('@', '')
-            if text != self._handler.from_user.username:
-                friend = None
-                for k in user_cache:
-                    if user_cache[k].tg_username == text:
-                        friend_id, friend, friend_tg_id = user_cache[k].id, user_cache[k].tg_username, user_cache[k].tg_id
-                        break
-                if friend is not None:
-                    friend_signed_up  = await db_rq_event_user.get_event_user_for_check_friend(
-                        event_id, friend_id=friend_id
-                    )
-                    my_prev_friend = await db_rq_event_user.get_event_user_for_check_friend(
-                        event_id, i_am_friend=self._handler.from_user.username
-                    )
-                    ''' Проверяем не записывался ли ранее мой друг (friend_signed_up) и не записывал ли 
-                    я кого-нибудь до этого (my_prev_friend) '''
-
-                    if not friend_signed_up and self._is_admin is not True and not my_prev_friend:
-                        message_text = ('⚠️ Внимание! Записать друга на тренировку можно только <b>один раз</b>!\n'
-                                        'Вы подтверждаете запись друга?')
-                        await self._state.update_data(friend_id=friend_id, friend=friend, friend_tg_id=friend_tg_id)
-                        await self._state.set_state(st.AddFriendFSM.add_friend_confirm)
-                        return await self._handler.answer(message_text, reply_markup=add_friend_confirm_kb,
-                                                          parse_mode='HTML')
-                    elif not friend_signed_up and self._is_admin is True:  # админы могут добавлять хоть сколько друзей
-                        message_text = ('Вы подтверждаете запись друга?')
-                        await self._state.update_data(friend_id=friend_id, friend=friend, friend_tg_id=friend_tg_id)
-                        await self._state.set_state(st.AddFriendFSM.add_friend_confirm)
-                        return await self._handler.answer(message_text, reply_markup=add_friend_confirm_kb, parse_mode='HTML')
-                    elif friend_signed_up:
-                        message_text = f'☑️ Ваш друг с никнеймом <i>{friend}</i> уже состоит в записи на тренировку'
-                    elif my_prev_friend and self._is_admin is not True:
-                        message_text = f'⛔️ Вы ранее уже записали друга с никнеймом <i>{my_prev_friend}</i>'
-                else:
-                    message_text = f'🤷🏻‍♂️ Пользователь с никнеймом <i>{text}</i> не зарегистрирован в боте'
+            _init_data = await self._init_data_definition(event_id)
+            if isinstance(_init_data, dict):  # если никнейм добавляемого друга прошел первичную проверку
+                friend_id, friend, friend_tg_id = (_init_data['friend_id'], _init_data['friend'],
+                                                   _init_data['friend_tg_id'])
+                proc_check =  self._process_of_check(_init_data)
+                if proc_check['available'] is True:
+                    await self._state.update_data(friend_id=friend_id, friend=friend, friend_tg_id=friend_tg_id)
+                    await self._state.set_state(st.AddFriendFSM.add_friend_confirm)
+                    keyboard = add_friend_confirm_kb(event_id)
+                elif proc_check['available'] is False:
+                    keyboard = cancel_kb(event_id)
+                elif proc_check['available'] is None:
+                    await self._state.clear()
+                    await self._handler.answer(proc_check['message_text'], parse_mode='HTML')
+                    await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
             else:
-                message_text = '☝🏽Вы не можете добавить себя вместо друга'
-            await self._handler.answer(message_text, parse_mode='HTML', reply_markup=cancel_kb(event_id))
+                message_text, keyboard = _init_data, cancel_kb(event_id)
+            await self._handler.answer(message_text, parse_mode='HTML', reply_markup=keyboard)
         except Exception as e:
             text, except_text = '⭕️ Возникла ошибка.', f'Ошибка _add_friend_check_friend: {e}'
             await self._exception_func(text, except_text)
         asyncio.create_task(delete_bkg(self._handler))
 
+    # Определяем необходимые данные для записи друга
+    async def _init_data_definition(self, event_id: int):
+        text = self._handler.text.strip().replace('@', '')
+        if text != self._handler.from_user.username:
+            for k in user_cache:
+                if user_cache[k].tg_username == text:
+                    friend_id = user_cache[k].id
+                    friend_signed_up = await db_rq_event_user.get_event_user_for_check_friend(
+                        event_id, friend_id=friend_id
+                    )
+                    my_prev_friend = await db_rq_event_user.get_event_user_for_check_friend(
+                        event_id, i_am_friend=self._handler.from_user.username
+                    )
+                    return {'friend_id': friend_id,
+                            'friend': user_cache[k].tg_username,
+                            'friend_tg_id':user_cache[k].tg_id,
+                            'friend_signed_up': friend_signed_up,
+                            'my_prev_friend': my_prev_friend}
+
+            return f'🤷🏻‍♂️ Пользователь с никнеймом <i>@{text}</i> не зарегистрирован в боте'
+        else:
+            return '☝🏽Вы не можете добавить себя как друга'
+
+    # Проверяем далее, можно ли добавлять друга
+    def _process_of_check(self, _init_data: dict):
+        friend, friend_signed_up, my_prev_friend = (_init_data['friend'], _init_data['friend_signed_up'],
+                                                    _init_data['my_prev_friend'])
+        if not friend_signed_up and self._is_admin is not True and not my_prev_friend:
+            message_text = ('⚠️ Внимание! Записать друга на тренировку можно только <b>один раз</b>!\n'
+                            'Вы подтверждаете запись друга?')
+            available = True
+        elif not friend_signed_up and self._is_admin is True:  # админы могут добавлять хоть сколько друзей
+            message_text, available = ('Вы подтверждаете запись друга?'), True
+        elif friend_signed_up:
+            message_text = f'☑️ Ваш друг с никнеймом <i>@{friend}</i> уже состоит в записи на тренировку'
+            available = False
+        elif my_prev_friend and self._is_admin is not True:
+            message_text, available = f'⛔️ Вы ранее уже записали друга с никнеймом <i>{my_prev_friend}</i>', None
+        return {'message_text': message_text, 'available': available}
+
     async def _add_friend_confirm(self):
         try:
-            call_data = self._handler.data.split(':')[1]
-            if call_data == 'yes':
+            call_data = self._handler.data.split(':')
+            state, event_id = call_data[0], int(call_data[1])
+            if state == 'add_friend_confirm_to_event_is':
                 data = await self._state.get_data()
-                friend_id, friend, friend_tg_id, event_id = (data['friend_id'], data['friend'], data['friend_tg_id'],
-                                                             data['event_id'])
+                friend_id, friend, friend_tg_id = (data['friend_id'], data['friend'], data['friend_tg_id'])
                 event = await db_req.get_event(id=event_id)
-                training_type, event_text = event[0]['training_type'], event[0]['event_text']
-                now, payment_dedline, event_datetime = (datetime.now(), event[0]['payment_dedline'],
-                                                        event[0]['event_datetime'])
+                training_type, event_text = event['training_type'], event['event_text']
+                payment_dedline, event_datetime, now = event['payment_dedline'], event['event_datetime'], datetime.now()
                 dedline_info = set_individual_dedline(payment_dedline, event_datetime, now)
-                data['created_at'], data['individual_dedline']= now, dedline_info['individual_dedline']
+                data['created_at'] = data['modified_at'] = now
+                data['individual_dedline'] = dedline_info['individual_dedline']
                 await db_rq_event_user.create_event_user(data, friend_id=friend_id,
                                                          i_am_friend=self._handler.from_user.username)
                 text = (f'️⚡️ ️⚡️ <b>ВАЖНАЯ ИНФОРМАЦИЯ</b>\n'
                         f'Вас записали на следующую тренировку\n'
                         f'<b>Тип тренировки</b>:{training_type}\n{event_text}\n\n')
                 text += dedline_info['text']
-                _msg_send = SendMessages()
-                asyncio.create_task(_msg_send.to_one_receiver(text=text, tg_id=friend_tg_id))
+                asyncio.create_task(SendMessages.to_one_receiver(text=text, tg_id=friend_tg_id))
                 text = f'Вы успешно записали друга с никнеймом <i>{friend}</i> на тренировку 🖍'
                 await self._handler.message.answer(text, parse_mode='HTML')
+                await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
             else:
                 await self._handler.message.answer(f'Вы отменили запись друга на тренировку🟡')
             await self._state.clear()  # выходим из состояния, чтобы кнопки дезактивировались
-            user_id = user_cache[self._handler.from_user.id].id
-            await show_formed_info_about_event(self._handler, self._is_admin, user_id)
         except Exception as e:
             text, except_text = '⭕️ Возникла ошибка.', f'Ошибка _add_friend_confirm: {e}'
             await self._exception_func(text, except_text)

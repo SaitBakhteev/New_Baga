@@ -11,9 +11,9 @@ from app.database import requests as db_rq
 
 from config.constants import *
 
-from ..often_ops_and_classes import delete_bkg, ParentClassForTrainingOperations, show_formed_info_about_event, cmd_start
+from ..often_ops_and_classes import delete_bkg, ParentClassForTrainingOperations, cmd_start
 from ...keyboards.admin_keyboards.admin_keyboards import *
-from app.keyboards.kb_show_training import cancel_kb
+from .manage_operations import show_event_with_manage_interface
 
 
 async def show_admin_panel(call: Message | CallbackQuery, state: FSMContext):
@@ -82,7 +82,7 @@ class CreateEvent(ParentClassForTrainingOperations):
         except ValueError as e:
             error_message = self._handle_template_error(str(e))
             user_message = f"{error_message}.\nПовторите действия, начиная со вставки шаблона."
-            await self._handler.answer(user_message, reply_markup=current_template_kb(text), parse_mode='HTML')
+            await self._handler.answer(user_message, reply_markup=curr_tmplt_kb(text), parse_mode='HTML')
             asyncio.create_task(delete_bkg(self._handler))
 
     def _parse_template_text(self, text, now):
@@ -175,7 +175,7 @@ class EditEvent(CreateEvent):
         if isinstance(self._handler, CallbackQuery):
             if self._handler.data.startswith('edit_event_is'):
                 await self._show_current_template_kb()
-            elif (self._handler.data == 'finish_edit_event' and
+            elif (self._handler.data.startswith('finish_edit_event') and
                   await self._state.get_state() == st.EditEventFSM.insert_template):
                 await self._save_event()
         elif await self._state.get_state() == st.EditEventFSM.insert_template:
@@ -186,7 +186,7 @@ class EditEvent(CreateEvent):
         event = await db_rq.get_event(id=event_id)
         text = 'Вставьте текущий шаблон этой тренировки, после чего отредактируйте и отправьте в сообщении боту'
         _template = self._form_current_template(event['event_text'])
-        await self._handler.message.answer(text, reply_markup=current_template_kb(_template))
+        await self._handler.message.answer(text, reply_markup=curr_tmplt_kb(_template, event_id))
         await self._state.update_data(event_id=event_id)
         await self._state.set_state(st.EditEventFSM.insert_template)
 
@@ -214,7 +214,7 @@ class EditEvent(CreateEvent):
         await db_rq.update_event(event_id, data)
         await self._state.clear()
         await self._handler.answer('Тренировка успешно отредактирована')
-        await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
+        await show_event_with_manage_interface(self._handler, self._state, event_id)
 
 
 class DeleteEvent(ParentClassForTrainingOperations):
@@ -230,8 +230,9 @@ class DeleteEvent(ParentClassForTrainingOperations):
         await self._state.update_data(event_id=event_id)
         await self._state.set_state(st.DeleteEventFSM.confirm)
         await self._handler.message.answer(
-            '📛 Если Вы уверены в отмене тренировки,  отправьте <b>да</b> в сообщении боту',
-            parse_mode='HTML', reply_markup=cancel_kb(event_id)
+            '📛 Если Вы уверены в отмене тренировки,  отправьте <b><i>да</i></b> в сообщении боту',
+            parse_mode='HTML',
+            reply_markup=interrupt_or_return_button(callback_data=f'to_manage_of_event_is:{event_id}')
         )
 
     async def _confirm(self):
@@ -241,6 +242,6 @@ class DeleteEvent(ParentClassForTrainingOperations):
             await db_rq.delete_event(event_id)
             await cmd_start(self._handler, self._state, self._is_admin, user_cache)
         else:
-            await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
+            await show_event_with_manage_interface(self._handler, self._is_admin, event_id, self._user_id)
         await self._state.clear()
         asyncio.create_task(delete_bkg(self._handler))

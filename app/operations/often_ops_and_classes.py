@@ -216,6 +216,7 @@ async def show_formed_info_about_event(call_mess: Message | CallbackQuery,
 
 
 def set_individual_dedline(payment_dedline, event_datetime, now):
+    payment_dedline, event_datetime = payment_dedline.replace(tzinfo=None), event_datetime.replace(tzinfo=None)
     delta_12, delta_3, delta_2, delta_1 = (timedelta(hours=12), timedelta(hours=3),
                                            timedelta(hours=2), timedelta(hours=1))
     delta_30m, delta_10m = timedelta(minutes=30), timedelta(minutes=10)

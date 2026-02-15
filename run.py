@@ -17,13 +17,17 @@ from app.database.requests import get_all_users
 from config.constants import *
 from config.db_config import TORTOISE_ORM
 from config.log_config import setup_base_logger, setup_logger
-from app.schedule import delete_events, check_payment_dedline
+
+from app.schedule import main_func, stat_execute_func
+
 
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
 setup_base_logger()  # запускаем настройки для стандартного логера
 
 stream_logger = logging.getLogger(__name__)
+
+
 
 logger = setup_logger(__name__)
 
@@ -68,30 +72,8 @@ async def startup(dispatcher: Dispatcher):
         await season_index()  # загрузка текущего индекса летоичсчисления сезона
 
         scheduler = AsyncIOScheduler()
-        scheduler.add_job(delete_events, CronTrigger(hour=1, minute=00), id="work_by_stats_and_delete_events_at_1", kwargs={'test': None, 'bot': bot})
-        scheduler.add_job(delete_events, CronTrigger(hour=4, minute=00), id="work_by_stats_and_delete_events_at_4", kwargs={'test': None, 'bot': bot})
-        for i in REPER_HOURS:  # это планировщик по проверкам дедлайнов
-            scheduler.add_job(check_payment_dedline,
-                              CronTrigger(hour=i - 1, minute=0),
-                              kwargs={'notify': True, 'bot': bot, 'user_cache': user_cache},
-                              id=f"notify_by_{i - 1}")
-            scheduler.add_job(check_payment_dedline,
-                              CronTrigger(hour=i, minute=0),
-                              id=f"scan_by_{i}",
-                              kwargs={'notify': False, 'bot': bot, 'user_cache': user_cache})
-        scheduler.add_job(check_payment_dedline, CronTrigger(hour=21, minute=50), id=f"scan_test", kwargs={'notify': False, 'bot': bot, 'user_cache':user_cache})
-
-
-        # # Заглушки
-        # test_now = datetime.now()
-        # for i in range(test_now.minute+1, 60):
-        #     scheduler.add_job(check_payment_dedline,
-        #                       CronTrigger(hour=test_now.hour, minute=i),
-        #                       kwargs={'notify': True, 'bot': bot},
-        #                       id=f"notify_by_test_{i}")
-        #     scheduler.add_job(check_payment_dedline,
-        #                       CronTrigger(hour=test_now.hour, minute=i, second=10),
-        #                       id=f"scan_by_test_{i}")
+        scheduler.add_job(main_func, CronTrigger(hour=1, minute=00), id="move_to_end")
+        scheduler.add_job(main_func, CronTrigger(hour=4, minute=00), id="remind", kwargs={'is_move': False})
 
         scheduler.start()
         stream_logger.info("Starting Bot...")

@@ -38,6 +38,7 @@ class Event(Model):  # модель создаваемых тренирвок
     boss = fields.ForeignKeyField('models.User', related_name='boss', null=True, on_delete=fields.NO_ACTION)
     user = fields.ManyToManyField('models.User', related_name="participants", through='EventUser')
     stars = fields.TextField(null=True)
+    question = fields.TextField(null=True)  # вопрос голосования
 
     def __str__(self):
         return f'event_id = {self.id}'
@@ -62,6 +63,9 @@ class EventUser(Model):
 
     # По идее это поле должно быть bool и по умолчанию быть False, но из-за ограничений SQLite оставляем как есть
     friend = fields.CharField(max_length=50, null=True, on_delete=fields.NO_ACTION)
+
+    likes = fields.IntField(null=True)  # число лайков в голосовании
+    me_liked = fields.BooleanField(default=False)  # поставил ли я лайк
 
     class Meta:
         table = 'EventUser'

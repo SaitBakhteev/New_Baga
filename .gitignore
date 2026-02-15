@@ -20,3 +20,5 @@ logs/
 webhook_run.py
 run.py
 scripts.py
+
+notes.txt

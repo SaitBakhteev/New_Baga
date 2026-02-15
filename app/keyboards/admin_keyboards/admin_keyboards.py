@@ -83,11 +83,17 @@ def input_template_kb(templates: list) -> InlineKeyboardMarkup:
     return keyboard.as_markup()
 
 
-def current_template_kb(template_text) -> InlineKeyboardMarkup:
+# Клавиатура вставки текущего шаблона при редактировании или создании тренировки
+def curr_tmplt_kb(template_text: str, event_id: int=None) -> InlineKeyboardMarkup:
     text, switch = 'Текущий шаблон', template_text
+    if event_id:
+        _cancel_btn = interrupt_or_return_button(callback_data=f'to_manage_of_event_is:{event_id}',
+                                             this_markup=False)
+    else:
+        _cancel_btn = _RETURN_TO_ADMIN_PANEL_BUTTON
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=text, switch_inline_query_current_chat=switch)],
-        [_CANCEL_ADMIN_OPERATION_BUTTON],
+        [_cancel_btn],
     ])
     return keyboard
 
@@ -142,11 +148,13 @@ drop_participant_confirm_kb = InlineKeyboardMarkup(inline_keyboard=[
 
 # Кнопка для сохранения изменений редактируемой тренировки
 def finish_edit_event_kb(event_id) -> InlineKeyboardMarkup:
-    _cancel_btn = interrupt_or_return_button(callback_data=f'to_manage_of_event_is:{event_id}',
-                                             this_markup=False)
+    _return_to_manage_btn = interrupt_or_return_button(
+        callback_data=f'to_manage_of_event_is:{event_id}',
+        this_markup=False
+    )
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='Сохранить изменения 🖊', callback_data='finish_edit_event')],
-        [_cancel_btn]
+        [InlineKeyboardButton(text='Сохранить изменения 🖊', callback_data=f'finish_edit_event:{event_id}')],
+        [_return_to_manage_btn]
     ])
     return keyboard
 
