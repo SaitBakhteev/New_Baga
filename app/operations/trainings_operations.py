@@ -70,12 +70,14 @@ class PaymentNotify(ParentClassForTrainingOperations):
             else:
                 text = (
                     'ВНИМАНИЕ❗️\n'
-                    'Уведомлять бот об оплате можно только ОДИН (!!) раз. Данное действие продлевает дедлайн оплаты '
-                    'до 1,5 суток <i><u>с момента попадания в ОСНОВНОЙ список тренировки</u></i>.\n'
-                    'До этого времени статус ✔️ переходит либо в статус ✅ (админ подтвердил оплату), либо в '
-                    '❌ (админ не подтвердил оплату).\n'
-                    'Если Вы подтверждаете факт оплаты и отправки скрина админу, '
-                    'отправьте в сообщении боту слово <i>"да"</i>?'
+                    '<b><i>Что нужно знать об этой функции</i></b>:\n'
+                    '🔸 Уведомлять бот об оплате можно только <b>ОДИН (!!) раз</b>;\n'
+                    '🔸 Продлевает дедлайн оплаты МАКСИМУМ на 1,5 сутки <i><u>с момента попадания '
+                    'в ОСНОВНОЙ список </u></i>;\n'
+                    '🔸 По истечении времени присваивается статус ✅ (админ подтвердил оплату) или '
+                    '❌ (админ не подтвердил оплату);\n'
+                    '🔸 Уведомлять нужно ТОЛЬКО, если Вы оплатили и <u>отправили админу скрин чека</u>.\n'
+                    '\nЕсли Вы подтверждаете факт оплаты, отправьте в сообщении боту слово <b><i>да</i></b>?'
                 )
                 await self._handler.message.answer(text, reply_markup=cancel_kb(event_id), parse_mode='HTML')
                 await self._state.update_data(event_id=event_id, event_user=_check_state)
@@ -154,6 +156,8 @@ class AddFriend(ParentClassForTrainingOperations):
                     await self._state.clear()
                     await self._handler.answer(proc_check['message_text'], parse_mode='HTML')
                     await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
+                    return
+                message_text = proc_check['message_text']
             else:
                 message_text, keyboard = _init_data, cancel_kb(event_id)
             await self._handler.answer(message_text, parse_mode='HTML', reply_markup=keyboard)
@@ -199,7 +203,7 @@ class AddFriend(ParentClassForTrainingOperations):
             message_text = f'☑️ Ваш друг с никнеймом <i>@{friend}</i> уже состоит в записи на тренировку'
             available = False
         elif my_prev_friend and self._is_admin is not True:
-            message_text, available = f'⛔️ Вы ранее уже записали друга с никнеймом <i>{my_prev_friend}</i>', None
+            message_text, available = f'⛔️ Вы ранее уже записали друга с никнеймом <i>@{my_prev_friend}</i>', None
         return {'message_text': message_text, 'available': available}
 
     async def _add_friend_confirm(self):
