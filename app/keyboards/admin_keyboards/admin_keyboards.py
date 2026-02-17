@@ -100,7 +100,7 @@ def curr_tmplt_kb(template_text: str, event_id: int=None) -> InlineKeyboardMarku
 
 finish_create_event_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Сохранить шаблон', callback_data='save_template')],
-    [InlineKeyboardButton(text='Добавить новую тренировку 🆗', callback_data='add_new_event')],
+    [InlineKeyboardButton(text='Утвердить новую тренировку 🆗', callback_data='add_new_event')],
     [_CANCEL_ADMIN_OPERATION_BUTTON]
 ])
 

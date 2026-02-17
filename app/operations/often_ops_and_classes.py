@@ -158,7 +158,7 @@ def show_text_about_event(event: dict, event_user: list, user_id: int) -> str:
     new_info = ev_dt_info.replace('\n',f' ({day})\n')
     text = text.replace(ev_dt_info, new_info)
 
-    if event['stars'] is not None:
+    if event['stars'] is not None and event['stars'] != '-':
         stars_text = event['stars'].replace(' ', '').split(',')  # переводим текстовый набор user_id в список
         star_tpl = tuple(map(lambda x: int(x), stars_text))  # преобразуем в кортеж целых чисел значений user_id
     else:
@@ -178,7 +178,7 @@ def show_text_about_event(event: dict, event_user: list, user_id: int) -> str:
             else:
                 tag = ''
             if len(tag) > 0 and tag != '✅':
-                _dedline = f": ⏳ <b><i>{item['individual_dedline'].strftime('%H:%M %d.%m.')}</i></b>"
+                _dedline = f": ⏳ <b><i>{item['individual_dedline'].strftime('%H:%M %d.%m')}</i></b>"
             else:
                 _dedline = ''
             fullname = f"{item["user__tg_name"]} @{item['user__tg_username']}"
@@ -225,7 +225,7 @@ def set_individual_dedline(payment_dedline, event_datetime, now):
     elif now + delta_12 <= event_datetime - delta_3:
         individual_dedline = now + delta_12
     else:
-        _delta, = event_datetime - now
+        _delta = event_datetime - now
         if _delta > delta_3:
             individual_dedline = event_datetime - delta_2
         elif _delta > delta_2 and _delta <= delta_3:
@@ -241,8 +241,9 @@ def set_individual_dedline(payment_dedline, event_datetime, now):
     if _lenght_of_dedline >= delta_2:
         text = f"Вам необходимо оплатить до <b><i>{individual_dedline.strftime('%H:%M %d.%m.%Y')}</i></b>.\n"
     else:
+        _minutes = int(_lenght_of_dedline.total_seconds() // 60)
         text = (f"ВНИМАНИЕ ‼️🔥\n У Вас весьма ограниченный дедлайн на оплату⏳.\n"
-                 f"Вам необходимов течение {_lenght_of_dedline.strftime('%M')} минут.\n")
+                 f"Вам необходимо оплатить в течение <b><u>{_minutes} минут</u></b>.\n")
 
     text += 'По истечении дедлайна есть риск оказаться в конце очереди при наличии резерва'
     return {'text': text, 'individual_dedline':individual_dedline}

@@ -65,7 +65,7 @@ class PaymentNotify(ParentClassForTrainingOperations):
             _check_state = await self._check_availability(event_id)
             if isinstance(_check_state, str):
                 text = _check_state
-                await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
+                await self._state.clear()
                 await self._handler.message.answer(text, parse_mode='HTML')
             else:
                 text = (
@@ -96,7 +96,11 @@ class PaymentNotify(ParentClassForTrainingOperations):
                     f'{self._add_text}')
         elif event_user.paid_check is True:
             return f'🔴 Вы ранее уже пользовались этой функцией.\n{self._add_text}'
+
+        # Если кнопка оповещения бота доступна, двигаемся дальше
         new_individual_dedline = event_user.modified_at + timedelta(days=1, hours=12)
+        if new_individual_dedline > event_user.event.event_datetime:
+            new_individual_dedline = event_user.event.event_datetime
         event_user.individual_dedline, event_user.paid_check = new_individual_dedline, True
         return event_user
 
@@ -132,6 +136,17 @@ class AddFriend(ParentClassForTrainingOperations):
 
     async def _add_friend(self):
         event_id = int(self._handler.data.split(':')[1])
+        if not self._is_admin:  # проверим, не простой ли это пользователь и не добавлял ли он ранее
+            my_prev_friend = await db_rq_event_user.get_event_user_for_check_friend(
+                event_id, i_am_friend=self._handler.from_user.username)
+            if my_prev_friend:
+                await self._state.clear()
+                text = f'⛔️ Вы ранее уже записали друга с никнеймом <i>@{my_prev_friend}</i>'
+                await self._handler.message.answer(text, parse_mode='HTML')
+                await self._handler.answer()  # чтобы кнопка сразу стала активной
+                return
+
+        # Если ранее друга не добавляли или это админ, то продолжаем
         text = 'Введите никнейм вашего друга.\n<i>Пример</i>: @ivanov1934'
         await self._handler.message.answer(text, parse_mode='HTML', reply_markup=cancel_kb(event_id))
         await self._state.update_data(event_id=event_id)
@@ -146,18 +161,11 @@ class AddFriend(ParentClassForTrainingOperations):
                 friend_id, friend, friend_tg_id = (_init_data['friend_id'], _init_data['friend'],
                                                    _init_data['friend_tg_id'])
                 proc_check =  self._process_of_check(_init_data)
-                if proc_check['available'] is True:
+                _available, message_text = proc_check['available'], proc_check['message_text']
+                if _available is True:
                     await self._state.update_data(friend_id=friend_id, friend=friend, friend_tg_id=friend_tg_id)
                     await self._state.set_state(st.AddFriendFSM.add_friend_confirm)
-                    keyboard = add_friend_confirm_kb(event_id)
-                elif proc_check['available'] is False:
-                    keyboard = cancel_kb(event_id)
-                elif proc_check['available'] is None:
-                    await self._state.clear()
-                    await self._handler.answer(proc_check['message_text'], parse_mode='HTML')
-                    await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
-                    return
-                message_text = proc_check['message_text']
+                keyboard = add_friend_confirm_kb(event_id) if _available is True else cancel_kb(event_id)
             else:
                 message_text, keyboard = _init_data, cancel_kb(event_id)
             await self._handler.answer(message_text, parse_mode='HTML', reply_markup=keyboard)
@@ -176,34 +184,24 @@ class AddFriend(ParentClassForTrainingOperations):
                     friend_signed_up = await db_rq_event_user.get_event_user_for_check_friend(
                         event_id, friend_id=friend_id
                     )
-                    my_prev_friend = await db_rq_event_user.get_event_user_for_check_friend(
-                        event_id, i_am_friend=self._handler.from_user.username
-                    )
                     return {'friend_id': friend_id,
                             'friend': user_cache[k].tg_username,
                             'friend_tg_id':user_cache[k].tg_id,
-                            'friend_signed_up': friend_signed_up,
-                            'my_prev_friend': my_prev_friend}
-
+                            'friend_signed_up': friend_signed_up}
             return f'🤷🏻‍♂️ Пользователь с никнеймом <i>@{text}</i> не зарегистрирован в боте'
         else:
             return '☝🏽Вы не можете добавить себя как друга'
 
     # Проверяем далее, можно ли добавлять друга
     def _process_of_check(self, _init_data: dict):
-        friend, friend_signed_up, my_prev_friend = (_init_data['friend'], _init_data['friend_signed_up'],
-                                                    _init_data['my_prev_friend'])
-        if not friend_signed_up and self._is_admin is not True and not my_prev_friend:
+        friend, friend_signed_up = (_init_data['friend'], _init_data['friend_signed_up'])
+        if not friend_signed_up:
             message_text = ('⚠️ Внимание! Записать друга на тренировку можно только <b>один раз</b>!\n'
-                            'Вы подтверждаете запись друга?')
+                            'Вы подтверждаете запись друга?\n')
             available = True
-        elif not friend_signed_up and self._is_admin is True:  # админы могут добавлять хоть сколько друзей
-            message_text, available = ('Вы подтверждаете запись друга?'), True
-        elif friend_signed_up:
+        else:
             message_text = f'☑️ Ваш друг с никнеймом <i>@{friend}</i> уже состоит в записи на тренировку'
             available = False
-        elif my_prev_friend and self._is_admin is not True:
-            message_text, available = f'⛔️ Вы ранее уже записали друга с никнеймом <i>@{my_prev_friend}</i>', None
         return {'message_text': message_text, 'available': available}
 
     async def _add_friend_confirm(self):
@@ -212,7 +210,7 @@ class AddFriend(ParentClassForTrainingOperations):
             state, event_id = call_data[0], int(call_data[1])
             if state == 'add_friend_confirm_to_event_is':
                 data = await self._state.get_data()
-                friend_id, friend, friend_tg_id = (data['friend_id'], data['friend'], data['friend_tg_id'])
+                friend_id, friend, friend_tg_id = data['friend_id'], data['friend'], data['friend_tg_id']
                 event = await db_req.get_event(id=event_id)
                 training_type, event_text = event['training_type'], event['event_text']
                 payment_dedline, event_datetime, now = event['payment_dedline'], event['event_datetime'], datetime.now()

@@ -242,6 +242,6 @@ class DeleteEvent(ParentClassForTrainingOperations):
             await db_rq.delete_event(event_id)
             await cmd_start(self._handler, self._state, self._is_admin, user_cache)
         else:
-            await show_event_with_manage_interface(self._handler, self._is_admin, event_id, self._user_id)
+            await show_event_with_manage_interface(self._handler, event_id, self._user_id)
         await self._state.clear()
         asyncio.create_task(delete_bkg(self._handler))

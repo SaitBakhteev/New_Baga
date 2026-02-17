@@ -88,3 +88,8 @@ class SendCheckFSM(StatesGroup):
 
 class PayConfirmationFSM(StatesGroup):
     write_participants = State()
+
+
+class GiveStarsFSM(StatesGroup):
+    continue_ = State()
+    finish = State()

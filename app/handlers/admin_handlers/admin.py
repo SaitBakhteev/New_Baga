@@ -52,73 +52,16 @@ async def call_cancel_training(call: CallbackQuery | Message, state: FSMContext,
     del_event = DeleteEvent(call, state, is_admin)
     await del_event.dispatch()
 
-#
-# @admin_router.callback_query(F.data == 'give_star')
-# async def give_star(call: CallbackQuery, state: FSMContext, is_admin: bool):
-#     data = await state.get_data()
-#     event = data['event']
-#     if event['stars'] is None:
-#         await state.set_state(st.ChooseEventFSM.give_star)
-#         await call.message.answer(
-#             '‼️ <b>ВНИМАНИЕ</b> ‼️\n'
-#             'Зафиксировать звёзд можно только <b>ОДИН РАЗ (!!!)</b> \n'
-#             'Введите через запятую порядковые номера игроков, которым хотите присвоить звезду',
-#             reply_markup=kb.return_to_start_markup(), parse_mode='HTML'
-#         )
-#     else:
-#         user_id_lst = [int(i) for i in event['stars'].replace(' ', '').split(',')]
-#         stars_txt = ""
-#         for k in user_cache:
-#             if user_cache[k].id in user_id_lst:
-#                 stars_txt += f"<b><i>{user_cache[k].tg_username}</i></b>\n"
-#         await call.message.answer('СТОП🛑. Вы уже на данную тренировку зафиксировали звёзд со '
-#                                   'следующими никнеймами:\n'
-#                                   f'{stars_txt}', parse_mode='HTML')
-#         await state.set_state(None)
-#         await show_formed_info_about_event(call, state, is_admin)
-#
-#
-# @admin_router.message(st.ChooseEventFSM.give_star)
-# async def give_star_input(message: Message, state: FSMContext, is_admin: bool):
-#     try:
-#         data = await state.get_data()
-#         event, event_user, verify_type = (data.get('event'), data.get('event_user'),
-#                                           data.get('verify_type'))
-#         prtcp_lst_form = await participant_list_formation(message, state, is_admin)
-#         index_list, number_list = prtcp_lst_form['index_list'], prtcp_lst_form['number_list']
-#         star_ids_list = [event_user[i]['user__id'] for i in index_list]
-#         # Поеобразуем спискок id звезд в строку
-#         stars = ",".join(str(x) for x in star_ids_list) if star_ids_list else None
-#         await state.update_data(stars=stars)
-#         await state.set_state(st.ChooseEventFSM.confirm_give_star)
-#         await message.answer('⚠️ Если Вы убеждены, что это окончательный список звезд, '
-#                              'отправьте в сообщении боту слово <i>да</i>',
-#                              reply_markup=kb.return_to_start_markup(), parse_mode='HTML')
-#     except Exception as e:
-#         await logger.error(f'Ошибка в присвоении звезды: {e}')
-#         # stream_logger.error(f'Ошибка в присвоении звезды: {e}')
-#
-#
-# @admin_router.message(st.ChooseEventFSM.confirm_give_star)
-# async def confirm_give_star(message: Message, state: FSMContext, is_admin: bool):
-#     data = await state.get_data()
-#     event_id, event, stars = data['event_id'], data['event'], data['stars']
-#     text = message.text
-#     if text == 'да':
-#         if stars:
-#             answer = 'Звезды тренировки добавлены успешно 🤩'
-#             await db_req.update_event(event_id=event_id, stars=stars, data=None)
-#             event['stars'] = stars
-#             await state.update_data(event=event)
-#         else:
-#             answer = 'Вы никого не указали из звезд 🤷🏻‍♂️'
-#     else:
-#         answer = 'Отправлено невалидное сообщение. Операция отменена ⛔️'
-#     await message.answer(answer)
-#     # await state.set_state(None)
-#     await show_formed_info_about_event(message, state, is_admin)
-#
-#
+
+@admin_router.callback_query(F.data.startswith('give_star_of_event_is'))
+@admin_router.callback_query(F.data.startswith('give_stars_continue'))
+@admin_router.message(st.GiveStarsFSM.continue_)
+@admin_router.message(st.GiveStarsFSM.finish)
+async def call_give_stars(call: Message | CallbackQuery, state: FSMContext, is_admin:bool):
+    give_stars = GiveStars(call, state, is_admin)
+    await give_stars.dispatch()
+
+
 # @admin_router.callback_query(F.data.startswith('drop_or_chancel'))
 # async def drop_or_chancel(call: CallbackQuery, state: FSMContext):
 #     call_data = call.data.split(':')[1]

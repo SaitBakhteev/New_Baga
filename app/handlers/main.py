@@ -4,6 +4,7 @@ from aiogram.filters import Command
 from ..operations.trainings_operations import *
 from app.handlers.rare_handlers.rare import rare_router
 from ..handlers.admin_handlers.admin import admin_router
+from ..handlers.for_tests import test_router
 
 from .. import states as st
 
@@ -17,7 +18,7 @@ main_router = Router()
 
 main_router.message.middleware(AdminMiddleware())
 main_router.callback_query.middleware(AdminMiddleware())
-main_router.include_routers(rare_router, admin_router)
+main_router.include_routers(rare_router, admin_router, test_router)
 
 
 # БЛОК ВЫБОРА ТРЕНИРОВОК
@@ -163,41 +164,6 @@ async def call_delete_from_training(call: CallbackQuery | Message, state: FSMCon
 #
 #
 #
-# ''' ДОСТУПНЫЕ АДМИНУ ФУНКЦИИ  '''
-#
-#
-# # Функция, которая определяет из БД учатников по веденным порядковым номерам
-# async def participant_list_formation(call_mess: Message | CallbackQuery, state: FSMContext, is_admin: bool):
-#     try:
-#         data = await state.get_data()
-#         event = data.get('event')
-#
-#         call_mess = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
-#         participants_count = event['participants_count']
-#
-#         # Список порядковых номеров участников, которые введены админом для подтверждения оплаты
-#         number_list = call_mess.text.replace(' ', '').split(',')
-#         number_list = list(map(int, number_list))
-#
-#         # Если админ ввел номера (в т.ч. 0), выходящие за пределы ОСНОВНОГО СПИСКА
-#         if any(num > participants_count or num == 0 for num in number_list):
-#             raise IndexError
-#         index_list = list(map(lambda x: x - 1, number_list))
-#         asyncio.create_task(delete_bkg(call_mess))
-#         return {'index_list': index_list, 'number_list': number_list}
-#     except ValueError:
-#         await call_mess.answer('Нужно <i><u>через запятую</u></i> вводить только '
-#                                '<b>целочисленные значения</b>. Повторите ввод.',
-#                                parse_mode='HTML',
-#                                reply_markup=kb.return_to_start_markup(process_interrupt=True))
-#         raise
-#     except IndexError:
-#         await call_mess.answer(f'Допустимы только порядковые номера из '
-#                                f'<u>ОСНОВНОГО СПИСКА</u>.\n'
-#                                f'Повторите ввод.',
-#                                parse_mode='HTML',
-#                                reply_markup=kb.return_to_start_markup(process_interrupt=True))
-#         raise
 #
 #
 # # -------------- Список админов ----------------

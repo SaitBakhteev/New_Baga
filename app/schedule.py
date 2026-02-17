@@ -41,9 +41,10 @@ class MoveToEnd():
     async def execute(self):
         if len(self._event_user) > self._participants_count:
             is_ex_move_to_end_ptcps = self._extract_from_main_lst()
-            self._reserv_list(is_ex_move_to_end_ptcps)
+            await self._reserve_lst_ops(is_ex_move_to_end_ptcps)
             if len(self._update_list) > 0:
-                await EventUser.bulk_update(self._update_list, ['modified_at', 'individual_dedline'])
+                await EventUser.bulk_update(self._update_list,
+                                            ['modified_at', 'individual_dedline', 'paid_check'])
 
     # Метод, который извлекает в отдельный список участников основного с просроченным дедлайном
     def _extract_from_main_lst(self):
@@ -52,9 +53,17 @@ class MoveToEnd():
             if len(self._update_list) > self._reserv_count:
                 break
             if obj.individual_dedline.replace(tzinfo=None) <= self._now and obj.payment_confirmed is not True:
+                # Обновляем время
+                # --------------
                 seconds += 1
                 modified_at = self._now + timedelta(seconds=seconds)
                 obj.modified_at = modified_at.replace(tzinfo=None)
+
+                # Обновляем paid_check
+                # --------------
+                if obj.paid_check:
+                    obj.paid_check = False
+
                 self._update_list.append(obj)
         return True if len(self._update_list) > 0 else None
 

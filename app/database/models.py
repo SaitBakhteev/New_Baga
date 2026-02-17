@@ -1,10 +1,3 @@
-"""
-Модель EventUsers. Данная модель предназначена для того, чтобы заносить в БД заявившихся участников на
-определенные тренировки. Поле paid_check может принимать следующие значения:
-- пустое NULL означает, что пользователь не обозначил оплату за тренировку;
-- текст 'I payed' означает, что пользователь оплатил, но чек об оплате не загрузил;
-- адрес чека об оплате, загруженный пользователем
-"""
 from tortoise.models import Model
 from tortoise import fields
 from pytz import timezone
@@ -51,38 +44,22 @@ class EventUser(Model):
     created_at = fields.DatetimeField(auto_now_add=True, timezone=timezone('Europe/Moscow'))
     modified_at = fields.DatetimeField(auto_now_add=True, timezone=timezone('Europe/Moscow'))
     individual_dedline = fields.DatetimeField(auto_now_add=True, timezone=timezone('Europe/Moscow'))
-
-    # Два поля по уведомлению об оплате: состояния уведомления, время жизни ✔️
     paid_check = fields.BooleanField(null=True)
-    paid_check_dedline = fields.DatetimeField(null=True, timezone=timezone('Europe/Moscow'))
-
     payment_confirmed = fields.BooleanField(default=None, null=True)  # подтверждение оплаты, доступное только админу
 
     # Последняя дата и время отправки напоминания об оплате
     last_payment_notify = fields.DatetimeField(null=True, timezone=timezone('Europe/Moscow'))
 
-    # По идее это поле должно быть bool и по умолчанию быть False, но из-за ограничений SQLite оставляем как есть
     friend = fields.CharField(max_length=50, null=True, on_delete=fields.NO_ACTION)
-
     likes = fields.IntField(null=True)  # число лайков в голосовании
     me_liked = fields.BooleanField(default=False)  # поставил ли я лайк
+
+    # Ненужное поле, которое вынужденно оставлено из-за ограниченйи SQLite
+    paid_check_dedline = fields.DatetimeField(null=True, timezone=timezone('Europe/Moscow'))
 
     class Meta:
         table = 'EventUser'
         unique_together = ('event', 'user')
-
-    async def upload_check(self):
-        self.paid_check = 'paid'
-        await self.save()
-
-    async def verify_payment(self, confirm=True):
-        if confirm:
-            self.payment_confirmed = True
-        elif confirm is None:  # если верификация отменена (например нечаянно нажал на подтверждение)
-            self.payment_confirmed = None
-        else:
-            self.payment_confirmed = False
-        await self.save()
 
 
 # Класс для сохранения шаблонов по созданию тренировок
