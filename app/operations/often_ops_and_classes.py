@@ -158,11 +158,13 @@ def show_text_about_event(event: dict, event_user: list, user_id: int) -> str:
     new_info = ev_dt_info.replace('\n',f' ({day})\n')
     text = text.replace(ev_dt_info, new_info)
 
+    star_tpl = None
     if event['stars'] is not None and event['stars'] != '-':
         stars_text = event['stars'].replace(' ', '').split(',')  # переводим текстовый набор user_id в список
         star_tpl = tuple(map(lambda x: int(x), stars_text))  # преобразуем в кортеж целых чисел значений user_id
-    else:
-        star_tpl = None
+    elif event['stars'] == '-':
+        text += '\n➖ <b><i>Тренировка отмечена без звезд</i></b>\n'
+
     text += '\n\n<b>ОСНОВНОЙ СПИСОК</b>\n'
     if event_user:
         for i, item in enumerate(event_user):

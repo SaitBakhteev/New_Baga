@@ -93,3 +93,13 @@ class PayConfirmationFSM(StatesGroup):
 class GiveStarsFSM(StatesGroup):
     continue_ = State()
     finish = State()
+
+
+class MoveToEndFSM(StatesGroup):
+    process = State()
+    finish = State()
+
+
+class DropUserFSM(StatesGroup):
+    process = State()
+    finish = State()

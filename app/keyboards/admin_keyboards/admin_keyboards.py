@@ -120,7 +120,7 @@ def admin_train_manag_kb(event_id) -> InlineKeyboardMarkup:
     keyboard.add(InlineKeyboardButton(text='💠 Сдвинуть в конец очереди ⬇️',
                                       callback_data=f'move_to_end_of_event_is:{event_id}'))
     keyboard.add(InlineKeyboardButton(text='💠 Удалить участника 🚷',
-                                      callback_data=f'drop_participant:{event_id}'))
+                                      callback_data=f'drop_user_from_event_is:{event_id}'))
     keyboard.add(InlineKeyboardButton(text='💠 Редактировать тренировку ✏️', callback_data=f'edit_event_is:{event_id}'))
     keyboard.add(InlineKeyboardButton(text='💠 🚫 ОТМЕНИТЬ ТРЕНИРОВКУ 💥',
                                       callback_data=f'cancel_training:{event_id}'))

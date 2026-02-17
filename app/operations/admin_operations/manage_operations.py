@@ -3,6 +3,7 @@ from datetime import datetime, date, time, timedelta
 
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
+from cryptography.hazmat.primitives.keywrap import aes_key_wrap
 
 from app import states as st
 from app.database import requests as db_rq
@@ -163,6 +164,7 @@ class GiveStars(ParentClassForTrainingOperations):
                 await self._continue()
         elif await self._state.get_state() == st.GiveStarsFSM.finish:
             await self._finish_exec()
+
     async def _begin(self):
         _init_params = await self._init_params()
         event_id, event = _init_params['event_id'], _init_params['event']
@@ -180,7 +182,6 @@ class GiveStars(ParentClassForTrainingOperations):
             keyboard = give_stars_continue_kb(event_id)
             await self._state.set_state(st.GiveStarsFSM.continue_)
         await self._handler.message.answer(msg, reply_markup=keyboard)
-
 
     async def _init_params(self):
         event_id = int(self._handler.data.split(':')[1])
@@ -245,3 +246,109 @@ class GiveStars(ParentClassForTrainingOperations):
             return '📛 Порядковые номера должны быть из ОСНОВНОГО СПИСКА'
         except ValueError:
             return '📛 Некорректный формат ввода'
+
+
+class MoveToEndCls(ParentClassForTrainingOperations):
+    async def dispatch(self):
+        data = await self._state.get_data()
+        if 'event_id' in data:
+            event_id = data['event_id']
+            self._cancel_kb = interrupt_or_return_button(callback_data=f'to_manage_of_event_is:{event_id}')
+        if isinstance(self._handler.data, CallbackQuery):
+            if self._handler.data.startswith('move_to_end_of_event_is'):
+                await self._begin()
+        elif await self._state.get_state() == st.MoveToEndFSM.process:
+            await self._process()
+        elif  await self._state.get_state() == st.MoveToEndFSM.finish:
+            await self._finish()
+
+    async def _begin(self):
+        text = 'Введите порядковый номер участника списке'
+        event_id = int(self._handler.data.split(':')[1])
+        event_user = await db_event_user_rq.get_event_user(event_id=event_id)
+        _cancel_kb = interrupt_or_return_button(callback_data=f'to_manage_of_event_is:{event_id}')
+        await self._handler.message.answer(text, reply_markup=_cancel_kb)
+        await self._state.update_data(event_id=event_id, event_user=event_user)
+        await self._state.set_state(st.MoveToEndFSM.process)
+
+    async def _process(self):
+        try:
+            idx = int(self._handler.text.strip())
+            data = await self._state.get_data()
+            event_user = data['event_user']
+            user_id = event_user[idx-1]['user__id']
+            await self._state.update_data(user_id=user_id)
+            await self._state.set_state(st.MoveToEndFSM.finish)
+            msg = 'Для подтверждения перемещения участника в конец очереди отправьте <b><i>да</i></b>'
+        except IndexError:
+            msg = 'Такого номера участника нет в списке'
+        except ValueError:
+            msg = 'Нужно вводить целочисленное значение'
+        await self._handler.answer(msg, reply_markup=self._cancel_kb)
+        return
+
+    async def _finish(self):
+        data = await self._state.get_data()
+        user_id, event_id, = data['user_id'], data['event_id']
+        if self._handler.text.strip().lower() == 'да':
+            await db_event_user_rq.update_event_user(user_id=user_id, event_id=event_id, replace_to_end=True)
+            msg = 'Участник перемещен в конец очереди ⬇️'
+        else:
+            msg = '🚫 Отправлено невалидное сообщение, операция отклонена'
+        await self._handler.message.answer(msg)
+        await self._state.clear()
+        await show_event_with_manage_interface(self._handler, self._state, event_id)
+
+
+class DropUser(ParentClassForTrainingOperations):
+    async def dispatch(self):
+        data = await self._state.get_data()
+        if 'event_id' in data:
+            event_id = data['event_id']
+            self._cancel_kb = interrupt_or_return_button(callback_data=f'to_manage_of_event_is:{event_id}')
+        if isinstance(self._handler.data, CallbackQuery):
+            if self._handler.data.startswith('drop_user_from_event_is'):
+                await self._begin()
+        elif await self._state.get_state() == st.DropUserFSM.process:
+            await self._process()
+        elif await self._state.get_state() == st.DropUserFSM.finish:
+            await self._finish()
+
+    async def _begin(self):
+        text = 'Введите порядковый номер участника списке'
+        event_id = int(self._handler.data.split(':')[1])
+        event_user = await db_event_user_rq.get_event_user(event_id=event_id)
+        _cancel_kb = interrupt_or_return_button(callback_data=f'to_manage_of_event_is:{event_id}')
+        await self._handler.message.answer(text, reply_markup=_cancel_kb)
+        await self._state.update_data(event_id=event_id, event_user=event_user)
+        await self._state.set_state(st.DropUserFSM.process)
+
+    async def _process(self):
+        try:
+            idx = int(self._handler.text.strip())
+            data = await self._state.get_data()
+            event_user = data['event_user']
+            user_id = event_user[idx - 1]['user__id']
+            await self._state.update_data(user_id=user_id)
+            await self._state.set_state(st.DropUserFSM.finish)
+            msg = 'Для подтверждения удаления участника отправьте <b><i>да</i></b>'
+        except IndexError:
+            msg = 'Такого номера участника нет в списке'
+        except ValueError:
+            msg = 'Нужно вводить целочисленное значение'
+        await self._handler.answer(msg, reply_markup=self._cancel_kb)
+        return
+
+    async def _finish(self):
+        data = await self._state.get_data()
+        user_id, event_id, = data['user_id'], data['event_id']
+        if self._handler.text.strip().lower() == 'да':
+            await db_event_user_rq.delete_event_user(user_id=user_id, event_id=event_id)
+            msg = 'Участник удален 🚷'
+        else:
+            msg = '🚫 Отправлено невалидное сообщение, операция отклонена'
+        await self._handler.message.answer(msg)
+        await self._state.clear()
+        await show_event_with_manage_interface(self._handler, self._state, event_id)
+
+

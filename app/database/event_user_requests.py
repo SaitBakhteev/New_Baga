@@ -132,6 +132,10 @@ async def update_event_user_for_payment_notify(even_id: id, user_id: int):
         await logger.error(f'Ошибка в update_event_user_for_payment_notify: {e}')
 
 
+async def update_event_user_for_modified_at(id: int):
+    await EventUser.filter(id=id).update(modified_at=datetime.now())
+
+
 async def update_event_user(user_id: int, event_id: int,
                             payment_notify: bool = False,
                             replace_to_end: bool = None):

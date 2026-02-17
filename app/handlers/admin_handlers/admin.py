@@ -4,6 +4,7 @@ from aiogram.filters import Command
 from app.operations.admin_operations.admin_operations import *
 
 from app.operations.admin_operations.manage_operations import *
+from app.schedule import MoveToEnd
 
 admin_router = Router()
 
@@ -60,6 +61,16 @@ async def call_cancel_training(call: CallbackQuery | Message, state: FSMContext,
 async def call_give_stars(call: Message | CallbackQuery, state: FSMContext, is_admin:bool):
     give_stars = GiveStars(call, state, is_admin)
     await give_stars.dispatch()
+
+
+@admin_router.callback_query(F.data.startswith('move_to_end_of_event_is'))
+@admin_router.message(st.MoveToEndFSM.process)
+@admin_router.message(st.MoveToEndFSM.finish)
+async def call_move_to_end(call: Message | CallbackQuery, state: FSMContext, is_admin:bool):
+    move_to_end = MoveToEndCls(call, state, is_admin)
+    await move_to_end.dispatch()
+
+
 
 
 # @admin_router.callback_query(F.data.startswith('drop_or_chancel'))
