@@ -83,7 +83,7 @@ class MoveToEnd():
             begin_idx, end_idx = self._participants_count, self._participants_count + len(self._update_list)
 
             # Обновляем individual_dedline для перешедших из резерва
-            transfer_lst_from_reserve = self._reserv_list[begin_idx:end_idx]
+            transfer_lst_from_reserve = self._event_user[begin_idx:end_idx]
             for obj in transfer_lst_from_reserve:
                 obj.individual_dedline = individual_dedline['individual_dedline'].replace(tzinfo=None)
             for i, obj in enumerate(self._reserv_list):
@@ -239,14 +239,16 @@ class StatisticOps():
                 stat.visit_count += 1
                 stat.modifed_at = self._now
                 stat.likes += item.likes
-                if item.user.id in self._stars:
-                    stat.star_count += 1
+                if item.user.id in set(self._stars):
+                    _stars_count = self._stars.count(item.user.id)
+                    stat.star_count += _stars_count
                 self._update_list.append(stat)
 
             else:
+                likes = 0 if item.likes is None else item.likes
                 new_stat = Statistic(
                     user=item.user, training_type=self._train_type,
-                    visit_count=1, star_count=0, likes=item.likes,
+                    visit_count=1, star_count=0, likes=likes,
                     created_at=self._now, modifed_at=self._now
                 )
                 if item.user.id in self._stars:

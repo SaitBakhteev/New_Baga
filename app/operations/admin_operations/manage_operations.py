@@ -172,7 +172,8 @@ class GiveStars(ParentClassForTrainingOperations):
             msg = ('<b>Сообщение боту зависит от контекста</b>:\n'
                    '🔸 🙅🏻 при <b>отсутствии</b> звезд отправьте прочерк <b><i>-</i></b>;\n'
                    '🔸 🤩 при <b>наличии</b> звезд наберите <u>через запятую</u> порядковые номера. '
-                   '<b>Пример</b>: <i>1, 2, 3</i>')
+                   '<b>Пример</b>: <i>1, 2, 3</i>;\n'
+                   '🔸 🧽 если хотите обнулить информацию, отправьте в сообщении 0.')
 
             # Вынужден здесь определить клавиатуру из-за отсутствия event_id
             keyboard = interrupt_or_return_button(callback_data=f'to_manage_of_event_is:{event_id}')
@@ -203,11 +204,14 @@ class GiveStars(ParentClassForTrainingOperations):
         event_id, event, event_user = data['event_id'], data['event'], data['event_user']
         stars = await self._stars(event, event_user)
         if stars:
+            stars = None if stars == '0' else stars  # пришлось добавить, хоть это и по-дурацки
             await db_rq.update_event(event_id=event_id, stars=stars, data=None)
-            if stars != '-':
-                msg = '⭐️ Тренировка отмечена звездами успешно'
-            else:
+            if stars == '-':
                 msg = '➖ Тренировка отмечена без звёзд'
+            elif stars == '0':
+                msg = '🧽 Тренировка обнулена'
+            else:
+                msg = '⭐️ Тренировка отмечена звездами успешно'
             await self._handler.answer(msg)
             await self._state.clear()
             await show_event_with_manage_interface(self._handler, self._state, event_id)
@@ -225,8 +229,12 @@ class GiveStars(ParentClassForTrainingOperations):
             if isinstance(_text_process, str):
                 await self._handler.answer(_text_process, parse_mode='HTML', reply_markup=self._cancel_kb)
                 return
-
-            stars = '-' if _text_process is False else ','.join(map(str, _text_process))
+            if _text_process is False:
+                stars = '-'
+            elif _text_process is None:
+                stars = '0'
+            else:
+                stars = ','.join(map(str, _text_process))
             return stars
         except Exception as e:
             await logger.error(f'GiveStars__list_form: {e}')
@@ -235,12 +243,15 @@ class GiveStars(ParentClassForTrainingOperations):
         try:
             if self._handler.text.strip() == '-':
                 return False
+            elif self._handler.text.strip() == '0':
+                return None
             text_lst = self._handler.text.replace(' ', '').split(',')
-            num_lst = list(map(lambda x: int(x), set(text_lst)))
+            num_lst = list(map(lambda x: int(x), text_lst))
             if any(x > available_count or x <= 0 for x in num_lst):
                 raise IndexError
             idx_lst = [i - 1 for i in num_lst]
-            id_list = [item['user__id'] for i, item in enumerate(event_user) if i in idx_lst]
+            id_list = [event_user[i]['user__id'] for i in idx_lst]
+            # id_list = [item['user__id'] for i, item in enumerate(event_user) if i in idx_lst]
             return id_list
         except IndexError:
             return '📛 Порядковые номера должны быть из ОСНОВНОГО СПИСКА'
