@@ -9,7 +9,7 @@ def setup_logger(module):
     logger = Logger(name=module)
     logger.propagate = False
     for i in [('general', logging.INFO), ('error', logging.ERROR), ('bot', logging.CRITICAL)]:
-        handler = AsyncFileHandler(f'logs/{i[0]}.log')
+        handler = AsyncFileHandler(f'logs/{i[0]}.log', encoding='utf-8')
         handler.level = i[1]
         handler.formatter = Formatter('{asctime} - {name} - {levelname} - {message}', style='{')
         logger.add_handler(handler)

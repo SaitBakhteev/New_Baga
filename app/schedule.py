@@ -114,7 +114,7 @@ class MoveToEnd():
             f'️⚡️ ️⚡️ <b>ВАЖНАЯ ИНФОРМАЦИЯ</b>\n'
             f'Уважаемый участник, вы перемещены из резерва в основной список.\n'
             f'<b><i>Сведения о тренировке</i></b>:\n'
-            f'<b>Дисциплина</b>: <i>{self._event_user.event.training_type}</i>\n'
+            f'<b>Дисциплина</b>: <i>{self._event_user[0].event.training_type}</i>\n'
             f'{self._event_user[0].event.event_text}'
         )
         text += f'\n{dedline_txt}'
@@ -175,20 +175,22 @@ class SendReminders():
 
 # Главная исполняющая функция по классам MoveToEnd и SendReminders
 async def main_func(is_move=True):
-    now = datetime.now()
+    now = datetime.now() + timedelta(minutes=10) # условная точка со сдвигом на 10 минут
     event_user = await (
         EventUser.filter(event__payment_dedline__lte=now, event__event_datetime__gt=now).
         select_related('event', 'user').order_by('event_id')
     )
+    evs = set([item.event.id for item in event_user])
+    print(f'evs = {evs}')
     if event_user:
         event_user_dct = _dct_form(event_user)
         if is_move:
-            for item in event_user_dct:
-                move_to_end = MoveToEnd(event_user=item, now=now)
+            for k in event_user_dct:
+                move_to_end = MoveToEnd(event_user=event_user_dct[k], now=now)
                 await move_to_end.execute()
         else:
-            for item in event_user_dct:
-                send_rmnd = SendReminders(event_user=item, now=now)
+            for k in event_user_dct:
+                send_rmnd = SendReminders(event_user=event_user_dct[k], now=now)
                 await send_rmnd.execute()
 
 

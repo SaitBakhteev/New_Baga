@@ -62,7 +62,7 @@ async def get_event_user(event_id=None, user_tg_id=None,
             # Запрос к БД для отображения списка участников согласно хронологии их записи
             result = await (EventUser.filter(event_id=event_id).prefetch_related(
                 'event', 'user'
-            ).order_by('created_at').
+            ).order_by('modified_at').
                             values('id',
                                    'user__id',
                                    'user__tg_id',
@@ -71,11 +71,10 @@ async def get_event_user(event_id=None, user_tg_id=None,
                                    'payment_confirmed',
                                    'paid_check',
                                    'friend',
-                                   'created_at',
                                    'modified_at',
                                    'individual_dedline',
                                    'event__participants_count'))
-            result = sorted(result, key=lambda x: x['modified_at'].replace(tzinfo=None))
+            result = sorted(result, key=lambda x: x['modified_at'].replace(tzinfo=None))  # перестраховка по сортировке
             return result
 
     except DoesNotExist:
@@ -158,8 +157,8 @@ async def update_event_user(user_id: int, event_id: int,
 async def update_event_user_after_add_friend(user):
     await EventUser.filter(user=user).update(friend='+')
 
-async def update_event_user_after_delete(update_list):
-    await EventUser.bulk_update(update_list, ['created_at'])
+async def update_event_user_on_delete(update_list: list):
+    await EventUser.bulk_update(update_list, ['modified_at', 'individual_dedline'])
 
 
 ''' -------------------------------------- DELETE ---------------------------------------- '''

@@ -248,79 +248,110 @@ class DeleteFromTraining(ParentClassForTrainingOperations):
         text =('Если Вы уверены, что хотите удалиться из тренировки напишите в сообщении '
                '<i><b>да</b></i> и отправьте его.\n'
                'Если сомневаетесь, отмените действие нажатием на кнопку или отправьте любое другое сообщение')
-        event_id, user_id = int(self._handler.data.split(':')[1]), user_cache[self._handler.from_user.id].id
+        event_id = int(self._handler.data.split(':')[1])
         await self._handler.message.answer(text, reply_markup=cancel_kb(event_id), parse_mode='HTML')
-        await self._state.update_data(event_id=event_id, user_id=user_id)
+        await self._state.update_data(event_id=event_id)
         await self._state.set_state(st.DeleteFromTrainingFSM.delete_from_training)
 
     async def _delete_from_training_confirm(self):
         try:
             data = await self._state.get_data()
-            event_id, user_id = data.get('event_id'), data.get('user_id')
+            event_id = data['event_id']
             if self._handler.text.lower().strip() == 'да':
-                current_event_user = await db_rq_event_user.get_event_user_before_delete(event_id=event_id)
-                seconds, update_list = -1, []
-                now = datetime.now().replace(tzinfo=None)
-                participants_count = current_event_user[0].event.participants_count
-                for _user in current_event_user[participants_count:]:
-                    seconds += 1
-                    _user.modified_at = now + timedelta(seconds=seconds)
-                    update_list.append(_user)
-                    await db_rq_event_user.update_event_user_after_delete(update_list)
-
-                await self._send_messages(current_event_user, now, data)
-                await db_rq_event_user.delete_event_user(user_id, event_id)
-                await self._handler.answer('Вы удалились из записи на тренировку.')
+                self._now = datetime.now()
+                important_params = await self._important_params()
+                await db_rq_event_user.delete_event_user(self._user_id, event_id)
+                await self._send_messages(important_params)
+                msg = '🗑 Вы удалились из записи на тренировку.'
                 await cmd_start(self._handler, self._state, self._is_admin, user_cache)
             else:
-                await show_formed_info_about_event(self._handler, self._is_admin, event_id, user_id)
-                await self._handler.answer('Удаление прервано')
+                msg = '🟠 Удаление прервано.'
+                await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
+            await self._handler.answer(msg)
         except Exception as e:
             text, except_text = ('⭕️ Возникла ошибка.', f'Ошибка _delete_from_training_confirm: {e}')
             await self._exception_func(text, except_text)
         await self._state.clear()
 
-    # Рассылка уведомлений после удаления
-    async def _send_messages(self, current_event_user, now, data):
-        res_prtcpt = None
+    async def _important_params(self):
+        '''
+        Метод устанавливает важные параметры:
+         - поднимется ли кто-нибудь из резерва после удаления;
+         - параметры тренировки
+        Здесь определяем позицию удаляющегося. Важны два критерия:
+        - есть ли резерв;
+        - находится ли удаляемый в основном списке.
+        Если выполняются оба критерия, то фиксируется tg_id первого участника резерва, который поднимется из резерва
+        '''
+        data = await self._state.get_data()
+        event_id = data.get('event_id')
+        current_event_user = await db_rq_event_user.get_event_user_before_delete(event_id=event_id)
         participants_count = current_event_user[0].event.participants_count
-        if len(current_event_user) > participants_count:
-            user_pos = next(
-                i for i, item in enumerate(current_event_user) if item.user.tg_id == self._handler.from_user.id
-            )
-            res_prtcpt = current_event_user[participants_count] if user_pos < participants_count else None
-            text = (f"❗️⚡️ <b>ВНИМАНИЕ АДМИНАМ</b>\n"
-                    f"Пользователь с никнеймом @<i>{self._handler.from_user.username}</i> "
-                    f"удалился из следующей тренировки\n\n"
-                    f"Дисциплина: <b><i>{data['training_type']}</i></b>\n"
-                    f"{current_event_user[0].event.event_text}")
-        if res_prtcpt:
-            res_tg_username, res_tg_id, res_id = (res_prtcpt.user.tg_username, res_prtcpt.user.tg_id,
-                                                  res_prtcpt.user.id)
-            text += (f'\n\n<b><i>🔆ВАЖНО!</i></b>\n'
-                     f"Пользователь с никнеймом <i>@{res_tg_username}</i> поднялся из резерва в основной список "
-                     f"и ему было выслано соответствующее уведомление")
-            # Обновляем времена поднявшегося из резерева и других резервистов
+        event_datetime = current_event_user[0].event.event_datetime
+        payment_dedline = current_event_user[0].event.payment_dedline
+        training_type = current_event_user[0].event.training_type
+        event_text = current_event_user[participants_count].event.event_text
 
-            if now + timedelta(hours=5) > current_event_user[0].event.event_datetime:
-                for k in user_cache:  # Информирование админов
-                    if user_cache[k].admin_permissions == True:
-                        tg_id = user_cache[k].tg_id
-                        await bot.send_message(chat_id=tg_id, text=text, parse_mode='HTML')
+        idx_pos = next(i for i, item in enumerate(current_event_user) if item.user.id == self._user_id)
+        if idx_pos < participants_count and len(current_event_user) > participants_count:
+            rsrv_tg_id = current_event_user[participants_count].user.tg_id
+            rsrv_tg_username = current_event_user[participants_count].user.tg_username
+            await self._update_params(current_event_user, participants_count, payment_dedline, event_datetime)
+        else:
+            rsrv_tg_id = rsrv_tg_username = None
+
+        return {'rsrv_tg_id': rsrv_tg_id, 'rsrv_tg_username': rsrv_tg_username, 'training_type': training_type,
+                'event_datetime': event_datetime.replace(tzinfo=None), 'event_text': event_text}
+
+    async def _update_params(self, current_event_user:list, participants_count:int, payment_dedline, event_datetime):
+        '''
+        Метод:
+        - обновляет поля modified_at всем резервникам
+        - обновляет individual_dedline резервнику, который поднялся в основной список
+        - записывает обновления в БД
+        return: текст индвидуального девлайна для информирования, чтобы информировать резревника,
+                поднявшегося в основной список
+        '''
+        seconds, update_list = -1, []
+        for i, obj in enumerate(current_event_user[participants_count:]):
+            if i == 0:
+                ind_dline = set_individual_dedline(payment_dedline, event_datetime, self._now)
+                obj.individual_dedline = ind_dline['individual_dedline'].replace(tzinfo=None)
+                self._ind_dline_txt = ind_dline['text']
+            seconds += 1
+            obj.modified_at = self._now + timedelta(seconds=seconds)
+            update_list.append(obj)
+        await db_rq_event_user.update_event_user_on_delete(update_list)
+
+    async def _send_messages(self, impnt_params:dict):
+        '''
+        Метод делает рассылку админам и тому, кто поднялся из резерва.
+        Текст для админов может дополниться, если есть резервник, поднявшийся в основной список, поэтому
+         SendMessages.to_admins идет как бы после блока с условием
+        '''
+        rsrv_tg_id, rsrv_tg_username = impnt_params['rsrv_tg_id'], impnt_params['rsrv_tg_username']
+        event_datetime, event_text = impnt_params['event_datetime'], impnt_params['event_text']
+        training_type = impnt_params['training_type']
+        tg_id, tg_username = self._handler.from_user.id, self._handler.from_user.username
+        adm_txt = (f"❗️⚡️ <b>ВНИМАНИЕ АДМИНАМ</b>\n"
+                f"Пользователь с никнеймом @<i>{tg_username}</i> "
+                f"удалился из следующей тренировки\n\n"
+                f"Дисциплина: <b><i>{training_type}</i></b>\n"
+                f"{event_text}")
+
+        if rsrv_tg_id:
+            adm_txt += (f'\n\n<b><i>🔆ВАЖНО!</i></b>\n'
+                     f"Пользователь с никнеймом <i>@{rsrv_tg_username}</i> поднялся из резерва в основной список "
+                     f"и ему было выслано соответствующее уведомление")
 
             # Информаривание пользователя, поднявшегося из резерва
             text = (f'⚡️⚡️<b>ВАЖНАЯ ИНФОРМАЦИЯ ДЛЯ ВАС</b>\n'
                     f'Вы перешли из резерва в основной список следующей тренировки:\n\n'
-                    f"Дисциплина: <b><i>{data['training_type']}</i></b>\n"
-                    f"{current_event_user[0].event.event_text}")
-
-            # < ---------- ЗДЕСЬ БУДЕТ УСТАНОВКА ДЕДЛАЙНА ОПЛАТЫ ---------------- >
-
-            text += (f'\n\n <b>ВНИМАНИЕ❗️</b> \n'
-                     f'<i>У Вас другой дедлайн оплаты.\n'
-                     f' Вам необходимо оплатить за тренировку до</i>'
-                     f' <b><i> ... </i></b>')
-            await bot.send_message(chat_id=res_tg_id, text=text, parse_mode='HTML')
+                    f"Дисциплина: <b><i>{training_type}</i></b>\n"
+                    f"{event_text}"
+                    f"\n\n{self._ind_dline_txt}")
+            await SendMessages.to_one_receiver(text, rsrv_tg_id)
+        await SendMessages.to_admins(adm_txt, self._now, event_datetime)
 
 
 # НЕИСПОЛЬЗУЕМЫЕ ФИЧИ
