@@ -50,7 +50,7 @@ class MoveToEnd():
     def _extract_from_main_lst(self):
         seconds = 0
         for obj in self._event_user[:self._participants_count]:
-            if len(self._update_list) > self._reserv_count:
+            if len(self._update_list) == self._reserv_count:
                 break
             if obj.individual_dedline.replace(tzinfo=None) <= self._now and obj.payment_confirmed is not True:
                 # Обновляем время

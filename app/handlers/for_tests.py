@@ -7,6 +7,7 @@ from aiogram.types import Message
 from ..database.models import *
 from ..schedule import main_func, stat_execute_func
 from config.log_config import setup_logger
+from config.constants import user_cache
 
 logger = setup_logger(__name__)
 
@@ -18,10 +19,13 @@ async def call_test(msg: Message):
     now = datetime.now()
     payment_dedline = now + timedelta(minutes=2)
     event_datetime, individual_dedline = now + timedelta(minutes=211), now + timedelta(hours=12)
-    for i in range(4,15):
+    for i, k in enumerate(user_cache):
+        if i > 6:
+            break
         _date = now - timedelta(days=i)
         _ind_ddl = _date + timedelta(hours=12)
-        await EventUser.create(user_id=i, event_id=3, created_at=_date, modified_at=_date, individual_dedline=_ind_ddl)
+        user_id = user_cache[k].id
+        await EventUser.create(user_id=user_id, event_id=3, created_at=_date, modified_at=_date, individual_dedline=_ind_ddl)
 
     #     await Event.filter(id=2).all().update(payment_dedline=payment_dedline, event_datetime=event_datetime)
     # await EventUser.all().update(individual_dedline=individual_dedline)
