@@ -201,7 +201,7 @@ def show_text_about_event(event: dict, event_user: list, user_id: int) -> str:
             else:
                 status_tag = ''
             if len(status_tag) > 0 and status_tag != '✅':
-                _dedline = f": ⏳ <b><i>{item['individual_dedline'].strftime('%H:%M %d.%m')}</i></b>"
+                _dedline = f"⏳ <b><i>{item['individual_dedline'].strftime('%H:%M %d.%m')}</i></b>"
             else:
                 _dedline = ''
             fullname = f'{item["user__tg_name"]} @{item["user__tg_username"]}'
@@ -215,9 +215,11 @@ def show_text_about_event(event: dict, event_user: list, user_id: int) -> str:
             # Чтобы пользователь видел себя выделенным шрифтом в списке на тренировку
             fullname = f'<b><i>{fullname}</i></b>' if item['user__id'] == user_id else fullname
             _dedline = f'\n  {_dedline}' if len(_dedline) > 0 else ''
-            star_txt = f'\n  {star_txt}' if len(star_txt) > 0 else ''
-            likes_txt = f'\n  {likes_txt}' if len(likes_txt) > 0 else ''
-            text+=f"<b>{i+1}</b>. {fullname}{status_tag}{_dedline}{star_txt}{likes_txt}\n"
+            star_txt = f'   {star_txt}' if len(star_txt) > 0 else ''
+            likes_txt = f'   {likes_txt}' if len(likes_txt) > 0 else ''
+            star_likes_txt = f'\n{star_txt}{likes_txt}' if len(star_txt) > 0 or len(likes_txt) else ''
+
+            text+=f"<b>{i+1}</b>. {fullname}{status_tag}{_dedline}{star_likes_txt}\n"
             if i + 1 == participants_count:
                 text += "\n 📌📌 <b><i>Резерв</i></b>: \n"
 
