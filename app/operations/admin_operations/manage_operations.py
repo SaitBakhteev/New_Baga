@@ -1,9 +1,8 @@
 import asyncio
-from datetime import datetime, date, time, timedelta
+from datetime import datetime
 
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
-from cryptography.hazmat.primitives.keywrap import aes_key_wrap
 
 from app import states as st
 from app.database import requests as db_rq
@@ -12,7 +11,7 @@ from ..often_ops_and_classes import show_text_about_event
 
 from config.constants import *
 
-from ..often_ops_and_classes import delete_bkg, ParentClassForTrainingOperations, show_formed_info_about_event
+from ..often_ops_and_classes import delete_bkg, ParentClassForTrainingOperations, show_formed_info_about_event, SendMessages
 from ...keyboards.admin_keyboards.admin_keyboards import *
 from ...keyboards.admin_keyboards.confirm_admin_keyboards import give_stars_continue_kb
 
@@ -335,10 +334,16 @@ class MoveToEndCls(ParentClassForTrainingOperations):
 
     async def _finish(self):
         data = await self._state.get_data()
-        user_id, event_id, = data['user_id'], data['event_id']
+        user_id, event_id, event_user = data['user_id'], data['event_id'], data['event_user']
         if self._handler.text.strip().lower() == 'да':
             await db_event_user_rq.update_event_user(user_id=user_id, event_id=event_id, replace_to_end=True)
             msg = 'Участник перемещен в конец очереди ⬇️'
+            event_datetime = event_user[0]['event__event_datetime'].replace(tzinfo=None)
+            event_text = event_user[0]['event__event_text']
+            if event_datetime > datetime.now():
+                txt = f'Вас админ переместил в конец очереди ⬇️ по следующей тренировке\n{event_text}'
+                tg_id = next(user_cache[k].tg_id for k in user_cache if user_cache[k].id == user_id)
+                await SendMessages.to_one_receiver(text=txt, tg_id=tg_id)
         else:
             msg = '🚫 Отправлено невалидное сообщение, операция отклонена'
         await self._handler.answer(msg)
@@ -387,17 +392,18 @@ class DropUser(ParentClassForTrainingOperations):
 
     async def _finish(self):
         data = await self._state.get_data()
-        user_id, event_id, = data['user_id'], data['event_id']
+        user_id, event_id, event_user = data['user_id'], data['event_id'], data['event_user']
         if self._handler.text.strip().lower() == 'да':
             await db_event_user_rq.delete_event_user(user_id=user_id, event_id=event_id)
             msg = 'Участник удален 🚷'
+            event_datetime = event_user[0]['event__event_datetime'].replace(tzinfo=None)
+            event_text = event_user[0]['event__event_text']
+            if event_datetime > datetime.now():
+                txt = f'Вас админ удалил из следующей тренировки 🚷\n{event_text}'
+                tg_id = next(user_cache[k].tg_id for k in user_cache if user_cache[k].id == user_id)
+                await SendMessages.to_one_receiver(text=txt, tg_id=tg_id)
         else:
             msg = '🚫 Отправлено невалидное сообщение, операция отклонена'
         await self._handler.answer(msg)
         await self._state.clear()
         await show_event_with_manage_interface(self._handler, self._state, event_id)
-
-
-
-
-

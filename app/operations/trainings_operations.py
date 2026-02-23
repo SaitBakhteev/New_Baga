@@ -140,7 +140,11 @@ class AddFriend(ParentClassForTrainingOperations):
 
     async def _add_friend(self):
         event_id = int(self._handler.data.split(':')[1])
+        event = await db_req.get_event(id=event_id)
         if not self._is_admin:  # проверим, не простой ли это пользователь и не добавлял ли он ранее
+            if event['event_datetime'].replace(tzinfo=None) < datetime.now():
+                await self._handler.message.answer('Друзей можно добавлять только до начала тренировки')
+                return
             my_prev_friend = await db_rq_event_user.get_event_user_for_check_friend(
                 event_id, i_am_friend=self._handler.from_user.username)
             if my_prev_friend:
@@ -153,7 +157,7 @@ class AddFriend(ParentClassForTrainingOperations):
         # Если ранее друга не добавляли или это админ, то продолжаем
         text = 'Введите никнейм вашего друга.\n<i>Пример</i>: @ivanov1934'
         await self._handler.message.answer(text, parse_mode='HTML', reply_markup=cancel_kb(event_id))
-        await self._state.update_data(event_id=event_id)
+        await self._state.update_data(event_id=event_id, event=event)
         await self._state.set_state(st.AddFriendFSM.add_friend)
 
     async def _add_friend_check(self):
@@ -215,7 +219,7 @@ class AddFriend(ParentClassForTrainingOperations):
             if state == 'add_friend_confirm_to_event_is':
                 data = await self._state.get_data()
                 friend_id, friend, friend_tg_id = data['friend_id'], data['friend'], data['friend_tg_id']
-                event = await db_req.get_event(id=event_id)
+                event = data['event']
                 training_type, event_text = event['training_type'], event['event_text']
                 payment_dedline, event_datetime, now = event['payment_dedline'], event['event_datetime'], datetime.now()
                 dedline_info = set_individual_dedline(payment_dedline, event_datetime, now)
@@ -227,7 +231,8 @@ class AddFriend(ParentClassForTrainingOperations):
                         f'Вас записали на следующую тренировку\n'
                         f'<b>Тип тренировки</b>:{training_type}\n{event_text}\n\n')
                 text += dedline_info['text']
-                asyncio.create_task(SendMessages.to_one_receiver(text=text, tg_id=friend_tg_id))
+                if datetime.now() < event['event_datetime'].replace(tzinfo=None):
+                    asyncio.create_task(SendMessages.to_one_receiver(text=text, tg_id=friend_tg_id))
                 text = f'Вы успешно записали друга с никнеймом <i>{friend}</i> на тренировку 🖍'
                 await self._handler.message.answer(text, parse_mode='HTML')
                 await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
@@ -442,103 +447,6 @@ class DeleteFromTraining(ParentClassForTrainingOperations):
                     f"Дисциплина: <b><i>{training_type}</i></b>\n"
                     f"{event_text}"
                     f"\n\n{self._ind_dline_txt}")
-            await SendMessages.to_one_receiver(text, rsrv_tg_id)
-        await SendMessages.to_admins(adm_txt, self._now, event_datetime)
-
-
-# НЕИСПОЛЬЗУЕМЫЕ ФИЧИ
-# ======================
-
-# # Оповестить бот об оплате кнопкой '✔️ Тренировка оплачена'
-# @add_router.callback_query(F.data.startswith('payment_notify'))
-# @add_router.message(SendCheckFSM.send_check)
-# async def payment_notify(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
-#     try:
-#         sendCheck = SendCheck(call, state)
-#         await sendCheck.dispatch()
-#         # call_data = call.data.split(':')[1]
-#         # data = await state.get_data()
-#         # user_id, event_id = data['user_id'], data['event_id']
-#         # payment_notify = True if call_data == "i_payed_check" else False
-#         # await db_req.update_event_user(user_id, event_id, payment_notify)
-#         # await choose_event(call, state, is_admin)
-#         # if payment_notify is not True:
-#         #     await call.message.answer('❗️<b>ВНИМАНИЕ</b>❗️\n'
-#         #                               'Вы отменили уведомление об оплате. Но это не '
-#         #                               'означает автоматический возврат денежных средств, если '
-#         #                               'Вы уже оплатили. Поэтому для возврата денежных средств обратитесь '
-#         #                               'к админу тренировки.')
-#     except Exception as e:
-#         await logger.error(e)
-#         # stream_logger.error(e)
-#
-#
-#
-# @add_router.message(Command('add'))
-# async def add_command(message: Message, is_admin: bool):
-#     await bot.send_document()
-#     await message.answer(f'Значение составляет {is_admin} ')
-# #
-#
-# # Оповестить бот об оплате кнопкой '✔️ Тренировка оплачена'
-# @add_router.callback_query(F.data.startswith('payment_notify'))
-# async def payment_notify(call: CallbackQuery, state: FSMContext, is_admin: bool):
-#     try:
-#         call_data = call.data.split(':')[1]
-#         data = await state.get_data()
-#         user_id, event_id = data['user_id'], data['event_id']
-#         payment_notify = True if call_data == "i_payed_check" else False
-#         await db_req.update_event_user(user_id, event_id, payment_notify)
-#         await choose_event(call, state, is_admin)
-#         if payment_notify is not True:
-#             await call.message.answer('❗️<b>ВНИМАНИЕ</b>❗️\n'
-#                                       'Вы отменили уведомление об оплате. Но это не '
-#                                       'означает автоматический возврат денежных средств, если '
-#                                       'Вы уже оплатили. Поэтому для возврата денежных средств обратитесь '
-#                                       'к админу тренировки.')
-#     except Exception as e:
-#         await logger.error(e)
-#         # stream_logger.error(e)
-
-
-# Класс отправки чека об оплате
-# class SendCheck():
-#     def __init__(self, call: Message | CallbackQuery,
-#                  state: FSMContext,
-#                  id: int,
-#                  is_admin: bool):
-#         self._call, self._state, self._is_admin = call, state, is_admin
-#         if isinstance(call, CallbackQuery):
-#             self._call_data = 'upload_check'
-#         else:
-#             self._call_data = 'send_check'
-#
-#     async def dispatch(self):
-#         match self._call_data:
-#             case 'upload_check':
-#                 await self._upload_check()
-#             case 'send_check':
-#                 await self._send_check()
-#
-#     async def _upload_check(self):
-#         await self._call.message.answer('Загрузите чек об оплате', reply_markup=return_to_start_markup())
-#         await self._state.set_state(SendCheckFSM.send_check)
-#
-#     async def _send_check(self):
-#         file_id = self._call.photo[-1].file_id
-#         event_user_id = int(self._call.data.split(':')[1])
-#         event_user = await EventUser.get(id=event_user_id)
-#         await event_user.upload_cjeck()
-#         await bot.send_photo(chat_id=1933865493,
-#                              photo=file_id,  caption='Чек об оплате',
-#                              reply_markup=kb.payment_verify_kb(event_user_id))
-#         await choose_event(self._call, self._state, self._is_admin)
-#         if payment_notify is not True:
-#             await self._call.message.answer('❗️<b>ВНИМАНИЕ</b>❗️\n'
-#                                       'Вы отменили уведомление об оплате. Но это не '
-#                                       'означает автоматический возврат денежных средств, если '
-#                                       'Вы уже оплатили. Поэтому для возврата денежных средств обратитесь '
-#                                       'к админу тренировки.')
-#
-#         # self._state.update_data(file_id = file_id)
-
+            if event_datetime.replace(tzinfo=None) > datetime.now():
+                await SendMessages.to_one_receiver(text, rsrv_tg_id)
+        await SendMessages.to_admins(adm_txt, self._now, event_datetime.replace(tzinfo=None))

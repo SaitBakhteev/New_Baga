@@ -78,6 +78,7 @@ async def get_event_user(event_id=None, user_tg_id=None,
                                    'me_liked',
                                    'event__participants_count',
                                    'event__event_datetime',
+                                   'event__event_text',
                                    'event__question'))
             result = sorted(result, key=lambda x: x['modified_at'].replace(tzinfo=None))  # перестраховка по сортировке
             return result
