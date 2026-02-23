@@ -16,6 +16,7 @@ async def call_show_admin_panel(call: CallbackQuery | Message, state: FSMContext
 
 @admin_router.callback_query(F.data=='add_event')
 @admin_router.callback_query(F.data.startswith('create_event_type_is'))
+@admin_router.callback_query(F.data.startswith('payment_dedline'))
 @admin_router.message(st.CreateEventFSM.template)
 @admin_router.callback_query(F.data=='save_template')
 @admin_router.callback_query(F.data=='add_new_event')

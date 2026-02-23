@@ -19,7 +19,7 @@ main_router = Router()
 
 main_router.message.middleware(AdminMiddleware())
 main_router.callback_query.middleware(AdminMiddleware())
-main_router.include_routers(rare_router, admin_router)
+main_router.include_routers(rare_router, admin_router, test_router)
 
 
 # БЛОК ВЫБОРА ТРЕНИРОВОК

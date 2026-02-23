@@ -83,6 +83,12 @@ def input_template_kb(templates: list) -> InlineKeyboardMarkup:
     return keyboard.as_markup()
 
 
+choose_pay_dline_kb = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='12 часов', callback_data='payment_dedline:12')],
+    [InlineKeyboardButton(text='24 часа', callback_data='payment_dedline:24')]
+])
+
+
 # Клавиатура вставки текущего шаблона при редактировании или создании тренировки
 def curr_tmplt_kb(template_text: str, event_id: int=None) -> InlineKeyboardMarkup:
     text, switch = 'Текущий шаблон', template_text

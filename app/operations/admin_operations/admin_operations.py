@@ -6,6 +6,8 @@ from aiogram.types import CallbackQuery, Message
 
 from functools import reduce
 
+from aiogram.utils import keyboard
+
 from app import states as st
 from app.database import requests as db_rq
 
@@ -33,6 +35,8 @@ class CreateEvent(ParentClassForTrainingOperations):
             if self._handler.data == 'add_event':
                 await self._show_creating_event_types()
             elif self._handler.data.startswith('create_event_type_is'):
+                await self._choose_dline()
+            elif self._handler.data.startswith('payment_dedline'):
                 await self._choose_template()
             elif (self._handler.data == 'save_template' and
                   await self._state.get_state() == st.CreateEventFSM.template):
@@ -49,15 +53,26 @@ class CreateEvent(ParentClassForTrainingOperations):
         await self._handler.message.answer(text, reply_markup=keyboard)
         asyncio.create_task(delete_bkg(self._handler))
 
-    async def _choose_template(self):
-        '''Здесь сначала сохраняем тип создаваемой тренировки,
-        а потом уже выводим кнопки выбора шаблона'''
+    async def _choose_dline(self):
+        # Сохраняем сначал тип тренировки в памяти
         index = int(self._handler.data.split(':')[1])
         await self._state.update_data(training_type=TRAINING_TYPES[index])
+
+        msg = 'Выберите первичный дедлайн для тренировки'
+        keyboard = choose_pay_dline_kb
+        await self._handler.message.answer(msg, reply_markup=keyboard)
+        asyncio.create_task(delete_bkg(self._handler))
+
+    async def _choose_template(self):
+        #Созраняем сначала в память тип деделайна
+        dline_hours = int(self._handler.data.split(':')[1])
+        await self._state.update_data(dline_hours=dline_hours)
+
         templates = await db_rq.get_templates()
         _keyboard = input_template_kb(templates=templates)
         await self._handler.message.answer('Выберите шаблон', reply_markup=_keyboard)
         await self._state.set_state(st.CreateEventFSM.template)
+        asyncio.create_task(delete_bkg(self._handler))
 
     async def _input_template(self, is_create_event=True):
         text = self._handler.text.replace(f"{BOT_NAME}", "").strip()
@@ -69,14 +84,15 @@ class CreateEvent(ParentClassForTrainingOperations):
                                           boss_id=event_info['boss_id'],
                                           event_datetime=event_info['event_datetime'],
                                           current_template=text)
+            data = await self._state.get_data()
             if is_create_event:
-                payment_dedline = self._set_payment_dedline(now, event_info['event_datetime'])
+                dline_hours = data['dline_hours']
+                payment_dedline = self._set_payment_dedline(now, event_info['event_datetime'], dline_hours)
                 await self._state.update_data(payment_dedline=payment_dedline)
                 text= "Если хотите сохранить текущий шаблон, нажмите на кнопку сохранения шаблона"
                 _keyboard = finish_create_event_kb
             else:
                 text = "Для завершения редактирования нажмите на кнопку сохранения изменений"
-                data = await self._state.get_data()
                 _keyboard = finish_edit_event_kb(data['event_id'])
             await self._handler.answer(text, reply_markup=_keyboard)
         except ValueError as e:
@@ -147,9 +163,9 @@ class CreateEvent(ParentClassForTrainingOperations):
         # Если ни одному из условий не соответствует, возвращается такая ошибка
         return "Ошибка в формате иного плана, проверьте внимательно"
 
-    def _set_payment_dedline(self, now, event_datetime):
-        if now + timedelta(days=1) < event_datetime - timedelta(hours=3):
-            return now + timedelta(days=1)
+    def _set_payment_dedline(self, now, event_datetime, dline_hours: int):
+        if now + timedelta(hours=dline_hours) < event_datetime - timedelta(hours=3):
+            return now + timedelta(hours=dline_hours)
         else:
             if now >= event_datetime - timedelta(hours=6):
                 raise ValueError('too_fast_event')

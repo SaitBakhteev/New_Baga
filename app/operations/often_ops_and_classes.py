@@ -125,7 +125,7 @@ async def show_training_types(message: Message, state: FSMContext):
 async def show_events(call: CallbackQuery, state: FSMContext, is_admin: bool):
     _index = int(call.data.split(':')[1])  # индекс тренировки
     training_type = TRAINING_TYPES[_index]
-    events = await db_req.get_events_by_training_type(training_type=training_type, is_admin=is_admin)
+    events = await db_req.get_events_by_training_type(training_type=training_type)
 
     if not events:
         message_text = 'Запланированных тренировок пока нет.'
