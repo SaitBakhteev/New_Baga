@@ -98,6 +98,9 @@ class PaymentNotify(ParentClassForTrainingOperations):
         elif event_user.paid_check is True:
             return f'🔴 Вы ранее уже пользовались этой функцией.\n{self._add_text}'
 
+        elif event_user.event.event_datetime.replace(tzinfo=None) < datetime.now():
+            return f'🔴 Функция доступна только до начала тренировки.\n{self._add_text}'
+
         # Если кнопка оповещения бота доступна, двигаемся дальше
         new_individual_dedline = event_user.modified_at + timedelta(days=1, hours=12)
         if new_individual_dedline > event_user.event.event_datetime:
