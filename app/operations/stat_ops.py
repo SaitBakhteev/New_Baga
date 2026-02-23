@@ -119,7 +119,7 @@ class ShowStat():
                     idx_end = rating_txt.find('<b>101.</b>')
                     msg = f'<b>ОБЩИЙ РЕЙТИНГ⚡️</b>\n\n{rating_txt[:idx_end]}'
                     await call.message.answer(msg, parse_mode='HTML', reply_markup=cls._back_kb)
-                elif i > 1:
+                else:
                     idx_begin = rating_txt.find(f'<b>{i*100+1}.</b>')
                     idx_end = rating_txt.find(f'<b>{(i+1)*100+1}.</b>')
                     msg = f'{rating_txt[idx_begin:idx_end]}'
