@@ -276,7 +276,7 @@ class StatisticOps():
 
     # Формирование общего рейтинга звезд
     @classmethod
-    def _stars_gen_rating_form(self, stars_dict:dict):
+    def _stars_gen_rating_form(cls, stars_dict:dict):
         global general_raiting
         general_raiting.clear()
 
@@ -298,7 +298,8 @@ class StatisticOps():
                                  star_count=star_count,
                                  text=text)
             general_raiting.append(_obj)
-            general_raiting = sorted(general_raiting, key=lambda x: x.star_count, reverse=True)
+
+        general_raiting = sorted(general_raiting, key=lambda x: x.star_count, reverse=True)
 
     @classmethod
     def _like_rating_form(cls, stats: list):
@@ -323,8 +324,9 @@ class StatisticOps():
                                  tg_username=user.tg_username,
                                  likes=likes)
             likes_rating.append(_obj)
-            likes_rating = sorted(likes_rating, key=lambda x: x.likes, reverse=True)
-            likes_rating = likes_rating[:30]
+
+        likes_rating = sorted(likes_rating, key=lambda x: x.likes, reverse=True)
+        likes_rating = likes_rating[:30]
 
     # Функция пересмотра статистики и формирования рейтинга
     @classmethod
