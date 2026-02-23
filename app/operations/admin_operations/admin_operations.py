@@ -236,12 +236,17 @@ class DeleteEvent(ParentClassForTrainingOperations):
         )
 
     async def _confirm(self):
-        data = await self._state.get_data()
-        event_id = data['event_id']
-        if self._handler.text.strip().lower() == 'да':
-            await db_rq.delete_event(event_id)
-            await cmd_start(self._handler, self._state, self._is_admin, user_cache)
-        else:
-            await show_event_with_manage_interface(self._handler, event_id, self._user_id)
-        await self._state.clear()
-        asyncio.create_task(delete_bkg(self._handler))
+        try:
+            data = await self._state.get_data()
+            event_id = data['event_id']
+            if self._handler.text.strip().lower() == 'да':
+                await db_rq.delete_event(event_id)
+                await self._handler.answer('Тренировка удалена 💥')
+                await cmd_start(self._handler, self._state, self._is_admin, user_cache)
+            else:
+                await show_event_with_manage_interface(self._handler, self._state, event_id)
+                await self._handler.answer('🚫 Удаление тренировки прервано.')
+            await self._state.clear()
+            asyncio.create_task(delete_bkg(self._handler))
+        except Exception as e:
+            await logger.error(f'Ошибка в DeleteEvent._confirm: {e}')

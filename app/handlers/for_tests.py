@@ -15,7 +15,7 @@ test_router = Router()
 
 @test_router.message(Command('test'))
 async def call_test(msg: Message):
-    await EventUser.all().delete()
+    ev_user = await EventUser.all().delete()
     now = datetime.now()
     payment_dedline = now + timedelta(minutes=2)
     event_datetime, individual_dedline = now + timedelta(minutes=211), now + timedelta(hours=12)
@@ -25,7 +25,9 @@ async def call_test(msg: Message):
         _date = now - timedelta(days=i)
         _ind_ddl = _date + timedelta(hours=12)
         user_id = user_cache[k].id
-        await EventUser.create(user_id=user_id, event_id=3, created_at=_date, modified_at=_date, individual_dedline=_ind_ddl)
+        event = await Event.all()
+        event_id = event[-1].id
+        await EventUser.create(user_id=user_id, event_id=event_id, created_at=_date, modified_at=_date, individual_dedline=_ind_ddl)
 
     #     await Event.filter(id=2).all().update(payment_dedline=payment_dedline, event_datetime=event_datetime)
     # await EventUser.all().update(individual_dedline=individual_dedline)

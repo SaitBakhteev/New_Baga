@@ -122,7 +122,7 @@ async def get_event(id=None, for_telegramm=False,
         elif id:
             event = await (Event.filter(id=id).values(
                 'id', 'payment_dedline', 'event_datetime', 'event_text', 'participants_count', 'stars',
-                'training_type'
+                'training_type','question'
             )
             )
             return event[0]
@@ -131,7 +131,7 @@ async def get_event(id=None, for_telegramm=False,
                 await (
                     Event.all().order_by('id').
                     values('id', 'payment_dedline', 'event_datetime', 'training_type',
-                           'event_text', 'participants_count', 'stars')
+                           'event_text', 'participants_count', 'stars', 'question')
                 )
     except DoesNotExist:
         return
@@ -157,6 +157,10 @@ async def update_event(event_id: int, data, **kwargs):
         )
     else:  # вносим звёзд в event
         await Event.filter(id=event_id).update(stars=kwargs['stars'])
+
+
+async def update_for_add_question_to_event(event_id:int, question):
+    await Event.filter(id=event_id).update(question=question)
 
 
 async def delete_event(id: int):

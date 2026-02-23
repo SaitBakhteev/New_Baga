@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from logging import exception
 
 from tortoise.exceptions import DoesNotExist
+from tortoise.expressions import F
 
 from config.log_config import setup_logger
 from app.database.models import EventUser, User
@@ -73,7 +74,11 @@ async def get_event_user(event_id=None, user_tg_id=None,
                                    'friend',
                                    'modified_at',
                                    'individual_dedline',
-                                   'event__participants_count'))
+                                   'likes',
+                                   'me_liked',
+                                   'event__participants_count',
+                                   'event__event_datetime',
+                                   'event__question'))
             result = sorted(result, key=lambda x: x['modified_at'].replace(tzinfo=None))  # перестраховка по сортировке
             return result
 
@@ -157,8 +162,20 @@ async def update_event_user(user_id: int, event_id: int,
 async def update_event_user_after_add_friend(user):
     await EventUser.filter(user=user).update(friend='+')
 
+
 async def update_event_user_on_delete(update_list: list):
     await EventUser.bulk_update(update_list, ['modified_at', 'individual_dedline'])
+
+
+async def update_for_like(event_id:int, user_id:int, liker_id:int):
+    '''
+    Здесь реализован специальный принцип за счет F выражения, которое в момент обьновления записи
+    автоматически считывает like и увеличивает на единицу.
+    user_id - это за кого голосуют
+    liker_id - это кто голосует
+    '''
+    await EventUser.filter(event_id=event_id, user_id=user_id).update(likes=F('likes')+1)
+    await EventUser.filter(event_id=event_id, user_id=liker_id).update(me_liked=True)
 
 
 ''' -------------------------------------- DELETE ---------------------------------------- '''

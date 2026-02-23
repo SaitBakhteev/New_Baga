@@ -24,6 +24,11 @@ class AddFriendFSM(StatesGroup):
     add_friend_confirm = State()
 
 
+class AddLike(StatesGroup):
+    input_prtcp = State()
+    confirm = State()
+
+
 class PaymenNotify(StatesGroup):
     confirm = State()
 
@@ -95,6 +100,10 @@ class GiveStarsFSM(StatesGroup):
     finish = State()
 
 
+class AddQuestion(StatesGroup):
+    finish = State()
+
+
 class MoveToEndFSM(StatesGroup):
     process = State()
     finish = State()
@@ -103,3 +112,5 @@ class MoveToEndFSM(StatesGroup):
 class DropUserFSM(StatesGroup):
     process = State()
     finish = State()
+
+

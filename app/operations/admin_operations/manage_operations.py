@@ -179,10 +179,11 @@ class GiveStars(ParentClassForTrainingOperations):
             keyboard = interrupt_or_return_button(callback_data=f'to_manage_of_event_is:{event_id}')
             await self._state.set_state(st.GiveStarsFSM.finish)
         else:
-            msg = '❗️ Предыдущая запись по этой операции сотрется.\n Продолжить?'
+            msg = ('❗️ Если Вы <b><u>в конце</u></b> утвердите новую запись по звездам, то это <u>полностью '
+                   'отменит</u> предыдущую запись.\nПродолжить?')
             keyboard = give_stars_continue_kb(event_id)
             await self._state.set_state(st.GiveStarsFSM.continue_)
-        await self._handler.message.answer(msg, reply_markup=keyboard)
+        await self._handler.message.answer(msg, reply_markup=keyboard, parse_mode='HTML')
 
     async def _init_params(self):
         event_id = int(self._handler.data.split(':')[1])
@@ -259,13 +260,47 @@ class GiveStars(ParentClassForTrainingOperations):
             return '📛 Некорректный формат ввода'
 
 
+class AddQuestion(ParentClassForTrainingOperations):
+    async def dispatch(self):
+        if isinstance(self._handler, CallbackQuery):
+            if self._handler.data.startswith('add_question_to_event_is'):
+                await self._begin()
+        elif await self._state.get_state() == st.AddQuestion.finish:
+            await self._finish()
+
+    async def _begin(self):
+        event_id = int(self._handler.data.split(':')[1])
+        event = await db_rq.get_event(id=event_id)
+        await self._state.update_data(event_id=event_id)
+
+        if event['question']:
+            msg = ('ВНИМАНИЕ! По данной тренировке уже ранее  сформулирован вопрос. Поэтому '
+                   'утверждение нового вопроса полностью отменит предыдущий.\n'
+                   'Если желаете продолжить, отправьте в сообщении текст вопроса.\n')
+        else:
+            msg = 'Если желаете продолжить, отправьте в сообщении текст вопроса.\n'
+        msg += '<b><i>Если хотите отменить вопрос для тренировки, отправьте 0</i></b>'
+
+        _cancel_kb = interrupt_or_return_button(callback_data=f'to_manage_of_event_is:{event_id}')
+        await self._handler.message.answer(msg, reply_markup=_cancel_kb, parse_mode='HTML')
+        await self._state.set_state(st.AddQuestion.finish)
+
+    async def _finish(self):
+        data = await self._state.get_data()
+        question = None if self._handler.text.strip() == '0' else self._handler.text
+        await db_rq.update_for_add_question_to_event(data['event_id'], question)
+        await self._state.clear()
+        await show_event_with_manage_interface(self._handler, self._state, data['event_id'])
+        asyncio.create_task(delete_bkg(self._handler))
+
+
 class MoveToEndCls(ParentClassForTrainingOperations):
     async def dispatch(self):
         data = await self._state.get_data()
         if 'event_id' in data:
             event_id = data['event_id']
             self._cancel_kb = interrupt_or_return_button(callback_data=f'to_manage_of_event_is:{event_id}')
-        if isinstance(self._handler.data, CallbackQuery):
+        if isinstance(self._handler, CallbackQuery):
             if self._handler.data.startswith('move_to_end_of_event_is'):
                 await self._begin()
         elif await self._state.get_state() == st.MoveToEndFSM.process:
@@ -306,7 +341,7 @@ class MoveToEndCls(ParentClassForTrainingOperations):
             msg = 'Участник перемещен в конец очереди ⬇️'
         else:
             msg = '🚫 Отправлено невалидное сообщение, операция отклонена'
-        await self._handler.message.answer(msg)
+        await self._handler.answer(msg)
         await self._state.clear()
         await show_event_with_manage_interface(self._handler, self._state, event_id)
 
@@ -317,7 +352,7 @@ class DropUser(ParentClassForTrainingOperations):
         if 'event_id' in data:
             event_id = data['event_id']
             self._cancel_kb = interrupt_or_return_button(callback_data=f'to_manage_of_event_is:{event_id}')
-        if isinstance(self._handler.data, CallbackQuery):
+        if isinstance(self._handler, CallbackQuery):
             if self._handler.data.startswith('drop_user_from_event_is'):
                 await self._begin()
         elif await self._state.get_state() == st.DropUserFSM.process:
@@ -358,8 +393,11 @@ class DropUser(ParentClassForTrainingOperations):
             msg = 'Участник удален 🚷'
         else:
             msg = '🚫 Отправлено невалидное сообщение, операция отклонена'
-        await self._handler.message.answer(msg)
+        await self._handler.answer(msg)
         await self._state.clear()
         await show_event_with_manage_interface(self._handler, self._state, event_id)
+
+
+
 
 

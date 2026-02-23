@@ -5,6 +5,7 @@ from ..operations.trainings_operations import *
 from app.handlers.rare_handlers.rare import rare_router
 from ..handlers.admin_handlers.admin import admin_router
 from ..handlers.for_tests import test_router
+from ..operations.stat_ops import ShowStat
 
 from .. import states as st
 
@@ -70,6 +71,29 @@ async def call_add_friend(call: CallbackQuery | Message, state: FSMContext, is_a
 async def call_delete_from_training(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
     dlt_from_trn = DeleteFromTraining(handler=call, state=state, is_admin=is_admin)
     await dlt_from_trn.dispatch()
+
+
+@main_router.callback_query(F.data.startswith('add_like_of_event_is'))
+@main_router.message(st.AddLike.input_prtcp)
+@main_router.message(st.AddLike.confirm)
+async def call_add_like(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
+    add_like = AddLike(handler=call, state=state, is_admin=is_admin)
+    await add_like.dispatch()
+
+
+# БЛОК ПРОСМОТРА СТАТИСТИКИ
+# ========================
+
+@main_router.message(Command('rait'))
+@main_router.callback_query(F.data == '/rait')
+@main_router.callback_query(F.data.startswith('to_raiting_type_is'))
+@main_router.callback_query(F.data == 'general_statistics')
+@main_router.callback_query(F.data == 'likes_statistics')
+async def call_rait(call: Message | CallbackQuery, state: FSMContext):
+    await state.clear()
+    await ShowStat.dispatch(call)
+
+
 
 
 # # Просмотр рейтинга

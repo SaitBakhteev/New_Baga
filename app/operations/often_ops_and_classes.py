@@ -142,6 +142,24 @@ async def show_events(call: CallbackQuery, state: FSMContext, is_admin: bool):
         await state.update_data(events=events)
 
 
+def _tags_formation(tag:str, count:int) -> str:
+    '''
+    Функция формирует запись тегов.
+    :param tag: какие теги нужно прописать
+    :param count: значение, означающее количество чего-либо
+    :return: возвращает пару количетсво-тег. Например ⭐️2️⃣
+    '''
+    if count == 1:
+        return tag
+    elif count == 0:
+        return ''
+    elif count > 1:
+        txt =''
+        for i in str(count):
+            txt += f'{NUMBERS[int(i)]}'
+        return f'{txt}{tag}'
+
+
 # Формирование текста по тренировке со списком участников
 def show_text_about_event(event: dict, event_user: list, user_id: int) -> str:
     text = f"<b>{event['training_type']}</b>\n\n"
@@ -165,6 +183,9 @@ def show_text_about_event(event: dict, event_user: list, user_id: int) -> str:
     elif event['stars'] == '-':
         text += '\n➖ <b><i>Тренировка отмечена без звезд</i></b>\n'
 
+    if event['question']:
+        text += f'\n<b><i>Вопрос для голосования</i></b>❓\n<i>{event["question"]}</i>'
+
     text += '\n\n<b>ОСНОВНОЙ СПИСОК</b>\n'
     if event_user:
         for i, item in enumerate(event_user):
@@ -184,16 +205,19 @@ def show_text_about_event(event: dict, event_user: list, user_id: int) -> str:
             else:
                 _dedline = ''
             fullname = f"{item["user__tg_name"]} @{item['user__tg_username']}"
-            star = "⭐️" if star_tpl is not None and item['user__id'] in star_tpl else ''
+            star_txt = ''
+            if star_tpl:
+                stars_count = star_tpl.count(item['user__id'])
+                star_txt = _tags_formation("⭐️", stars_count)
+
+            likes_txt = _tags_formation('💚', item['likes'])
 
             # Чтобы пользователь видел себя выделенным шрифтом в списке на тренировку
             fullname = f'<b><i>{fullname}</i></b>' if item['user__id'] == user_id else fullname
 
-            text+=f"{star}{i+1}. {fullname} {tag}{_dedline}\n"
+            text+=f"{star_txt} {likes_txt} <b>{i+1}</b>. {fullname} {tag}{_dedline}\n"
             if i + 1 == participants_count:
                 text += "\n 📌📌 <b><i>Резерв</i></b>: \n"
-
-        text += '\n<b>❗️ВАЖНЫЕ РЕКОМЕНДАЦИИ</b> в <b>/rec</b>'
 
     return text
 

@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS "event" (
     "participants_count" INT NOT NULL  DEFAULT 18,
     "event_text" TEXT,
     "stars" TEXT,
+    "question" TEXT,
     "boss_id" INT REFERENCES "user" ("id") ON DELETE NO ACTION
 );
 CREATE TABLE IF NOT EXISTS "EventUser" (
@@ -35,10 +36,12 @@ CREATE TABLE IF NOT EXISTS "EventUser" (
     "modified_at" TIMESTAMP NOT NULL  DEFAULT CURRENT_TIMESTAMP,
     "individual_dedline" TIMESTAMP NOT NULL  DEFAULT CURRENT_TIMESTAMP,
     "paid_check" INT,
-    "paid_check_dedline" TIMESTAMP,
     "payment_confirmed" INT,
     "last_payment_notify" TIMESTAMP,
     "friend" VARCHAR(50),
+    "likes" INT NOT NULL  DEFAULT 0,
+    "me_liked" INT NOT NULL  DEFAULT 0,
+    "paid_check_dedline" TIMESTAMP,
     "event_id" INT NOT NULL REFERENCES "event" ("id") ON DELETE CASCADE,
     "user_id" INT NOT NULL REFERENCES "user" ("id") ON DELETE CASCADE,
     CONSTRAINT "uid_EventUser_event_i_4fb903" UNIQUE ("event_id", "user_id")

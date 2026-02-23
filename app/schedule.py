@@ -13,18 +13,7 @@ logger, stream_logger = setup_logger(__name__), logging.getLogger(__name__)
 
 stars_dict = dict()  # словарь рейтинга звезд, распределенный по типам тренировок
 general_raiting = []  # список общего рейтинга
-
-
-# Формирование словаря из списка EventUser путем распределенных по ключам event_id
-def _dct_form(event_user: list) -> dict:
-    event_user_dct = dict()
-    for item in event_user:
-        if item.event.id not in event_user_dct:
-            event_user_dct[item.event.id] = []
-        event_user_dct[item.event.id].append(item)
-    for k in event_user_dct:
-        event_user_dct[k] = sorted(event_user_dct[k], key=lambda item: item.modified_at)
-    return event_user_dct
+likes_rating = []  # рейтинг симпатий
 
 
 # Класс для сканирования и перемещения в конец очереди
@@ -196,6 +185,13 @@ async def main_func(is_move=True):
 
 # БЛОК РАБОТЫ СО СТАТИСТИКОЙ
 # ==========================
+class _LocalStatObj():
+    '''Этот класс для того, чтобы создавать локальные экземпляры внутри списков общего рейтинга'''
+    def __init__(self, tg_name, tg_username, star_count=None, text=None, likes=None):
+        self.tg_name, self.tg_username = tg_name, tg_username
+        self.star_count, self.text = star_count, text  # это для общего рейтинга звезд
+        self.likes = likes  # это для общего рейтинга симпатий (лайков)
+
 
 class StatisticOps():
     def __init__(self, event_user, now):
@@ -218,41 +214,41 @@ class StatisticOps():
         _user_ids = [item.user.id for item in self._event_user]
         stat = await Statistic.filter(
             user__id__in=_user_ids,
-            training_type__in=self._train_type,
+            training_type=self._train_type,
             season_index=SEASON_INDEX[0]
         ).prefetch_related('user').all()
         self._stat = stat
 
     def _extract_stars(self):
-        if self._event_user[0].event.stars != 'No':
+        if self._event_user[0].event.stars != '-':
             _stars = self._event_user[0].event.stars.replace(' ', '').split(',')
-            stars_of_event = tuple(map(lambda x: int(x), _stars))
+            stars_of_event = list(map(lambda x: int(x), _stars))
             self._stars = stars_of_event
         else:
             self._stars = []
+        if not all(item.likes==0 for item in self._event_user):  # если было голосование
+            obj = max(self._event_user, key=lambda item: item.likes)
+            self._stars.append(obj.user.id)
 
     def _lists_formation(self):
         for item in self._event_user:
             stat = next((_stat for _stat in self._stat if _stat.user.id==item.user.id),
                         None)
+            stars_count = self._stars.count(item.user.id)  # сколько раз встречается id пользователя в звездах
             if stat:
                 stat.visit_count += 1
                 stat.modifed_at = self._now
-                stat.likes += item.likes
-                if item.user.id in set(self._stars):
-                    _stars_count = self._stars.count(item.user.id)
-                    stat.star_count += _stars_count
+                stat.likes = stat.likes + item.likes if item.likes is not None else 0
+                stat.star_count += stars_count
                 self._update_list.append(stat)
 
             else:
                 likes = 0 if item.likes is None else item.likes
                 new_stat = Statistic(
                     user=item.user, training_type=self._train_type,
-                    visit_count=1, star_count=0, likes=likes,
+                    visit_count=1, star_count=stars_count, likes=likes,
                     created_at=self._now, modifed_at=self._now
                 )
-                if item.user.id in self._stars:
-                    new_stat.star_count += 1
                 self._create_list.append(new_stat)
 
     @classmethod
@@ -262,14 +258,11 @@ class StatisticOps():
             await SendMessages.to_admins_about_non_marked_events(events=events_without_stars)
         await Event.filter(event_datetime__lt=now, stars__isnull=False).delete()
 
-    # Функция пересмотра статистики и формирования рейтинга
+    # Реформирование рейтинга звезд по типам тренировки
     @classmethod
-    async def stat_raiting(cls, now):
+    def _star_rating_by_type(cls, stats:list):
         global stars_dict
-        global general_raiting
         stars_dict.clear()
-        stats = await (Statistic.filter(season_index=SEASON_INDEX[0]).
-                       prefetch_related('user').all().order_by('training_type'))
         for item in stats:
             if item.training_type not in stars_dict:
                 stars_dict[item.training_type] = []
@@ -279,23 +272,68 @@ class StatisticOps():
         for k in stars_dict:
             stars_dict[k] = sorted(stars_dict[k], key=lambda item: item.star_count, reverse=True)
 
-        # Формирование общего рейтинга
-        users = set()
+        # Формирование ТОП-30 рейтинга лайков
 
+    # Формирование общего рейтинга звезд
+    @classmethod
+    def _stars_gen_rating_form(self, stars_dict:dict):
+        global general_raiting
+        general_raiting.clear()
+
+        users = set()
         for k in stars_dict:
             for item in stars_dict[k]:
                 users.add(item.user)
-        general_raiting.clear()
+
         for _user in users:
-            star_count = 0
+            star_count = likes = 0
             text = ''
             for k in stars_dict:
                 _user_raiting = next((item for item in stars_dict[k] if item.user.id == _user.id), None)
                 if _user_raiting:
                     star_count += _user_raiting.star_count
                     text += str(k)[0]
-            general_raiting.append((_user.tg_name, _user.tg_username, star_count, text))
-            general_raiting = sorted(general_raiting, key=lambda x: x[2], reverse=True)
+            _obj = _LocalStatObj(tg_name=_user.tg_name,
+                                 tg_username=_user.tg_username,
+                                 star_count=star_count,
+                                 text=text)
+            general_raiting.append(_obj)
+            general_raiting = sorted(general_raiting, key=lambda x: x.star_count, reverse=True)
+
+    @classmethod
+    def _like_rating_form(cls, stats: list):
+        global likes_rating
+        likes_rating.clear()
+
+        _like_rating = []  # временный список
+        for item in stats:
+            if item.likes > 0:
+                _like_rating.append(item)
+
+        users = set()
+        for item in _like_rating:
+            users.add(item.user)
+
+        for user in users:
+            likes = 0
+            for item in _like_rating:
+                if user == item.user:
+                    likes += item.likes
+            _obj = _LocalStatObj(tg_name=user.tg_name,
+                                 tg_username=user.tg_username,
+                                 likes=likes)
+            likes_rating.append(_obj)
+            likes_rating = sorted(likes_rating, key=lambda x: x.likes, reverse=True)
+            likes_rating = likes_rating[:30]
+
+    # Функция пересмотра статистики и формирования рейтинга
+    @classmethod
+    async def stat_raiting_form(cls):
+        stats = await (Statistic.filter(season_index=SEASON_INDEX[0]).
+                       prefetch_related('user').all().order_by('training_type'))
+        cls._star_rating_by_type(stats)
+        cls._stars_gen_rating_form(cls.stars_dict_getter())
+        cls._like_rating_form(stats)
 
     # СПЕЦИАЛЬНЫЕ ГЕТТЕРЫ ДЛЯ ИЗБЕЖАНИЯ ПРОБЛЕМ ОБНУЛЕНИЯ В ДРУГИХ МОДУЛЯХ
     # -------------------------------------------------------------------
@@ -306,6 +344,22 @@ class StatisticOps():
     @classmethod
     def general_raiting_getter(cls):
         return general_raiting
+
+    @classmethod
+    def likes_raiting_getter(cls):
+        return likes_rating
+
+
+# Формирование словаря из списка EventUser путем распределенных по ключам event_id
+def _dct_form(event_user: list) -> dict:
+    event_user_dct = dict()
+    for item in event_user:
+        if item.event.id not in event_user_dct:
+            event_user_dct[item.event.id] = []
+        event_user_dct[item.event.id].append(item)
+    for k in event_user_dct:
+        event_user_dct[k] = sorted(event_user_dct[k], key=lambda item: item.modified_at)
+    return event_user_dct
 
 
 # главная исполняющая функция по работе со статистикой
@@ -322,7 +376,4 @@ async def stat_execute_func():
             stat_ops = StatisticOps(event_user=event_user_dct[k], now=now)
             await stat_ops.execute()
     await StatisticOps.delete_events(now)
-
-
-async def test_for_sch(tst=None, bot=None, user_cache=None):
-    pass
+    await StatisticOps.stat_raiting_form()

@@ -1,5 +1,6 @@
 import asyncio
 
+from aiogram.types import InlineKeyboardMarkup
 from tortoise.exceptions import IntegrityError
 
 from app.operations.often_ops_and_classes import *
@@ -233,6 +234,94 @@ class AddFriend(ParentClassForTrainingOperations):
         except Exception as e:
             text, except_text = '⭕️ Возникла ошибка.', f'Ошибка _add_friend_confirm: {e}'
             await self._exception_func(text, except_text)
+        asyncio.create_task(delete_bkg(self._handler))
+
+
+class AddLike(ParentClassForTrainingOperations):
+    async def dispatch(self):
+        if isinstance(self._handler, CallbackQuery):
+            if self._handler.data.startswith('add_like_of_event_is'):
+                await self._begin()
+        elif await self._state.get_state() == st.AddLike.input_prtcp:
+            await self._input()
+        elif  await self._state.get_state() == st.AddLike.confirm:
+            await self._confirm()
+
+    async def _begin(self):
+        event_id = int(self._handler.data.split(':')[1])
+        event_user = await db_rq_event_user.get_event_user(event_id=event_id)
+
+        check = await self._check_avlblty_on_begin(event_user)
+        if check is True:
+            await self._state.update_data(event_id=event_id, event_user=event_user)
+            await self._state.set_state(st.AddLike.input_prtcp)
+            msg = 'Имейте ввиду, голосовать можно только ОДИН раз!\nВведите порядковый номер игрока из основного списка'
+            await self._handler.message.answer(msg, parse_mode='HTML', reply_markup=cancel_kb(event_id))
+        else:
+            await self._state.clear()
+            await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
+            await self._handler.message.answer(check, parse_mode='HTML')
+            asyncio.create_task(delete_bkg(self._handler))
+
+    # Проверяем доступность голосования для дальнейших действий
+    async def _check_avlblty_on_begin(self, event_user: list):
+        question, event_datetime = event_user[0]['event__question'], event_user[0]['event__event_datetime']
+        if not question:
+            return 'К сожалению админ не добавил вопрос для голосования 🥺'
+        elif len(event_user) == 0:
+            return 'Увы, но никого нет в списке на тренировку 🤷🏼‍♂️'
+        elif datetime.now() + timedelta(hours=1) < event_datetime.replace(tzinfo=None):
+            return 'Голосование открывается через час после начала тренировки ⏱️️'
+
+        # Конечная проверка, есть ли Вы в основном списке и не голосовали ли ранее
+        prtcpts_count = event_user[0]['event__participants_count']
+        main_lst = event_user[:prtcpts_count]  # отсекаем резерв
+        await self._state.update_data(main_lst=main_lst)
+        i_am = next((item for item in main_lst if item['user__id']==self._user_id), None)
+        if not i_am:
+            return 'Вы отсутствуете в основном списке 🙅🏻'
+        if i_am['me_liked']:
+            return 'Вы уже ранее отдали свой голос ☝🏼'
+        return True
+
+    async def _input(self):
+        data = await self._state.get_data()
+        main_lst = data['main_lst']
+        try:
+            num = int(self._handler.text.strip())
+            if num > len(main_lst) or num <= 0:
+                raise ValueError('out of range')
+            user_id =main_lst[num-1]['user__id']
+            if user_id == self._user_id:
+                await self._handler.answer('Нельзя голосовать за самого себя ☝🏼',
+                                           reply_markup=cancel_kb(data['event_id']))
+                return
+            await self._state.update_data(user_id=user_id)
+            msg = 'Для подтверждения, отправьте <b><i>да</i></b>'
+            await self._state.set_state(st.AddLike.confirm)
+        except ValueError as e:
+            if str(e).startswith('out of range'):
+                msg = 'Вы ввели номер за пределами ОСНОВНОГО списка'
+            else:
+                msg = 'Некорретный формат. Вводить нужно только одно целое число.'
+        await self._handler.answer(msg, reply_markup=cancel_kb(data['event_id']), parse_mode='HTML')
+        asyncio.create_task(delete_bkg(self._handler))
+
+    async def _confirm(self):
+        '''
+        Здесь мы сначала должны получит из БД текущее полодение вещей по игроку
+        :return:
+        '''
+        data = await self._state.get_data()
+        event_id, user_id = data['event_id'], data['user_id']
+        if self._handler.text.strip() == 'да':
+            await db_rq_event_user.update_for_like(event_id, user_id, self._user_id)
+            msg = 'Ваш голос зачтен 💚👍🏼'
+        else:
+            msg = '🚫 Голосование отменено'
+        await self._state.clear()
+        await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
+        await self._handler.answer(msg, parse_mode='HTML')
         asyncio.create_task(delete_bkg(self._handler))
 
 

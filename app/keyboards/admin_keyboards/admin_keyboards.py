@@ -117,6 +117,8 @@ def admin_train_manag_kb(event_id) -> InlineKeyboardMarkup:
     keyboard.add(InlineKeyboardButton(text='💠 Опровергнуть оплату ❌',
                                       callback_data=f'refute_payment_of_event_is:{event_id}'))
     keyboard.add(InlineKeyboardButton(text='💠 Присвоить звезду ⭐️', callback_data=f'give_star_of_event_is:{event_id}'))
+    keyboard.add(InlineKeyboardButton(text='💠 Добавить вопрос для голосования ❓',
+                                      callback_data=f'add_question_to_event_is:{event_id}'))
     keyboard.add(InlineKeyboardButton(text='💠 Сдвинуть в конец очереди ⬇️',
                                       callback_data=f'move_to_end_of_event_is:{event_id}'))
     keyboard.add(InlineKeyboardButton(text='💠 Удалить участника 🚷',

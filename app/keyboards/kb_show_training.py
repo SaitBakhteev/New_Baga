@@ -97,6 +97,7 @@ def training_interface_kb(event: dict, event_user: list, user_id: int, admin_per
             keyboard.button(text=text, callback_data=call)
 
         keyboard.button(text='🤜🏽Записать друга🤛🏽', callback_data=f'add_friend_to_event_is:{event['id']}')
+        keyboard.button(text='Проголосовать за игрока💚', callback_data=f'add_like_of_event_is:{event['id']}')
 
         if admin_permissions:
             keyboard.button(

@@ -51,7 +51,7 @@ class EventUser(Model):
     last_payment_notify = fields.DatetimeField(null=True, timezone=timezone('Europe/Moscow'))
 
     friend = fields.CharField(max_length=50, null=True, on_delete=fields.NO_ACTION)
-    likes = fields.IntField(null=True)  # число лайков в голосовании
+    likes = fields.IntField(default=0)  # число лайков в голосовании
     me_liked = fields.BooleanField(default=False)  # поставил ли я лайк
 
     # Ненужное поле, которое вынужденно оставлено из-за ограниченйи SQLite
