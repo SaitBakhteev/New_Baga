@@ -85,7 +85,8 @@ def input_template_kb(templates: list) -> InlineKeyboardMarkup:
 
 choose_pay_dline_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='12 часов', callback_data='payment_dedline:12')],
-    [InlineKeyboardButton(text='24 часа', callback_data='payment_dedline:24')]
+    [InlineKeyboardButton(text='24 часа', callback_data='payment_dedline:24')],
+    [_CANCEL_ADMIN_OPERATION_BUTTON]
 ])
 
 
