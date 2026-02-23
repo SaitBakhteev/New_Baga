@@ -85,24 +85,24 @@ def training_interface_kb(event: dict, event_user: list, user_id: int, admin_per
         keyboard = InlineKeyboardBuilder()
         if signed_up_for_training:
             text = '🔴 Удалиться из тренировки'
-            callback_data = f'delete_from_training_is:{event['id']}'
+            callback_data = f'delete_from_training_is:{event["id"]}'
         else:
             text = '🟢 Записаться на тренировку'
-            callback_data = f'sign_up_to_training_is:{event['id']}'
+            callback_data = f'sign_up_to_training_is:{event["id"]}'
         keyboard.add(InlineKeyboardButton(text=text, callback_data=callback_data))
 
         # Кнопка уведомления об оплате или её отмена доступна, только если участник не в резерве
         if availible_notify_by_payment:
-            text, call = '✔️ Оповестить бот об оплате', f'payment_notify_by_event_is:{event['id']}'
+            text, call = '✔️ Оповестить бот об оплате', f'payment_notify_by_event_is:{event["id"]}'
             keyboard.button(text=text, callback_data=call)
 
-        keyboard.button(text='🤜🏽Записать друга🤛🏽', callback_data=f'add_friend_to_event_is:{event['id']}')
-        keyboard.button(text='Проголосовать за игрока💚', callback_data=f'add_like_of_event_is:{event['id']}')
+        keyboard.button(text='🤜🏽Записать друга🤛🏽', callback_data=f'add_friend_to_event_is:{event["id"]}')
+        keyboard.button(text='Проголосовать за игрока💚', callback_data=f'add_like_of_event_is:{event["id"]}')
 
         if admin_permissions:
             keyboard.button(
                 text='💠🤵🏻‍♂️ Администрирование тренировки',
-                callback_data=f'to_manage_of_event_is:{event['id']}'
+                callback_data=f'to_manage_of_event_is:{event["id"]}'
             )
         _index = TRAINING_TYPES.index(event["training_type"])
         callback_data = f'to_training_type_is:{_index}'

@@ -3,9 +3,6 @@ import logging
 
 from aiogram import Dispatcher
 
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler  # для webhook
-from aiohttp import web
-
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
@@ -20,6 +17,8 @@ from config.db_config import TORTOISE_ORM
 from config.log_config import setup_base_logger, setup_logger
 
 from app.schedule import main_func, stat_execute_func, StatisticOps
+
+bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
 setup_base_logger()  # запускаем настройки для стандартного логера
 
@@ -52,31 +51,10 @@ async def connect_to_db():
         return False
 
 
-async def webhook_setup(bot: Bot):
-    try:
-        # Удаляем старый вебхук перед установкой нового
-        await bot.delete_webhook()
-        
-        await bot.set_webhook(
-            url=f"{URL}/webhook",
-            secret_token=f"{WEBHOOK_TOKEN}"
-        )
-        
-        # Проверяем установку
-        webhook_info = await bot.get_webhook_info()
-
-    except Exception as e:
-        await logger.error(f'Ошибка в webhook_setup: {e}')
-        raise
-    
-
 async def startup(dispatcher: Dispatcher):
     try:
         if not await connect_to_db():
             raise RuntimeError
-
-        # Вызываем установку webhook
-        await webhook_setup(bot)
 
         # Формирование user_cache и dedlines
         users = await get_all_users()
@@ -125,33 +103,10 @@ async def shutdown(dispatcher: Dispatcher):
 async def main():
     dp = Dispatcher()
     dp.include_router(main_router)
-
+    dp.startup.register(startup)
     dp.shutdown.register(shutdown)
-    await startup(dp)
-    try:
-        # НАСТРОЙКА WEBHOOK СЕРВЕРА
-        app = web.Application()
-        # Регистрируем обработчик вебхука
-        webhook_requests_handler = SimpleRequestHandler(
-            dispatcher=dp,
-            bot=bot,
-            secret_token=f"{WEBHOOK_TOKEN}",
-        )
-        webhook_requests_handler.register(app, path="/webhook")
-        # Запускаем сервер
-        runner = web.AppRunner(app)
-        await runner.setup()
+    await dp.start_polling(bot)
 
-        site = web.TCPSite(runner, host="0.0.0.0", port=3000)
-        await site.start()
-        
-        # БЕСКОНЕЧНЫЙ ЦИКЛ
-        await asyncio.Event().wait()
-        
-    except Exception as e:
-        print(f"ERROR in main: {e}")
-        raise
-    
 
 if __name__ == "__main__":
     try:

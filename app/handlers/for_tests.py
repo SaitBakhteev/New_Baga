@@ -33,6 +33,17 @@ async def call_test(msg: Message):
     # await EventUser.all().update(individual_dedline=individual_dedline)
     await msg.answer('this test')
 
+
+@test_router.message(Command('pay'))
+async def call_schedule(msg: Message):
+    evs = await EventUser.all()
+    for ev in evs:
+        _dt = ev.modified_at.replace(tzinfo=None) + timedelta(days=1, hours=12)
+        ev.individual_dedline = _dt
+        await ev.save()
+    await msg.answer('норм pay')
+
+
 @test_router.message(Command('upd'))
 async def call_test(msg: Message):
     yesterday = datetime.now() - timedelta(days=1)

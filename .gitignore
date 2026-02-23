@@ -1,5 +1,6 @@
 venv
 .idea
+migrations
 **/__pycache__/
 sudo dydtemctl ssh status
 logs/error.log

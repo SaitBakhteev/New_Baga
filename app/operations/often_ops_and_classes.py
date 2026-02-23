@@ -204,7 +204,7 @@ def show_text_about_event(event: dict, event_user: list, user_id: int) -> str:
                 _dedline = f": ⏳ <b><i>{item['individual_dedline'].strftime('%H:%M %d.%m')}</i></b>"
             else:
                 _dedline = ''
-            fullname = f"{item["user__tg_name"]} @{item['user__tg_username']}"
+            fullname = f'{item["user__tg_name"]} @{item["user__tg_username"]}'
             star_txt = ''
             if star_tpl:
                 stars_count = star_tpl.count(item['user__id'])
@@ -280,10 +280,10 @@ class SendMessages():
     # Метод применяется при записи, удалении, перемещении админом и прочее
     @classmethod
     async def to_one_receiver(cls, text, tg_id):
-        await logger.critical('to_one_receiver_test')
-        await logger.critical(f'\n\nto_one_receiver_txt: {text}')
-        print(f'to_one_receiver:{tg_id}')
-        # await bot.send_message(tg_id, text, parse_mode='HTML')
+        # await logger.critical('to_one_receiver_test')
+        # await logger.critical(f'\n\nto_one_receiver_txt: {text}')
+        # print(f'to_one_receiver:{tg_id}')
+        await bot.send_message(tg_id, text, parse_mode='HTML')
 
     @classmethod
     async def to_several_receivers(cls, tg_ids: list, text):
@@ -292,10 +292,10 @@ class SendMessages():
         :param tg_ids: список tg_id получателдей уведомления
         '''
         
-        await logger.critical(f'\n\nto_several_receivers_txt: {text}')
+        # await logger.critical(f'\n\nto_several_receivers_txt: {text}')
         for tg_id in tg_ids:
-            print(f'to_several_receivers: {tg_id}')
-            # await bot.send_message(tg_id, text, parse_mode='HTML')
+            # print(f'to_several_receivers: {tg_id}')
+            await bot.send_message(tg_id, text, parse_mode='HTML')
 
     @classmethod
     async def to_admins(cls, text, now, event_datetime):
@@ -308,11 +308,11 @@ class SendMessages():
         :return:
         '''
         if event_datetime - now < timedelta(hours=12):
-            await logger.critical(f'\n\nto_admins_txt: {text}')
+            # await logger.critical(f'\n\nto_admins_txt: {text}')
             for k in user_cache:
                 if user_cache[k].admin_permissions:
-                    print(f'to_admins: {int(k)}')
-                    # await bot.send_message(int(k), text, parse_mode='HTML')
+                    # print(f'to_admins: {int(k)}')
+                    await bot.send_message(int(k), text, parse_mode='HTML')
 
     @classmethod
     async def to_admins_about_non_marked_events(cls, events: list):
@@ -322,5 +322,5 @@ class SendMessages():
         text += 'Если на тренировке звезд не было, то нужно отметить прочерком'
         for k in user_cache:
             if user_cache[k].admin_permissions:
-                print(f'to_admins_about_non_marked_events: {int(k)}')
-                # await bot.send_message(int(k), text, parse_mode='HTML')
+                # print(f'to_admins_about_non_marked_events: {int(k)}')
+                await bot.send_message(int(k), text, parse_mode='HTML')
