@@ -191,16 +191,16 @@ def show_text_about_event(event: dict, event_user: list, user_id: int) -> str:
         for i, item in enumerate(event_user):
             if i + 1 <= participants_count:
                 if item['payment_confirmed'] is False:
-                    tag = '❌'
+                    status_tag = '❌'
                 elif not item['payment_confirmed'] and item['paid_check']:
-                    tag = '✔️'
+                    status_tag = '✔️'
                 elif item['payment_confirmed']:
-                    tag = '✅'
+                    status_tag = '✅'
                 else:
-                    tag = '⚠️'
+                    status_tag = '⚠️'
             else:
-                tag = ''
-            if len(tag) > 0 and tag != '✅':
+                status_tag = ''
+            if len(status_tag) > 0 and status_tag != '✅':
                 _dedline = f": ⏳ <b><i>{item['individual_dedline'].strftime('%H:%M %d.%m')}</i></b>"
             else:
                 _dedline = ''
@@ -210,12 +210,14 @@ def show_text_about_event(event: dict, event_user: list, user_id: int) -> str:
                 stars_count = star_tpl.count(item['user__id'])
                 star_txt = _tags_formation("⭐️", stars_count)
 
-            likes_txt = _tags_formation('💚', item['likes'])
+            likes_txt = _tags_formation('🩷', item['likes'])
 
             # Чтобы пользователь видел себя выделенным шрифтом в списке на тренировку
             fullname = f'<b><i>{fullname}</i></b>' if item['user__id'] == user_id else fullname
-
-            text+=f"{star_txt} {likes_txt} <b>{i+1}</b>. {fullname} {tag}{_dedline}\n"
+            _dedline = f'\n  {_dedline}' if len(_dedline) > 0 else ''
+            star_txt = f'\n  {star_txt}' if len(star_txt) > 0 else ''
+            likes_txt = f'\n  {likes_txt}' if len(likes_txt) > 0 else ''
+            text+=f"<b>{i+1}</b>. {fullname}{status_tag}{_dedline}{star_txt}{likes_txt}\n"
             if i + 1 == participants_count:
                 text += "\n 📌📌 <b><i>Резерв</i></b>: \n"
 

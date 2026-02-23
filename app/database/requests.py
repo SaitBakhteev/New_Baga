@@ -58,6 +58,11 @@ async def update_user(**kwargs):
         # stream_await logger.error(f'update_user: {e}')
 
 
+# Обноаление подписки на уведомления
+async def update_subscription(user_id: int, subscription:str):
+    await User.filter(id=user_id).update(subscription=subscription)
+
+
 # Обновление поля включения или отключения уведомлений
 async def update_user_receive_notificcations(tg_id: int):
     try:

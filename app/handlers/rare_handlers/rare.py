@@ -1,13 +1,15 @@
 from aiogram import F, Bot
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 from aiogram.dispatcher.router import Router
 
 from app.operations.often_ops_and_classes import cmd_start, AdminMiddleware
 from app.operations.regisration_ops import registration_and_welcome
+from app.operations.rare_ops import ProfileManagment, SubscriptionManage
 
 from config.constants import user_cache
+from app import states as st
 
 rare_router = Router()
 
@@ -21,6 +23,24 @@ async def call_cmd_start(call: Message | CallbackQuery, state: FSMContext, is_ad
 @rare_router.callback_query(F.data == 'registration')
 async def call_registration(call: CallbackQuery):
     await registration_and_welcome(call)
+
+
+@rare_router.message(Command('prof'))
+@rare_router.callback_query(F.data == '/prof')
+@rare_router.callback_query(F.data == 'profile_edit')
+@rare_router.message(st.EditProfileFSM.edit_tg_name)
+async def call_prof_manage(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
+    prof_manage = ProfileManagment(call, state, is_admin)
+    await prof_manage.dispatch()
+
+
+@rare_router.message(Command('ntf'))
+@rare_router.callback_query(F.data == '/ntf')
+@rare_router.callback_query(F.data == 'subscription_edit')
+@rare_router.message(st.SubscriptionEditFSM.confirm)
+async def call_subcription_mng(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
+    subcription_mng = SubscriptionManage(call, state, is_admin)
+    await subcription_mng._dispatch()
 
 
 # @rare_router.message(Command('dev'))

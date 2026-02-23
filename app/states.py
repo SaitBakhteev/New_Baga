@@ -66,6 +66,10 @@ class EditProfileFSM(StatesGroup):
     edit_tg_username = State()
 
 
+class SubscriptionEditFSM(StatesGroup):
+    confirm = State()
+
+
 class DeleteTemplateFSM(StatesGroup):
     delete_template = State()
 
