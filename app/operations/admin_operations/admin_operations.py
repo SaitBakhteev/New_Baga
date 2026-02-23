@@ -6,14 +6,12 @@ from aiogram.types import CallbackQuery, Message
 
 from functools import reduce
 
-from aiogram.utils import keyboard
-
 from app import states as st
 from app.database import requests as db_rq
 
 from config.constants import *
 
-from ..often_ops_and_classes import delete_bkg, ParentClassForTrainingOperations, cmd_start
+from ..often_ops_and_classes import delete_bkg, ParentClassForTrainingOperations, cmd_start, SendMessages
 from ...keyboards.admin_keyboards.admin_keyboards import *
 from .manage_operations import show_event_with_manage_interface
 
@@ -180,11 +178,15 @@ class CreateEvent(ParentClassForTrainingOperations):
     async def _add_new_event(self):
         data = await self._state.get_data()
         await db_rq.create_event(data)
-        message_text = (f'<b>СОЗДАНА НОВАЯ ТРЕНИРОВКА</b>\n\n'
+        msg = (f'<b>СОЗДАНА НОВАЯ ТРЕНИРОВКА</b>\n\n'
                         f'<b>{data["training_type"]}</b>\n{data["event_text"]}')
-        await self._handler.message.answer(message_text, parse_mode='HTML')
+        await self._handler.message.answer(msg, parse_mode='HTML')
         await show_admin_panel(self._handler, self._state)
 
+        async def _delayed_notification(msg: str, training_type: str):
+            await asyncio.sleep(300)  # 5 минут
+            await SendMessages.to_several_subscribers(msg, training_type)
+        asyncio.create_task(_delayed_notification(msg, data["training_type"]))
 
 class EditEvent(CreateEvent):
     async def dispatch(self):

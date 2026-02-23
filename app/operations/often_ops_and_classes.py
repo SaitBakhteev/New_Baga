@@ -302,6 +302,15 @@ class SendMessages():
             await bot.send_message(tg_id, text, parse_mode='HTML')
 
     @classmethod
+    async def to_several_subscribers(cls, text, training_type):
+        '''Метод рассылает уведомления тем, кто подписался на данный тип тренировки'''
+        for k in user_cache:
+            if user_cache[k].subscription:
+                if training_type in user_cache[k].subscription:
+                    tg_id = user_cache[k].tg_id
+                    await bot.send_message(tg_id, text, parse_mode='HTML')
+
+    @classmethod
     async def to_admins(cls, text, now, event_datetime):
         '''
         Данная функция сработает, если сообщения будут по тренировке, до начала
