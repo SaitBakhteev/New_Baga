@@ -16,6 +16,8 @@ eaadb754596a36faae5a1c940c505843.zip
 *.sqlite3-shm
 *.sqlite3-wal
 
+
+*.zip
 media
 logs/
 webhook_run.py

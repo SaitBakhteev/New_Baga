@@ -5,6 +5,8 @@ from aiogram.types import CallbackQuery, Message
 
 from typing import Optional
 
+from math import ceil
+
 from config.constants import TRAINING_TYPES, NUMBERS
 from ..schedule import StatisticOps
 from .often_ops_and_classes import delete_bkg
@@ -108,8 +110,24 @@ class ShowStat():
     async def _show_general_raiting(cls, call: CallbackQuery):
         general_raiting = StatisticOps.general_raiting_getter()
         rating_txt = cls._general_rating_formation(general_raiting, '⭐️', call)
-        msg = f'<b>ОБЩИЙ РЕЙТИНГ⚡️</b>\n\n{rating_txt}' if rating_txt else 'В этом сезоне тренировки пока не проводились'
-        await call.message.answer(msg, parse_mode='HTML', reply_markup=cls._back_kb)
+
+        _count = rating_txt.count('\n') if rating_txt else 0
+        if _count > 100:
+            n = ceil(_count / 100)  # поярдковое число, округленное всегда вверх
+            for i in range(0, n):
+                if i==0:
+                    idx_end = rating_txt.find('<b>101.</b>')
+                    msg = f'<b>ОБЩИЙ РЕЙТИНГ⚡️</b>\n\n{rating_txt[:idx_end]}'
+                    await call.message.answer(msg, parse_mode='HTML', reply_markup=cls._back_kb)
+                elif i > 1:
+                    idx_begin = rating_txt.find(f'<b>{i*100+1}.</b>')
+                    idx_end = rating_txt.find(f'<b>{(i+1)*100+1}.</b>')
+                    msg = f'{rating_txt[idx_begin:idx_end]}'
+                    await call.message.answer(msg, parse_mode='HTML', reply_markup=cls._back_kb)
+        else:
+            msg = f'<b>ОБЩИЙ РЕЙТИНГ⚡️</b>\n\n{rating_txt}' if rating_txt \
+                else 'В этом сезоне тренировки пока не проводились'
+            await call.message.answer(msg, parse_mode='HTML', reply_markup=cls._back_kb)
 
     @classmethod
     async def _show_likes_rating(cls, call: CallbackQuery):

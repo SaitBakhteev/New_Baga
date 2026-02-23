@@ -47,7 +47,7 @@ def setup_base_logger():
 
     # Хендлер для консоли
     stream_handler = logging.StreamHandler()
-    stream_handler.setLevel(logging.INFO)
+    stream_handler.setLevel(logging.WARNING)
     stream_handler.setFormatter(formatter)
 
     # Настраиваем корневой логгер
