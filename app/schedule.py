@@ -137,10 +137,15 @@ class SendReminders():
     async def execute(self):
         for obj in self._event_user[:self._participants_count]:
             ind_dedline = obj.individual_dedline.replace(tzinfo=None)
-            last_payment_notify = obj.last_payment_notify.replace(tzinfo=None)
+            last_payment_notify = obj.last_payment_notify
+            if last_payment_notify:
+                last_payment_notify.replace(tzinfo=None)
 
-            # Прошло ли 5 часов с последнего уведомления
-            is_5h_from_las = last_payment_notify + timedelta(hours=5) <= self._now
+                # Прошло ли 5 часов с последнего уведомления
+                is_5h_from_las = last_payment_notify + timedelta(hours=5) <= self._now
+            else:
+                is_5h_from_las = True
+
             if ind_dedline <= self._before_1_hours and is_5h_from_las:
                 last_payment_notify = self._now
                 obj.last_payment_notify = last_payment_notify
