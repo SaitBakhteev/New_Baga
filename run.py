@@ -22,6 +22,7 @@ from config.log_config import setup_base_logger, setup_logger
 from app.schedule import main_func, stat_execute_func, StatisticOps
 
 setup_base_logger()  # запускаем настройки для стандартного логера
+logging.getLogger('apscheduler').setLevel(logging.WARNING)
 
 stream_logger = logging.getLogger(__name__)
 

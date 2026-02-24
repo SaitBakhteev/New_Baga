@@ -32,7 +32,7 @@ def setup_base_logger():
 
     # Хендлер для INFO и выше (general.log)
     info_handler = logging.FileHandler('logs/general.log')
-    info_handler.setLevel(logging.INFO)
+    info_handler.setLevel(logging.WARNING)
     info_handler.setFormatter(formatter)
 
     # Хендлер для ERROR и выше (error.log)
