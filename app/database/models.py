@@ -14,7 +14,7 @@ class User(Model):
     receive_notifications = fields.BooleanField(default=False)  # получать или не получать уведомления
 
     # На какие типы тренировок должны приходить уведомления
-    subscription = fields.CharField(null=True, max_length=64)
+    subscription = fields.TextField(null=True)
 
     def __str__(self):
         return self.tg_username

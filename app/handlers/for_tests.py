@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from aiogram import Router, F
 from aiogram.filters import Command
+from aiogram.loggers import event
 from aiogram.types import Message
 
 from ..database.models import *
@@ -64,3 +65,9 @@ async def call_schedule(msg: Message):
 async def call_schedule(msg: Message):
     await logger.critical('logs_tet')
 
+
+@test_router.message(Command('olg'))
+async def call_olg(msg: Message):
+    _date = datetime.now() - timedelta(days=1)
+    await EventUser.create(event_id=244, user_id=173, individual_dedline=_date,
+                           payment_confirmed=True)
