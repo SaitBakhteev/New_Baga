@@ -380,25 +380,28 @@ class DeleteFromTraining(ParentClassForTrainingOperations):
         - находится ли удаляемый в основном списке.
         Если выполняются оба критерия, то фиксируется tg_id первого участника резерва, который поднимется из резерва
         '''
-        data = await self._state.get_data()
-        event_id = data.get('event_id')
-        current_event_user = await db_rq_event_user.get_event_user_before_delete(event_id=event_id)
-        participants_count = current_event_user[0].event.participants_count
-        event_datetime = current_event_user[0].event.event_datetime
-        payment_dedline = current_event_user[0].event.payment_dedline
-        training_type = current_event_user[0].event.training_type
-        event_text = current_event_user[participants_count].event.event_text
+        try:
+            data = await self._state.get_data()
+            event_id = data.get('event_id')
+            current_event_user = await db_rq_event_user.get_event_user_before_delete(event_id=event_id)
+            participants_count = current_event_user[0].event.participants_count
+            event_datetime = current_event_user[0].event.event_datetime
+            payment_dedline = current_event_user[0].event.payment_dedline
+            training_type = current_event_user[0].event.training_type
+            event_text = current_event_user[0].event.event_text
 
-        idx_pos = next(i for i, item in enumerate(current_event_user) if item.user.id == self._user_id)
-        if idx_pos < participants_count and len(current_event_user) > participants_count:
-            rsrv_tg_id = current_event_user[participants_count].user.tg_id
-            rsrv_tg_username = current_event_user[participants_count].user.tg_username
-            await self._update_params(current_event_user, participants_count, payment_dedline, event_datetime)
-        else:
-            rsrv_tg_id = rsrv_tg_username = None
+            idx_pos = next(i for i, item in enumerate(current_event_user) if item.user.id == self._user_id)
+            if idx_pos < participants_count and len(current_event_user) > participants_count:
+                rsrv_tg_id = current_event_user[participants_count].user.tg_id
+                rsrv_tg_username = current_event_user[participants_count].user.tg_username
+                await self._update_params(current_event_user, participants_count, payment_dedline, event_datetime)
+            else:
+                rsrv_tg_id = rsrv_tg_username = None
 
-        return {'rsrv_tg_id': rsrv_tg_id, 'rsrv_tg_username': rsrv_tg_username, 'training_type': training_type,
-                'event_datetime': event_datetime.replace(tzinfo=None), 'event_text': event_text}
+            return {'rsrv_tg_id': rsrv_tg_id, 'rsrv_tg_username': rsrv_tg_username, 'training_type': training_type,
+                    'event_datetime': event_datetime.replace(tzinfo=None), 'event_text': event_text}
+        except Exception as e:
+            await logger.error(f'ERROR on _important_params: {e}')
 
     async def _update_params(self, current_event_user:list, participants_count:int, payment_dedline, event_datetime):
         '''
