@@ -1,4 +1,5 @@
 import logging
+import asyncio
 
 from datetime import datetime, timedelta
 
@@ -225,6 +226,12 @@ class StatisticOps():
         self._stat = stat
 
     def _extract_stars(self):
+        '''Функция извлекает звезд и лидера голосования. По голосованию обработка идет по следующему алгоритму:
+            - находим по функции max объект с максимальным количеством лайков
+            - формируем список лайков, соответствующих максимуму
+            - смотрим количество записей этого списка
+            - если максимум один, то тогда и присуждаем +1 звезду
+         '''
         if self._event_user[0].event.stars != '-':
             _stars = self._event_user[0].event.stars.replace(' ', '').split(',')
             stars_of_event = list(map(lambda x: int(x), _stars))
@@ -233,7 +240,21 @@ class StatisticOps():
             self._stars = []
         if not all(item.likes==0 for item in self._event_user):  # если было голосование
             obj = max(self._event_user, key=lambda item: item.likes)
-            self._stars.append(obj.user.id)
+            max_count = len([item.likes for item in self._event_user if item.likes == obj.likes])
+            if max_count == 1:  # звезду добавляем, если лидер голосования один единственный
+                self._stars.append(obj.user.id)
+                async def _delayed_notification(text: str, training_type: str):
+                    await asyncio.sleep(25000)
+                    await SendMessages.to_several_subscribers(text, training_type)
+                training_type = obj.event.training_type
+                _datetime = obj.event.event_datetime.strftime('%d.%m %H:%M')
+                fullname = f'{obj.user.tg_name} @{obj.user.tg_username}'
+                text=('<b>🩷 ИТОГИ ГОЛОСОВАНИЯ 🔥\n\n</b>'
+                      f'Лидером голосования прошедшей тренировки (<i>{_datetime}</i>) по дисциплине '
+                      f'<b><i>{training_type}</i></b> становится <b><i>{fullname}</i></b> 🥳. Участнику '
+                      f'присуждается дополнительная звезда 🤩\n\n'
+                      f'💥🔥ПОЗДРАВЛЯЕМ!!😍')
+                asyncio.create_task(_delayed_notification(text=text, training_type=training_type))
 
     def _lists_formation(self):
         for item in self._event_user:
