@@ -139,7 +139,7 @@ class SendReminders():
             ind_dedline = obj.individual_dedline.replace(tzinfo=None)
             last_payment_notify = obj.last_payment_notify
             if last_payment_notify:
-                last_payment_notify.replace(tzinfo=None)
+                last_payment_notify = last_payment_notify.replace(tzinfo=None)
 
                 # Прошло ли 5 часов с последнего уведомления
                 is_5h_from_las = last_payment_notify + timedelta(hours=5) <= self._now
