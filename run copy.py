@@ -66,13 +66,20 @@ async def startup(dispatcher: Dispatcher):
         await StatisticOps.stat_raiting_form()
 
         scheduler = AsyncIOScheduler()
-        scheduler.add_job(main_func, CronTrigger(hour='7-22', minute='*/2'),
-                          kwargs={'is_move': True}, id="move_to_end")
-        scheduler.add_job(main_func, CronTrigger(hour='7-22', minute='1-59/2'),
-                          kwargs={'is_move': False}, id="remind")
+        scheduler.add_job(main_func, CronTrigger(hour='7-23', minute='*/2'),
+                          kwargs={'is_move': True}, id="move_to_end_1")
+        scheduler.add_job(main_func, CronTrigger(hour='7-23', minute='1-59/2'),
+                          kwargs={'is_move': False}, id="remind_1")
 
-        scheduler.add_job(stat_execute_func, CronTrigger(hour=1, minute=00), id="stat_execute_1h")
-        scheduler.add_job(stat_execute_func, CronTrigger(hour=4, minute=00), id="stat_execute_4h")
+        scheduler.add_job(stat_execute_func, CronTrigger(hour=1, minute=2), id="stat_execute_1h")
+
+        scheduler.add_job(main_func, CronTrigger(hour='7-22', minute='*/2'),
+                          kwargs={'is_move': True}, id="move_to_end_1")
+        scheduler.add_job(main_func, CronTrigger(hour='7-22', minute='1-59/2'),
+                          kwargs={'is_move': False}, id="remind_1")
+
+
+        # scheduler.add_job(stat_execute_func, CronTrigger(hour=4, minute=2), id="stat_execute_4h")
 
         scheduler.start()
         stream_logger.info("Starting Bot...")

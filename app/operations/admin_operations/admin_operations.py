@@ -188,6 +188,7 @@ class CreateEvent(ParentClassForTrainingOperations):
             await SendMessages.to_several_subscribers(msg, training_type)
         asyncio.create_task(_delayed_notification(msg, data["training_type"]))
 
+
 class EditEvent(CreateEvent):
     async def dispatch(self):
         if isinstance(self._handler, CallbackQuery):
@@ -268,3 +269,43 @@ class DeleteEvent(ParentClassForTrainingOperations):
             asyncio.create_task(delete_bkg(self._handler))
         except Exception as e:
             await logger.error(f'Ошибка в DeleteEvent._confirm: {e}')
+
+
+# Добавление или удаление админов
+class AdminEdit(ParentClassForTrainingOperations):
+    _return_kb = interrupt_or_return_button(callback_data='adm_list') #  возврат к точке выбора действия по админам
+
+
+    async def _begin(self):
+        msg = f'<b><i>Текущий список админов:</i></b>\n\n'
+        for k in user_cache:
+            if user_cache[k].admin_permissions:
+                msg += f'{user_cache[k].tg_name} {user_cache[k].tg_username}\n'
+        msg += '\nВыберите операцию'
+        await self._handler.message.answer(msg, parse_mode='HTML',reply_markup=edit_admins())
+        asyncio.create_task(delete_bkg(self._handler))
+
+    async def _input_data(self):
+        call_data = self._handler.data.split(':')[1]
+        await self._state.update_data(call_data=call_data)
+        text = 'добавить' if call_data == 'add' else 'удалить'
+        msg = f'Отправьте в сообщении боту никнейм админа, которого хотите {text}'
+        await self._handler.message.answer(msg, parse_mode='HTML',reply_markup=self._return_kb)
+        await self._state.set_state(st.EditAdminFSM.input_data)
+
+    async def _end(self):
+        data = await self._state.get_data()
+        tg_username = self._handler.text.replace('@', '').replace(' ', '')
+        tg_id = next((k for k in user_cache if user_cache[k]._tg_username == tg_username), None)
+        if tg_id:
+            admin_permissions = True if data['call_data'] == 'add' else False
+            await db_rq.update_admin(user_cache[tg_id].id, admin_permissions)
+            user_cache[tg_id].admin_permissions = admin_permissions
+            act_text = f'добавлен' if data['call_data'] == 'add' else 'удален'
+            username = user_cache[tg_id].tg_username
+            msg = f'Пользователь с никнеймом {username} {act_text} успешно 👌🏽'
+        else:
+            msg = f'Пользователь с таким никнеймом не зарегистрирован в боте 🤷🏼‍♂️'
+        await self._handler.answer(msg)
+        await self._state.clear()
+        await self._begin()

@@ -173,8 +173,8 @@ def finish_edit_event_kb(event_id) -> InlineKeyboardMarkup:
 
 def edit_admins() -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardBuilder()
-    keyboard.button(text='Добавить админа', callback_data='edit_admin:add')
-    keyboard.button(text='Удалить админа', callback_data='edit_admin:delete')
+    keyboard.button(text='Добавить админа 😎', callback_data='edit_admin:add')
+    keyboard.button(text='Удалить админа 🚯', callback_data='edit_admin:delete')
     keyboard.add(_RETURN_TO_ADMIN_PANEL_BUTTON)
     keyboard.adjust(1)
     return keyboard.as_markup()

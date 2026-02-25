@@ -4,6 +4,7 @@ from pytz import timezone
 
 from config.constants import SEASON_INDEX
 
+
 class User(Model):
     id = fields.IntField(primary_key=True)
     tg_id = fields.BigIntField(unique=True)

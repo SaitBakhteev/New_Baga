@@ -91,6 +91,10 @@ async def update_admin_and_get(tg_username: str, admin_permissions: bool):
         await logger.error(f'update_admin_and_get: {e}')
 
 
+async def update_admin(user_id:int, admin_permissions:bool):
+    await User.filter(id=user_id).update(admin_permissions=admin_permissions)
+
+
 ''' ---------------------------- EVENT ------------------------------------------------ '''
 async def create_event(data):  # добавить событие
     try:

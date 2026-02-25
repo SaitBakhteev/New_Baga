@@ -170,7 +170,7 @@ class SendReminders():
 
 # Главная исполняющая функция по классам MoveToEnd и SendReminders
 async def main_func(is_move=True):
-    now = datetime.now() + timedelta(minutes=10) # условная точка со сдвигом на 10 минут
+    now = datetime.now()
     event_user = await (
         EventUser.filter(event__payment_dedline__lte=now, event__event_datetime__gt=now).
         select_related('event', 'user').order_by('event_id')
@@ -183,6 +183,11 @@ async def main_func(is_move=True):
             for k in event_user_dct:
                 move_to_end = MoveToEnd(event_user=event_user_dct[k], now=now)
                 await move_to_end.execute()
+
+            # Если наступил час или 4 часа ночи, тогда обрабатываем статистику
+            # if now.hour
+            # await stat_execute_func()
+
         else:
             for k in event_user_dct:
                 send_rmnd = SendReminders(event_user=event_user_dct[k], now=now)
