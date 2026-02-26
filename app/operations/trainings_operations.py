@@ -322,7 +322,7 @@ class AddLike(ParentClassForTrainingOperations):
         '''
         data = await self._state.get_data()
         event_id, user_id = data['event_id'], data['user_id']
-        if self._handler.text.strip() == 'да':
+        if self._handler.text.strip().lower() == 'да':
             await db_rq_event_user.update_for_like(event_id, user_id, self._user_id)
             msg = 'Ваш голос зачтен 💚👍🏼'
         else:
