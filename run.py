@@ -89,9 +89,9 @@ async def startup(dispatcher: Dispatcher):
         await StatisticOps.stat_raiting_form()
 
         scheduler = AsyncIOScheduler()
-        scheduler.add_job(main_func, CronTrigger(hour='7-22', minute='*/2'),
+        scheduler.add_job(main_func, CronTrigger(minute='*/2'),
                           kwargs={'is_move': True}, id="move_to_end")
-        scheduler.add_job(main_func, CronTrigger(hour='7-22', minute='1-59/2'),
+        scheduler.add_job(main_func, CronTrigger(minute='1-59/2'),
                           kwargs={'is_move': False}, id="remind")
 
         scheduler.add_job(stat_execute_func, CronTrigger(hour=1, minute=00), id="stat_execute_1h")

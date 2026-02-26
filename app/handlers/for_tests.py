@@ -68,10 +68,10 @@ async def call_schedule(msg: Message):
 
 @test_router.message(Command('usr'))
 async def call_olg(msg: Message):
-    users = await User.all()
+    users = await User.filter(subscription__isnull=False).all()
     for user in users:
-        if user.subscription is not None:
-            user.big_subscription = str(user.subscription)
-            await user.save()
-    await msg.answer('подписки дублироаны другим полем')
+        user.big_subscription = user.subscription
+    await User.bulk_update(users, fields=['big_subscription'])
+    await msg.answer('Подписки дублированы другим полем')
+
 

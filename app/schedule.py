@@ -1,7 +1,7 @@
 import logging
 import asyncio
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 
 from app.database.models import Event, EventUser, Statistic, User
 
@@ -137,20 +137,21 @@ class SendReminders():
 
     async def execute(self):
         for obj in self._event_user[:self._participants_count]:
-            ind_dedline = obj.individual_dedline.replace(tzinfo=None)
-            last_payment_notify = obj.last_payment_notify
-            if last_payment_notify:
-                last_payment_notify = last_payment_notify.replace(tzinfo=None)
+            if obj.payment_confirmed is not True:
+                ind_dedline = obj.individual_dedline.replace(tzinfo=None)
+                last_payment_notify = obj.last_payment_notify
+                if last_payment_notify:
+                    last_payment_notify = last_payment_notify.replace(tzinfo=None)
 
-                # Прошло ли 5 часов с последнего уведомления
-                is_5h_from_las = last_payment_notify + timedelta(hours=5) <= self._now
-            else:
-                is_5h_from_las = True
+                    # Прошло ли 5 часов с последнего уведомления
+                    is_5h_from_las = last_payment_notify + timedelta(hours=5) <= self._now
+                else:
+                    is_5h_from_las = True
 
-            if ind_dedline <= self._before_1_hours and is_5h_from_las:
-                last_payment_notify = self._now
-                obj.last_payment_notify = last_payment_notify
-                self._update_list.append(obj)
+                if ind_dedline <= self._before_1_hours and is_5h_from_las:
+                    last_payment_notify = self._now
+                    obj.last_payment_notify = last_payment_notify
+                    self._update_list.append(obj)
         if len(self._update_list) > 0:
             await self._send_msg()
             await EventUser.bulk_update(self._update_list, ['last_payment_notify'])
@@ -171,27 +172,32 @@ class SendReminders():
 # Главная исполняющая функция по классам MoveToEnd и SendReminders
 async def main_func(is_move=True):
     now = datetime.now()
-    event_user = await (
-        EventUser.filter(event__payment_dedline__lte=now, event__event_datetime__gt=now).
-        select_related('event', 'user').order_by('event_id')
-    )
-    evs = set([item.event.id for item in event_user])
-    print(f'evs = {evs}')
-    if event_user:
-        event_user_dct = _dct_form(event_user)
-        if is_move:
-            for k in event_user_dct:
-                move_to_end = MoveToEnd(event_user=event_user_dct[k], now=now)
-                await move_to_end.execute()
 
-            # Если наступил час или 4 часа ночи, тогда обрабатываем статистику
-            # if now.hour
-            # await stat_execute_func()
+    # Устанавливаем двухминутные границы для 1 и 4 часов, внутри которых планировщик работать не должен
+    time_begin_1, time_end_1 = time(hour=0, minute=58), time(hour=1, minute=2)
+    time_begin_4, time_end_4 = time(hour=3, minute=58), time(hour=4, minute=2)
+    _condition_1 = now.time() >= time_begin_1 and now.time() <= time_end_1
+    _condition_4 = now.time() >= time_begin_4 and now.time() <= time_end_4
 
-        else:
-            for k in event_user_dct:
-                send_rmnd = SendReminders(event_user=event_user_dct[k], now=now)
-                await send_rmnd.execute()
+    if _condition_1 or _condition_4:
+        return
+    else:
+        event_user = await (
+                EventUser.filter(event__payment_dedline__lte=now, event__event_datetime__gt=now).
+                select_related('event', 'user').order_by('event_id')
+            )
+        evs = set([item.event.id for item in event_user])
+        print(f'evs = {evs}')
+        if event_user:
+            event_user_dct = _dct_form(event_user)
+            if is_move:
+                for k in event_user_dct:
+                    move_to_end = MoveToEnd(event_user=event_user_dct[k], now=now)
+                    await move_to_end.execute()
+            else:
+                for k in event_user_dct:
+                    send_rmnd = SendReminders(event_user=event_user_dct[k], now=now)
+                    await send_rmnd.execute()
 
 
 # БЛОК РАБОТЫ СО СТАТИСТИКОЙ

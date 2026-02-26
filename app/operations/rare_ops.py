@@ -108,7 +108,7 @@ class SubscriptionManage(ParentClassForTrainingOperations):
             else:  # если выбрал только одну подписку
                 idx = int(self._handler.text.replace(' ', '')) - 1
                 subscription = TRAINING_TYPES[idx]
-            await self._state.update_data(subscription=subscription)
+            await self._state.update_data(big_subscription=subscription)
         except IndexError:
             return 'Введен несуществующий порядковый номер. Операция отклонена 📛'
         except ValueError:
@@ -119,8 +119,8 @@ class SubscriptionManage(ParentClassForTrainingOperations):
         if not isinstance(_check, str):
             msg = 'Вы обновили подписку 🔔'
             data = await self._state.get_data()
-            await db_req.update_subscription(self._user_id, data['subscription'])
-            user_cache[self._handler.from_user.id].big_subscription = data['subscription']
+            await db_req.update_subscription(self._user_id, data['big_subscription'])
+            user_cache[self._handler.from_user.id].big_subscription = data['big_subscription']
         else:
             msg = _check
         await self._state.clear()

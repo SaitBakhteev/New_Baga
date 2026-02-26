@@ -60,7 +60,7 @@ async def update_user(**kwargs):
 
 # Обноаление подписки на уведомления
 async def update_subscription(user_id: int, subscription:str):
-    await User.filter(id=user_id).update(subscription=subscription)
+    await User.filter(id=user_id).update(big_subscription=subscription)
 
 
 # Обновление поля включения или отключения уведомлений
