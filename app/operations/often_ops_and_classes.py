@@ -295,11 +295,11 @@ class SendMessages():
         Метод предназначен для рассылки нескольким участникам при работе планировщика
         :param tg_ids: список tg_id получателдей уведомления
         '''
-        
-        # await logger.critical(f'\n\nto_several_receivers_txt: {text}')
         for tg_id in tg_ids:
-            # print(f'to_several_receivers: {tg_id}')
-            await bot.send_message(tg_id, text, parse_mode='HTML')
+            try:
+                await bot.send_message(tg_id, text, parse_mode='HTML')
+            except Exception as e:
+                await logger.error(f'Ошибка в to_several_receivers: {e}')
 
     @classmethod
     async def to_several_subscribers(cls, text, training_type):

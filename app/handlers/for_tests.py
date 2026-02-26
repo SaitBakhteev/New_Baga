@@ -61,9 +61,10 @@ async def call_schedule(msg: Message):
     await stat_execute_func()
 
 
-@test_router.message(Command('log'))
+@test_router.message(Command('rmd'))
 async def call_schedule(msg: Message):
-    await logger.critical('logs_tet')
+    await main_func(is_move=False)
+    await msg.answer('тест rmd норм')
 
 
 @test_router.message(Command('usr'))
