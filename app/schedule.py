@@ -266,7 +266,7 @@ class StatisticOps():
                 fullname = f'{obj.user.tg_name} @{obj.user.tg_username}'
                 question = obj.event.question
                 text=('<b>🩷 ИТОГИ ГОЛОСОВАНИЯ 🔥\n\n</b>'
-                      f'По результатам голосования ❓"<b><i>{question}</i></b>"❓ прошедшей тренировки '
+                      f'Лидером голосования ❓"<b><i>{question}</i></b>"❓ прошедшей тренировки '
                       f'(<i>{_datetime}</i>) по дисциплине <b><i>{training_type}</i></b> становится участник '
                       f'<b><i>{fullname}</i></b> 🥳. Ему присуждается звезда 🤩\n\n'
                       f'💥🔥ПОЗДРАВЛЯЕМ!!😍')
