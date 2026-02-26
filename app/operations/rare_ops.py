@@ -77,7 +77,7 @@ class SubscriptionManage(ParentClassForTrainingOperations):
     async def _begin(self):
         await self._state.clear()
         tg_id = self._handler.from_user.id
-        subscription = user_cache[tg_id].subscription
+        subscription = user_cache[tg_id].big_subscription
         if subscription is None:
             msg = 'В настоящий момент у Вас нет подписок на уведомления'
         else:
@@ -120,7 +120,7 @@ class SubscriptionManage(ParentClassForTrainingOperations):
             msg = 'Вы обновили подписку 🔔'
             data = await self._state.get_data()
             await db_req.update_subscription(self._user_id, data['subscription'])
-            user_cache[self._handler.from_user.id].subscription = data['subscription']
+            user_cache[self._handler.from_user.id].big_subscription = data['subscription']
         else:
             msg = _check
         await self._state.clear()

@@ -66,8 +66,11 @@ async def call_schedule(msg: Message):
     await logger.critical('logs_tet')
 
 
-@test_router.message(Command('olg'))
+@test_router.message(Command('usr'))
 async def call_olg(msg: Message):
-    _date = datetime.now() - timedelta(days=1)
-    await EventUser.create(event_id=244, user_id=173, individual_dedline=_date,
-                           payment_confirmed=True)
+    users = await User.all()
+    for user in users:
+        user.big_subscription = user.subscription
+        await user.save()
+    await msg.answer('подписки дублироаны другим полем')
+

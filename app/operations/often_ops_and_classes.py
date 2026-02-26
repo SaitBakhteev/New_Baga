@@ -305,8 +305,8 @@ class SendMessages():
     async def to_several_subscribers(cls, text, training_type):
         '''Метод рассылает уведомления тем, кто подписался на данный тип тренировки'''
         for k in user_cache:
-            if user_cache[k].subscription:
-                if training_type in user_cache[k].subscription:
+            if user_cache[k].big_subscription:
+                if training_type in user_cache[k].big_subscription:
                     tg_id = user_cache[k].tg_id
                     await bot.send_message(tg_id, text, parse_mode='HTML')
 

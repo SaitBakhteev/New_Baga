@@ -12,10 +12,13 @@ class User(Model):
     tg_name = fields.CharField(max_length=150, null=True)
     created_at = fields.DatetimeField(auto_now_add=True, timezone=timezone('Europe/Moscow'))
     admin_permissions = fields.BooleanField(default=False)
-    receive_notifications = fields.BooleanField(default=False)  # получать или не получать уведомления
 
     # На какие типы тренировок должны приходить уведомления
-    subscription = fields.TextField(null=True)
+    big_subscription = fields.TextField(null=True)
+
+    # Бесполезные поля, но из-за SQLite их уже не убрать в текущей БД
+    receive_notifications = fields.BooleanField(default=False)  # получать или не получать уведомления
+    subscription = fields.CharField(null=True, max_length=64)
 
     def __str__(self):
         return self.tg_username
