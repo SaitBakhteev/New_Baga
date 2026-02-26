@@ -264,10 +264,11 @@ class StatisticOps():
                 training_type = obj.event.training_type
                 _datetime = obj.event.event_datetime.strftime('%d.%m %H:%M')
                 fullname = f'{obj.user.tg_name} @{obj.user.tg_username}'
+                question = obj.event.question
                 text=('<b>🩷 ИТОГИ ГОЛОСОВАНИЯ 🔥\n\n</b>'
-                      f'Лидером голосования прошедшей тренировки (<i>{_datetime}</i>) по дисциплине '
-                      f'<b><i>{training_type}</i></b> становится <b><i>{fullname}</i></b> 🥳. Участнику '
-                      f'присуждается дополнительная звезда 🤩\n\n'
+                      f'По результатам голосования ❓"<b><i>{question}</i></b>"❓ прошедшей тренировки '
+                      f'(<i>{_datetime}</i>) по дисциплине <b><i>{training_type}</i></b> становится участник '
+                      f'<b><i>{fullname}</i></b> 🥳. Ему присуждается звезда 🤩\n\n'
                       f'💥🔥ПОЗДРАВЛЯЕМ!!😍')
                 asyncio.create_task(_delayed_notification(text=text, training_type=training_type))
 
