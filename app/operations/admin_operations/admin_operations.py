@@ -275,6 +275,14 @@ class DeleteEvent(ParentClassForTrainingOperations):
 class AdminEdit(ParentClassForTrainingOperations):
     _return_kb = interrupt_or_return_button(callback_data='adm_list') #  возврат к точке выбора действия по админам
 
+    async def dispatch(self):
+        if isinstance(self._handler, CallbackQuery):
+            if self._handler.data == 'admin_list':
+                await self._begin()
+            elif self._handler.data.startswith('edit_admin'):
+                await self._input_data()
+        elif await self._state.get_state() == st.EditAdminFSM.input_data:
+            await self._end()
 
     async def _begin(self):
         msg = f'<b><i>Текущий список админов:</i></b>\n\n'

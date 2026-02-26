@@ -256,21 +256,26 @@ class StatisticOps():
         if not all(item.likes==0 for item in self._event_user):  # если было голосование
             obj = max(self._event_user, key=lambda item: item.likes)
             max_count = len([item.likes for item in self._event_user if item.likes == obj.likes])
+            training_type = obj.event.training_type
+            _datetime = obj.event.event_datetime.strftime('%d.%m %H:%M')
+            question = obj.event.question
             if max_count == 1:  # звезду добавляем, если лидер голосования один единственный
                 self._stars.append(obj.user.id)
-                async def _delayed_notification(text: str, training_type: str):
-                    await asyncio.sleep(25000)
-                    await SendMessages.to_several_subscribers(text, training_type)
-                training_type = obj.event.training_type
-                _datetime = obj.event.event_datetime.strftime('%d.%m %H:%M')
                 fullname = f'{obj.user.tg_name} @{obj.user.tg_username}'
-                question = obj.event.question
-                text=('<b>🩷 ИТОГИ ГОЛОСОВАНИЯ 🔥\n\n</b>'
+                text=('<b>🩷 ИТОГИ ГОЛОСОВАНИЯ 🔥</b>\n\n'
                       f'Лидером голосования ❓"<b><i>{question}</i></b>"❓ прошедшей тренировки '
                       f'(<i>{_datetime}</i>) по дисциплине <b><i>{training_type}</i></b> становится участник '
                       f'<b><i>{fullname}</i></b> 🥳. Ему присуждается звезда 🤩\n\n'
                       f'💥🔥ПОЗДРАВЛЯЕМ!!😍')
-                asyncio.create_task(_delayed_notification(text=text, training_type=training_type))
+            else:
+                text=('<b>🩷 ИТОГИ ГОЛОСОВАНИЯ 🔥</b>\n\n'
+                      f'Голосование ❓"<b><i>{question}</i></b>"❓ прошедшей тренировки (<i>{_datetime}</i>) '
+                      f'по дисциплине <b><i>{training_type}</i></b> не выявила лидера 🤷🏼‍♂️')
+
+            async def _delayed_notification(text: str, training_type: str):
+                await asyncio.sleep(25000)
+                await SendMessages.to_several_subscribers(text, training_type)
+            asyncio.create_task(_delayed_notification(text=text, training_type=training_type))
 
     def _lists_formation(self):
         for item in self._event_user:
@@ -366,7 +371,6 @@ class StatisticOps():
             likes_rating.append(_obj)
 
         likes_rating = sorted(likes_rating, key=lambda x: x.likes, reverse=True)
-        likes_rating = likes_rating[:30]
 
     # Функция пересмотра статистики и формирования рейтинга
     @classmethod

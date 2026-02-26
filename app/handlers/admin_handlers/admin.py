@@ -25,13 +25,16 @@ async def call_input_template(call: CallbackQuery | Message, state: FSMContext, 
     await create_event.dispatch()
 
 
-@admin_router.callback_query(F.data.startswith('edit_event_is'))
-@admin_router.callback_query(F.data.startswith('finish_edit_event'))
-@admin_router.message(st.EditEventFSM.insert_template)
-async def call_edit_event(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
-    edit_event = EditEvent(call, state, is_admin)
-    await edit_event.dispatch()
+@admin_router.callback_query(F.data == 'admin_list')
+@admin_router.callback_query(F.data.startswith('edit_admin'))
+@admin_router.message(st.EditAdminFSM.input_data)
+async def call_edit_admin(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
+    edit_admin = AdminEdit(call, state, is_admin)
+    await edit_admin.dispatch()
 
+
+# АДМИНИСТРИРОВАНИЕ ТРЕНИРОВКИ
+# ============================
 
 @admin_router.callback_query(F.data.startswith('to_manage_of_event_is'))
 async def call_show_event_with_manage_interface(call: CallbackQuery, state: FSMContext):
@@ -45,13 +48,6 @@ async def call_show_event_with_manage_interface(call: CallbackQuery, state: FSMC
 async def call_payment_verify(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
     pay_vrfy = PaymentVerification(call, state, is_admin)
     await pay_vrfy.dispatch()
-
-
-@admin_router.callback_query(F.data.startswith('cancel_training'))
-@admin_router.message(st.DeleteEventFSM.confirm)
-async def call_cancel_training(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
-    del_event = DeleteEvent(call, state, is_admin)
-    await del_event.dispatch()
 
 
 @admin_router.callback_query(F.data.startswith('give_star_of_event_is'))
@@ -86,17 +82,16 @@ async def call_move_to_end(call: Message | CallbackQuery, state: FSMContext, is_
     await drop_user.dispatch()
 
 
-#
-# @admin_router.message(st.ChancelTraininigFSM.chancel_training)
-# async def chancel_training_state(message: Message, state: FSMContext, is_admin: bool):
-#     await state.set_state(None)
-#     if message.text.lower() == 'да':
-#         data = await state.get_data()
-#         event_id = data.get('event_id')
-#         await db_req.delete_event(event_id)
-#         await message.answer('Тренировка удалена.')
-#         await cmd_start(message, state, is_admin)
-#     else:
-#         await message.answer('Удаление тренировки отменено.')
-#         await state.set_state(None)
-#     asyncio.create_task(delete_bkg(message))
+@admin_router.callback_query(F.data.startswith('edit_event_is'))
+@admin_router.callback_query(F.data.startswith('finish_edit_event'))
+@admin_router.message(st.EditEventFSM.insert_template)
+async def call_edit_event(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
+    edit_event = EditEvent(call, state, is_admin)
+    await edit_event.dispatch()
+
+
+@admin_router.callback_query(F.data.startswith('cancel_training'))
+@admin_router.message(st.DeleteEventFSM.confirm)
+async def call_cancel_training(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
+    del_event = DeleteEvent(call, state, is_admin)
+    await del_event.dispatch()

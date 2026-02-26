@@ -101,8 +101,8 @@ class SubscriptionManage(ParentClassForTrainingOperations):
         try:
             if ',' in self._handler.text:  # если несколько подписок
                 text = self._handler.text.replace(' ', '').split(',')
-                _lst = list(map(lambda x:TRAINING_TYPES[int(x)-1], text))  # формируем список подписок
-                subscription = ','.join(map(str, _lst))
+                _set = set(map(lambda x:TRAINING_TYPES[int(x)-1], text))  # формируем список подписок
+                subscription = ','.join(map(str, _set))
             elif self._handler.text.replace(' ', '') == '0':  # если отказываемся от подписки
                 subscription = None
             else:  # если выбрал только одну подписку

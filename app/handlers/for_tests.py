@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 
 from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.loggers import event
 from aiogram.types import Message
 
 from ..database.models import *

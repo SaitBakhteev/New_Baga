@@ -107,23 +107,27 @@ class ShowStat():
         await call.message.answer(msg, parse_mode='HTML', reply_markup=cls._back_kb)
 
     @classmethod
+    async def _process_big_txt(cls, _count:int, rating_txt:str, call: CallbackQuery):
+        n = ceil(_count / 100)  # поярдковое число, округленное всегда вверх
+        for i in range(0, n):
+            if i == 0:
+                idx_end = rating_txt.find('<b>101.</b>')
+                msg = f'<b>ОБЩИЙ РЕЙТИНГ⚡️</b>\n\n{rating_txt[:idx_end]}'
+                await call.message.answer(msg, parse_mode='HTML')
+            else:
+                idx_begin = rating_txt.find(f'<b>{i * 100 + 1}.</b>')
+                idx_end = rating_txt.find(f'<b>{(i + 1) * 100 + 1}.</b>')
+                msg = f'{rating_txt[idx_begin:idx_end]}'
+                keyboard = cls._back_kb if i == n - 1 else None
+                await call.message.answer(msg, parse_mode='HTML', reply_markup=keyboard)
+
+    @classmethod
     async def _show_general_raiting(cls, call: CallbackQuery):
         general_raiting = StatisticOps.general_raiting_getter()
         rating_txt = cls._general_rating_formation(general_raiting, '⭐️', call)
-
         _count = rating_txt.count('\n') if rating_txt else 0
         if _count > 100:
-            n = ceil(_count / 100)  # поярдковое число, округленное всегда вверх
-            for i in range(0, n):
-                if i==0:
-                    idx_end = rating_txt.find('<b>101.</b>')
-                    msg = f'<b>ОБЩИЙ РЕЙТИНГ⚡️</b>\n\n{rating_txt[:idx_end]}'
-                    await call.message.answer(msg, parse_mode='HTML', reply_markup=cls._back_kb)
-                else:
-                    idx_begin = rating_txt.find(f'<b>{i*100+1}.</b>')
-                    idx_end = rating_txt.find(f'<b>{(i+1)*100+1}.</b>')
-                    msg = f'{rating_txt[idx_begin:idx_end]}'
-                    await call.message.answer(msg, parse_mode='HTML', reply_markup=cls._back_kb)
+            await cls._process_big_txt(_count, rating_txt, call)
         else:
             msg = f'<b>ОБЩИЙ РЕЙТИНГ⚡️</b>\n\n{rating_txt}' if rating_txt \
                 else 'В этом сезоне тренировки пока не проводились'
@@ -134,8 +138,12 @@ class ShowStat():
         try:
             likes_statistics = StatisticOps.likes_raiting_getter()
             rating_txt = cls._general_rating_formation(likes_statistics, '💚', call)
-            msg = f'🔥 <b>ОБЩИЙ РЕЙТИНГ СИМПАТИЙ</b> 💚\n\n{rating_txt}' if rating_txt \
-                else 'В этом сезоне голосования пока не проводились'
-            await call.message.answer(msg, parse_mode='HTML', reply_markup=cls._back_kb)
+            _count = rating_txt.count('\n') if rating_txt else 0
+            if _count > 100:
+                await cls._process_big_txt(_count, rating_txt, call)
+            else:
+                msg = f'🔥 <b>ОБЩИЙ РЕЙТИНГ СИМПАТИЙ</b> 💚\n\n{rating_txt}' if rating_txt \
+                    else 'В этом сезоне голосования пока не проводились'
+                await call.message.answer(msg, parse_mode='HTML', reply_markup=cls._back_kb)
         except Exception as e:
             await logger.error(f'Ошибка _show_likes_rating: {e}')
