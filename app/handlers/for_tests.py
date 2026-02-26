@@ -70,7 +70,8 @@ async def call_schedule(msg: Message):
 async def call_olg(msg: Message):
     users = await User.all()
     for user in users:
-        user.big_subscription = user.subscription
-        await user.save()
+        if user.subscription:
+            user.big_subscription = user.subscription
+            await user.save()
     await msg.answer('подписки дублироаны другим полем')
 
