@@ -274,22 +274,22 @@ class AddLike(ParentClassForTrainingOperations):
     # Проверяем доступность голосования для дальнейших действий
     async def _check_avlblty_on_begin(self, event_user: list):
         question, event_datetime = event_user[0]['event__question'], event_user[0]['event__event_datetime']
-        if not question:
+        prtcpts_count = event_user[0]['event__participants_count']
+        main_lst = event_user[:prtcpts_count]  # отсекаем резерв
+        await self._state.update_data(main_lst=main_lst)
+
+        i_am = next((item for item in main_lst if item['user__id']==self._user_id), None)
+        if not i_am:  # проверка, есть ли Вы в основном списке и не голосовали ли ранее
+            return 'Вы отсутствуете в основном списке 🙅🏻'
+        elif not question:
             return 'К сожалению админ не добавил вопрос для голосования 🥺'
         elif len(event_user) == 0:
             return 'Увы, но никого нет в списке на тренировку 🤷🏼‍♂️'
         elif datetime.now() + timedelta(hours=1) < event_datetime.replace(tzinfo=None):
             return 'Голосование открывается через час после начала тренировки ⏱️️'
-
-        # Конечная проверка, есть ли Вы в основном списке и не голосовали ли ранее
-        prtcpts_count = event_user[0]['event__participants_count']
-        main_lst = event_user[:prtcpts_count]  # отсекаем резерв
-        await self._state.update_data(main_lst=main_lst)
-        i_am = next((item for item in main_lst if item['user__id']==self._user_id), None)
-        if not i_am:
-            return 'Вы отсутствуете в основном списке 🙅🏻'
-        if i_am['me_liked']:
+        elif i_am['me_liked']:
             return 'Вы уже ранее отдали свой голос ☝🏼'
+
         return True
 
     async def _input(self):

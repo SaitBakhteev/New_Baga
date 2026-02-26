@@ -314,8 +314,6 @@ class StatisticOps():
         for k in stars_dict:
             stars_dict[k] = sorted(stars_dict[k], key=lambda item: item.star_count, reverse=True)
 
-        # Формирование ТОП-30 рейтинга лайков
-
     # Формирование общего рейтинга звезд
     @classmethod
     def _stars_gen_rating_form(cls, stars_dict:dict):
