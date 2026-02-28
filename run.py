@@ -19,7 +19,7 @@ from config.constants import *
 from config.db_config import TORTOISE_ORM
 from config.log_config import setup_base_logger, setup_logger
 
-from app.schedule import main_func, stat_execute_func, StatisticOps
+from app.schedule import main_func, stat_execute_func, StatisticOps, msg_send
 
 setup_base_logger()  # запускаем настройки для стандартного логера
 logging.getLogger('apscheduler').setLevel(logging.WARNING)
@@ -93,6 +93,7 @@ async def startup(dispatcher: Dispatcher):
                           kwargs={'is_move': True}, id="move_to_end")
         scheduler.add_job(main_func, CronTrigger(minute='1-59/2'),
                           kwargs={'is_move': False}, id="remind")
+        scheduler.add_job(msg_send, CronTrigger(hour=8, minute=0, second=25), id='msg_send')
 
         scheduler.add_job(stat_execute_func, CronTrigger(hour=1, minute=00), id="stat_execute_1h")
         scheduler.add_job(stat_execute_func, CronTrigger(hour=4, minute=00), id="stat_execute_4h")

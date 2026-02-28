@@ -47,6 +47,7 @@ async def sign_up_to_training(call: CallbackQuery, state: FSMContext, is_admin: 
         pass
     await show_formed_info_about_event(call, is_admin, event_id, user_id)
     await call.message.answer(text, parse_mode='HTML')
+    asyncio.create_task(delete_bkg(call))
 
 
 # Уведомить бот об оплате
@@ -267,9 +268,7 @@ class AddLike(ParentClassForTrainingOperations):
             await self._handler.message.answer(msg, parse_mode='HTML', reply_markup=cancel_kb(event_id))
         else:
             await self._state.clear()
-            await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
             await self._handler.message.answer(check, parse_mode='HTML')
-            asyncio.create_task(delete_bkg(self._handler))
 
     # Проверяем доступность голосования для дальнейших действий
     async def _check_avlblty_on_begin(self, event_user: list):
@@ -326,7 +325,7 @@ class AddLike(ParentClassForTrainingOperations):
             await db_rq_event_user.update_for_like(event_id, user_id, self._user_id)
             msg = 'Ваш голос зачтен 💚👍🏼'
         else:
-            msg = '🚫 Голосование отменено'
+            msg = '🚫 Боту отправлено невалидное сообщение, голосование отменено'
         await self._state.clear()
         await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
         await self._handler.answer(msg, parse_mode='HTML')

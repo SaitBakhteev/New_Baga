@@ -16,7 +16,7 @@ from config.constants import *
 from config.db_config import TORTOISE_ORM
 from config.log_config import setup_base_logger, setup_logger
 
-from app.schedule import main_func, stat_execute_func, StatisticOps
+from app.schedule import main_func, stat_execute_func, StatisticOps, msg_send
 
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
@@ -66,13 +66,14 @@ async def startup(dispatcher: Dispatcher):
         await StatisticOps.stat_raiting_form()
 
         scheduler = AsyncIOScheduler()
-        # scheduler.add_job(main_func, CronTrigger(minute='*/2'),
-        #                   kwargs={'is_move': True}, id="move_to_end")
-        # scheduler.add_job(main_func, CronTrigger(minute='1-59/2'),
-        #                   kwargs={'is_move': False}, id="remind")
+        scheduler.add_job(main_func, CronTrigger(minute='*/2'),
+                          kwargs={'is_move': True}, id="move_to_end")
+        scheduler.add_job(main_func, CronTrigger(minute='1-59/2'),
+                          kwargs={'is_move': False}, id="remind")
+        scheduler.add_job(msg_send, CronTrigger(hour=18, minute=19, second=0), id='msg_send')
 
-        scheduler.add_job(stat_execute_func, CronTrigger(hour=1, minute=0), id="stat_execute_1h")
-        scheduler.add_job(stat_execute_func, CronTrigger(hour=4, minute=0), id="stat_execute_4h")
+        scheduler.add_job(stat_execute_func, CronTrigger(hour=1, minute=00), id="stat_execute_1h")
+        scheduler.add_job(stat_execute_func, CronTrigger(hour=4, minute=00), id="stat_execute_4h")
 
         scheduler.start()
         stream_logger.info("Starting Bot...")

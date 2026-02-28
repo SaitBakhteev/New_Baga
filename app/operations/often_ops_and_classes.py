@@ -120,6 +120,7 @@ async def cmd_start(call_mess: CallbackQuery | Message, state: FSMContext, is_ad
 async def show_training_types(message: Message, state: FSMContext):
     await state.clear()
     await message.answer('Выберите тип тренировки', reply_markup=choose_training_type_kb())
+    asyncio.create_task(delete_bkg(message))
 
 
 async def show_events(call: CallbackQuery, state: FSMContext, is_admin: bool):
@@ -140,6 +141,7 @@ async def show_events(call: CallbackQuery, state: FSMContext, is_admin: bool):
         keyboard = show_events_kb(event_user, *events)
         await call.message.answer(message_text, reply_markup=keyboard, parse_mode='HTML')
         await state.update_data(events=events)
+    asyncio.create_task(delete_bkg(call))
 
 
 def _tags_formation(tag:str, count:int) -> str:
@@ -210,7 +212,7 @@ def show_text_about_event(event: dict, event_user: list, user_id: int) -> str:
                 stars_count = star_tpl.count(item['user__id'])
                 star_txt = _tags_formation("⭐️", stars_count)
 
-            likes_txt = _tags_formation('🩷', item['likes'])
+            likes_txt = _tags_formation('💚', item['likes'])
 
             # Чтобы пользователь видел себя выделенным шрифтом в списке на тренировку
             fullname = f'<b><i>{fullname}</i></b>' if item['user__id'] == user_id else fullname
@@ -305,10 +307,13 @@ class SendMessages():
     async def to_several_subscribers(cls, text, training_type):
         '''Метод рассылает уведомления тем, кто подписался на данный тип тренировки'''
         for k in user_cache:
-            if user_cache[k].big_subscription:
-                if training_type in user_cache[k].big_subscription:
-                    tg_id = user_cache[k].tg_id
-                    await bot.send_message(tg_id, text, parse_mode='HTML')
+            try:
+                if user_cache[k].big_subscription:
+                    if training_type in user_cache[k].big_subscription:
+                        tg_id = user_cache[k].tg_id
+                        await bot.send_message(tg_id, text, parse_mode='HTML')
+            except Exception as e:
+                await logger.error(f'Ошибка to_several_subscribers: {e}')
 
     @classmethod
     async def to_admins(cls, text, now, event_datetime):

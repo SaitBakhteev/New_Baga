@@ -3,7 +3,7 @@ import asyncio
 
 from datetime import datetime, timedelta, time
 
-from app.database.models import Event, EventUser, Statistic, User
+from app.database.models import Event, EventUser, Statistic, Voting
 
 from config.log_config import setup_logger
 from config.constants import SEASON_INDEX
@@ -224,7 +224,7 @@ class StatisticOps():
 
     async def execute(self):
         await self._load_stat()
-        self._extract_stars()
+        await self._extract_stars()
         self._lists_formation()
         if self._update_list:
             await Statistic.bulk_update(self._update_list, ['modifed_at', 'star_count', 'visit_count', 'likes'])
@@ -240,42 +240,42 @@ class StatisticOps():
         ).prefetch_related('user').all()
         self._stat = stat
 
-    def _extract_stars(self):
+    async def _extract_stars(self):
         '''Функция извлекает звезд и лидера голосования. По голосованию обработка идет по следующему алгоритму:
             - находим по функции max объект с максимальным количеством лайков
             - формируем список лайков, соответствующих максимуму
             - смотрим количество записей этого списка
             - если максимум один, то тогда и присуждаем +1 звезду
          '''
-        if self._event_user[0].event.stars != '-':
-            _stars = self._event_user[0].event.stars.replace(' ', '').split(',')
-            stars_of_event = list(map(lambda x: int(x), _stars))
-            self._stars = stars_of_event
-        else:
-            self._stars = []
-        if not all(item.likes==0 for item in self._event_user):  # если было голосование
-            obj = max(self._event_user, key=lambda item: item.likes)
-            max_count = len([item.likes for item in self._event_user if item.likes == obj.likes])
-            training_type = obj.event.training_type
-            _datetime = obj.event.event_datetime.strftime('%d.%m %H:%M')
-            question = obj.event.question
-            if max_count == 1:  # звезду добавляем, если лидер голосования один единственный
-                self._stars.append(obj.user.id)
-                fullname = f'{obj.user.tg_name} @{obj.user.tg_username}'
-                text=('<b>🩷 ИТОГИ ГОЛОСОВАНИЯ 🔥</b>\n\n'
-                      f'Лидером голосования ❓"<b><i>{question}</i></b>"❓ прошедшей тренировки '
-                      f'(<i>{_datetime}</i>) по дисциплине <b><i>{training_type}</i></b> становится участник '
-                      f'<b><i>{fullname}</i></b> 🥳. Ему присуждается звезда 🤩\n\n'
-                      f'💥🔥ПОЗДРАВЛЯЕМ!!😍')
+        try:
+            print(f'stars = {self._event_user[0].event.stars}')
+            if self._event_user[0].event.stars != '-':
+                _stars = self._event_user[0].event.stars.replace(' ', '').split(',')
+                stars_of_event = list(map(lambda x: int(x), _stars))
+                self._stars = stars_of_event
             else:
-                text=('<b>🩷 ИТОГИ ГОЛОСОВАНИЯ 🔥</b>\n\n'
-                      f'Голосование ❓"<b><i>{question}</i></b>"❓ прошедшей тренировки (<i>{_datetime}</i>) '
-                      f'по дисциплине <b><i>{training_type}</i></b> не выявила лидера 🤷🏼‍♂️')
-
-            async def _delayed_notification(text: str, training_type: str):
-                await asyncio.sleep(25000)
-                await SendMessages.to_several_subscribers(text, training_type)
-            asyncio.create_task(_delayed_notification(text=text, training_type=training_type))
+                self._stars = []
+            if not all(item.likes==0 for item in self._event_user):  # если было голосование
+                obj = max(self._event_user, key=lambda item: item.likes)
+                max_count = len([item.likes for item in self._event_user if item.likes == obj.likes])
+                training_type = obj.event.training_type
+                _datetime = obj.event.event_datetime.strftime('%d.%m %H:%M')
+                question = obj.event.question
+                if max_count == 1:  # звезду добавляем, если лидер голосования один единственный
+                    self._stars.append(obj.user.id)
+                    fullname = f'{obj.user.tg_name} @{obj.user.tg_username}'
+                    text=('<b>🩷 ИТОГИ ГОЛОСОВАНИЯ 🔥</b>\n\n'
+                          f'Лидером голосования ❓"<b><i>{question}</i></b>"❓ прошедшей тренировки '
+                          f'(<i>{_datetime}</i>) по дисциплине <b><i>{training_type}</i></b> становится участник '
+                          f'<b><i>{fullname}</i></b> 🥳. Ему присуждается звезда 🤩\n\n'
+                          f'💥🔥ПОЗДРАВЛЯЕМ!!😍')
+                else:
+                    text=('<b>🩷 ИТОГИ ГОЛОСОВАНИЯ 🔥</b>\n\n'
+                          f'Голосование ❓"<b><i>{question}</i></b>"❓ прошедшей тренировки (<i>{_datetime}</i>) '
+                          f'по дисциплине <b><i>{training_type}</i></b> не выявила лидера 🤷🏼‍♂️')
+                await Voting.create(question=text, training_type=training_type)
+        except Exception as e:
+            await logger.error(f'Error on _extract_stars: {e}')
 
     def _lists_formation(self):
         for item in self._event_user:
@@ -408,7 +408,7 @@ def _dct_form(event_user: list) -> dict:
     return event_user_dct
 
 
-# главная исполняющая функция по работе со статистикой
+# Главная исполняющая функция по работе со статистикой
 async def stat_execute_func():
     now = datetime.now()
     event_user = await  EventUser.filter(
@@ -423,3 +423,12 @@ async def stat_execute_func():
             await stat_ops.execute()
     await StatisticOps.delete_events(now)
     await StatisticOps.stat_raiting_form()
+
+
+# Функция для рассылки уведомлений подписчикам
+async def msg_send():
+    msg = await Voting.all()
+    if len(msg) > 0:
+        for item in msg:
+            await SendMessages.to_several_subscribers(item.question, item.training_type)
+    await Voting.all().delete()

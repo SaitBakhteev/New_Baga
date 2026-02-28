@@ -5,7 +5,7 @@ from aiogram.filters import Command
 from aiogram.types import Message
 
 from ..database.models import *
-from ..schedule import main_func, stat_execute_func
+from ..schedule import main_func, stat_execute_func, msg_send
 from config.log_config import setup_logger
 from config.constants import user_cache
 
@@ -75,3 +75,6 @@ async def call_olg(msg: Message):
     await msg.answer('Подписки дублированы другим полем')
 
 
+@test_router.message(Command('msg'))
+async def call_olg(msg: Message):
+    await msg_send()
