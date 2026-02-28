@@ -33,6 +33,15 @@ async def call_edit_admin(call: CallbackQuery | Message, state: FSMContext, is_a
     await edit_admin.dispatch()
 
 
+@admin_router.callback_query(F.data == 'stat_edit_begin')
+@admin_router.callback_query(F.data.startswith('stat_edit'))
+@admin_router.message(st.EditStatFSM.process)
+@admin_router.message(st.EditStatFSM.confirm)
+async def call_stat_edit(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
+    stat_edit = StatEdit(call, state, is_admin)
+    await stat_edit.dispatch()
+
+
 # АДМИНИСТРИРОВАНИЕ ТРЕНИРОВКИ
 # ============================
 

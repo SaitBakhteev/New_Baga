@@ -117,3 +117,6 @@ class DropUserFSM(StatesGroup):
     finish = State()
 
 
+class EditStatFSM(StatesGroup):
+    process = State()
+    confirm = State()

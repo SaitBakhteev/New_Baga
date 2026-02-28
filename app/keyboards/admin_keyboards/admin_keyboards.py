@@ -32,7 +32,7 @@ def admin_panel_kb():
     keyboard.add(InlineKeyboardButton(text='💠 Создать тренировку 🗓', callback_data='add_event'))
     keyboard.add(InlineKeyboardButton(text='💠 Удалить шаблон 🗑', callback_data='delete_template'))
     keyboard.add(InlineKeyboardButton(text='💠 Управление списком админов 😎', callback_data='admin_list'))
-    keyboard.add(InlineKeyboardButton(text='💠 Иструкция для админа 📕', callback_data='admin_tutorial'))
+    keyboard.add(InlineKeyboardButton(text='💠 Коррекция статистики 📊', callback_data='stat_edit_begin'))
     keyboard.add(RETURN_TO_START_BUTTON)
     keyboard.adjust(1)
     return keyboard.as_markup()
@@ -178,3 +178,14 @@ def edit_admins() -> InlineKeyboardMarkup:
     keyboard.add(_RETURN_TO_ADMIN_PANEL_BUTTON)
     keyboard.adjust(1)
     return keyboard.as_markup()
+
+
+# Панель кнопок редактирования статистики
+def stat_edit_kb() -> InlineKeyboardMarkup:
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text='Редактирование посещений 🏃‍♂️', callback_data='stat_edit:visit')],
+        [InlineKeyboardButton(text='Редактирование звезд ⭐️', callback_data='stat_edit:star')],
+        [InlineKeyboardButton(text='Редактирование симпатий 💚', callback_data='stat_edit:like')],
+        [_RETURN_TO_ADMIN_PANEL_BUTTON]
+    ])
+    return keyboard

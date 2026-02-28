@@ -1,10 +1,12 @@
-import uuid
-from uuid import uuid1
+from typing import Optional
+
 from config.log_config import setup_logger
+from config.constants import SEASON_INDEX, season_index
 
 from tortoise.exceptions import DoesNotExist
+from tortoise.expressions import F
 
-from app.database.models import User, Event, EventUser, Template
+from app.database.models import User, Event, Template, Statistic
 from datetime import datetime, timedelta
 
 logger = setup_logger(__name__)
@@ -190,21 +192,19 @@ async def delete_template(template_id: int):
         return 'Error'
 
 
-''' ДЛЯ ТЕСТИРОВАНИЯ '''
+# БЛОК ЗАПРОСОВ ПО СТАТИСТИКЕ
+# ==========================
 
-# # Обновление поля created_at после перехода из резерва
-# async def update_event_user_after_transfer(event_id, user_id, now):
-#     await EventUser.filter(user_id=user_id, event_id=event_id).update(created_at=now)
-async def test():
-    print('test')
-    # for i in  range(52, 59):
-    #     await EventUser.create(event_id=14, user_id=i)
-    # for i in range(50):
-    #     posfix = str(uuid1())
-    #     posfix = posfix[:posfix.find('-')]
-    #     await User.create(
-    #         tg_id=-100-i, tg_username=f'username_{posfix}',
-    #         tg_name=f'test_name_{posfix[::-1]}'
-    #     )
-    # #
-    # #
+async def get_stat(user_id: int, training_type) -> Optional[Statistic]:
+    stat = await Statistic.filter(
+        user_id=user_id, training_type=training_type, season_index=SEASON_INDEX[0]
+    ).get_or_none()
+    return stat if stat else None
+
+
+# Админское редактироване статистики
+async def create_stat(user_id: int, training_type: str):
+    await Statistic.create(user_id=user_id, training_type=training_type,
+                           visit_count=1, star_count=0, likes=0,
+                           season_index=SEASON_INDEX[0])
+

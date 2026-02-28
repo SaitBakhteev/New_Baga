@@ -14,6 +14,7 @@ from config.constants import *
 from ..often_ops_and_classes import delete_bkg, ParentClassForTrainingOperations, cmd_start, SendMessages
 from ...keyboards.admin_keyboards.admin_keyboards import *
 from .manage_operations import show_event_with_manage_interface
+from ..stat_ops import StatisticOps
 
 
 async def show_admin_panel(call: Message | CallbackQuery, state: FSMContext):
@@ -273,7 +274,7 @@ class DeleteEvent(ParentClassForTrainingOperations):
 
 # Добавление или удаление админов
 class AdminEdit(ParentClassForTrainingOperations):
-    _return_kb = interrupt_or_return_button(callback_data='adm_list') #  возврат к точке выбора действия по админам
+    _return_kb = interrupt_or_return_button(callback_data='admin_list') #  возврат к точке выбора действия по админам
 
     async def dispatch(self):
         if isinstance(self._handler, CallbackQuery):
@@ -285,12 +286,16 @@ class AdminEdit(ParentClassForTrainingOperations):
             await self._end()
 
     async def _begin(self):
+        await self._state.clear()
         msg = f'<b><i>Текущий список админов:</i></b>\n\n'
-        for k in user_cache:
+        i = 0
+        for k in (user_cache):
             if user_cache[k].admin_permissions:
-                msg += f'{user_cache[k].tg_name} {user_cache[k].tg_username}\n'
+                i += 1
+                msg += f'<b>{i}.</b> {user_cache[k].tg_name} @{user_cache[k].tg_username}\n'
         msg += '\nВыберите операцию'
-        await self._handler.message.answer(msg, parse_mode='HTML',reply_markup=edit_admins())
+        _handler = self._handler.message if isinstance(self._handler, CallbackQuery) else self._handler
+        await _handler.answer(msg, parse_mode='HTML',reply_markup=edit_admins())
         asyncio.create_task(delete_bkg(self._handler))
 
     async def _input_data(self):
@@ -304,7 +309,7 @@ class AdminEdit(ParentClassForTrainingOperations):
     async def _end(self):
         data = await self._state.get_data()
         tg_username = self._handler.text.replace('@', '').replace(' ', '')
-        tg_id = next((k for k in user_cache if user_cache[k]._tg_username == tg_username), None)
+        tg_id = next((k for k in user_cache if user_cache[k].tg_username == tg_username), None)
         if tg_id:
             admin_permissions = True if data['call_data'] == 'add' else False
             await db_rq.update_admin(user_cache[tg_id].id, admin_permissions)
@@ -317,3 +322,147 @@ class AdminEdit(ParentClassForTrainingOperations):
         await self._handler.answer(msg)
         await self._state.clear()
         await self._begin()
+
+
+# Редактирование статистики
+class StatEdit(ParentClassForTrainingOperations):
+    _cancel_kb = interrupt_or_return_button(callback_data='stat_edit_begin')
+
+    async def dispatch(self):
+        if isinstance(self._handler, CallbackQuery):
+            if self._handler.data == 'stat_edit_begin':
+                await self._begin()
+            elif self._handler.data.startswith('stat_edit'):
+                await self._input_data()
+        elif await self._state.get_state() == st.EditStatFSM.process:
+            await self._process()
+        elif await self._state.get_state() == st.EditStatFSM.confirm:
+            await self._confirm()
+
+    async def _begin(self):
+        await self._state.clear()
+        msg = 'Выберите тип редактирования'
+        _handler = self._handler.message if isinstance(self._handler, CallbackQuery) else self._handler
+        await _handler.answer(msg, parse_mode='HTML', reply_markup=stat_edit_kb())
+        asyncio.create_task(delete_bkg(self._handler))
+
+    async def _edit_type_txt(self, edit_type:str) -> str:
+        txt = 'Вы выбрали редактирование '
+        match edit_type:
+            case 'visit': edit_type_txt = '<u>визитов 🏃‍♂️</u>'
+            case 'star':  edit_type_txt = '<u>звезд ⭐️</u>'
+            case 'like':  edit_type_txt = '<u>симпатий 💚</u>'
+        await self._state.update_data(edit_type_txt=edit_type_txt)
+        txt += edit_type_txt
+        txt += 'Для редактирования доступны следующие типы тренировок:\n'
+        for i, item in enumerate(TRAINING_TYPES):
+            txt += f'<b>{i+1}.</b> {item}\n'
+        txt += ('\nВ сообщении боту необходимо <u>через запятую</u> записать данные в следующем порядке:\n'
+                '1. Никнейм\n'
+                '2. Порядковый номер дисциплины\n'
+                '3. Соответствующий знак операции:\n'
+                f'  🔸 <b>+</b> если хотите увеличить число {edit_type_txt}\n'
+                f'  🔸 <b>-</b> если хотите уменьшить число {edit_type_txt}\n\n'
+                f'<b><i>Пример сообщения боту</i></b>: Alex_Guta, 4, +\nЭто значит, что для пользователя с никнеймом '
+                f'@Alex_Guta увеличится на единицу число {edit_type_txt} по дисциплине <b><i>{TRAINING_TYPES[3]}</i></b>')
+        return txt
+
+    async def _input_data(self):
+        edit_type = self._handler.data.split(':')[1]
+        await self._state.update_data(edit_type=edit_type)
+        msg = await self._edit_type_txt(edit_type)
+        await self._handler.message.answer(msg, parse_mode='HTML', reply_markup=self._cancel_kb)
+        await self._state.set_state(st.EditStatFSM.process)
+        asyncio.create_task(delete_bkg(self._handler))
+
+    async def _get_current_stat(self, user_id: int, lst: list) -> str:
+        try:
+            if lst[2] == '+' or lst[2] == '-':
+                training_type = TRAINING_TYPES[int(lst[1]) - 1]
+                user_stat = await db_rq.get_stat(user_id=user_id, training_type=training_type)
+                if user_stat:
+                    txt = (f'Статистика участника <b><i>@{lst[0]}</i></b> по дисциплине <b><i>{training_type}</i></b>:\n'
+                           f'🔸 число визитов: <i>{user_stat.visit_count} 🏃‍♂️</i>\n'
+                           f'🔸 число звезд: <i>{user_stat.star_count} ⭐️</i>\n'
+                           f'🔸 число симпатий: <i>{user_stat.likes} 💚</i>\n\n')
+
+                    # Достаточно взять в память текущую запись
+                    await self._state.update_data(user_stat=user_stat, action_type=lst[2])
+                else:
+                    txt = (f'Для пользователя с никнеймом @{lst[0]} по дисциплине <b>{training_type}</b> '
+                           f'отсутствует запись. Это значит, что подтверждение операции <u>ТОЛЬКО ЛИШЬ</u> создаст '
+                           f'новую запись с автоматическим присвоением числа визитов, равное 1 ❗️ '
+                           f'Поэтому для редактирования Вам нужно будет <b>вновь вернуться сюда</b>\n')
+
+                    # А вот если новая запись, то тогда записываем во временную память другие данные
+                    await self._state.update_data(user_id=user_id, training_type=training_type)
+                return txt
+            else:
+                raise ValueError
+        except (ValueError, IndexError):
+            raise
+
+    async def _process(self):
+        try:
+            lst = self._handler.text.replace(' ', '').replace('@', '').split(',')
+            user_id = next((user_cache[k].id for k in user_cache if user_cache[k].tg_username == lst[0]), None)
+            if user_id is None:
+                msg = 'Такого пользователя нет в боте 🤷🏼‍♂️.'
+            else:
+                msg = await self._get_current_stat(user_id, lst)
+                await self._state.set_state(st.EditStatFSM.confirm)
+                action_txt = 'увеличить' if lst[2] == '+' else 'уменьшить'
+                data = await self._state.get_data()
+                if 'user_stat' in data:
+                    msg += (f'Вы уверены, что хотите <b><i>{action_txt}</i></b> число {data["edit_type_txt"]} '
+                            f'по вышеприведенной статистике?\n')
+                msg += f' Для подтверждения действия отправьте в сообщении <b><i>да</i></b>'
+                await self._handler.answer(msg, parse_mode='HTML', reply_markup=self._cancel_kb)
+                return
+        except (ValueError, IndexError) as e:
+            msg = '🚫 Нарушен формат сообщения.'
+            await logger.error(f'Ошибка в StatEdit._process:{e}')
+        except Exception as e:
+            msg = '📛 Неизвестная ошибка.'
+            await logger.error(f'Ошибка в StatEdit._process:{e}')
+        await self._begin()
+        msg += ' Операция отклонена.'
+        await self._handler.answer(msg, parse_mode='HTML')
+
+    # Метод, определяющий какие действия нужно совершить с БД
+    async def _save_process(self, data: dict):
+        if 'user_stat' in data:
+            edit_type, action_type, user_stat = data['edit_type'], data['action_type'], data['user_stat']
+            if edit_type == 'visit':
+                if action_type == '+':
+                    user_stat.visit_count += 1
+                else:
+                    if user_stat.visit_count >= 2:
+                        user_stat.visit_count -= 1
+            elif edit_type ==  'star':
+                if action_type == '+':
+                    user_stat.star_count += 1
+                else:
+                    if user_stat.star_count >= 1:
+                        user_stat.star_count -= 1
+            elif edit_type ==  'like':
+                if action_type == '+':
+                    user_stat.likes += 1
+                else:
+                    if user_stat.likes >= 1:
+                        user_stat.likes -= 1
+
+            await user_stat.save()
+        else:
+            await db_rq.create_stat(data['user_id'], data['training_type'])
+
+    async def _confirm(self):
+        if self._handler.text.strip().lower() == 'да':
+            data = await self._state.get_data()
+            await self._save_process(data)
+            await StatisticOps.stat_raiting_form()
+            msg = 'Редактирование статистики прошло успешно 👍🏼'
+        else:
+            msg = 'Отправлено невалидное сообщение. Операция отменена 🚫'
+        await self._begin()
+        await self._handler.answer(msg, parse_mode='HTML')
