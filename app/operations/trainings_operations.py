@@ -223,16 +223,20 @@ class AddFriend(ParentClassForTrainingOperations):
                 event = data['event']
                 training_type, event_text = event['training_type'], event['event_text']
                 payment_dedline, event_datetime, now = event['payment_dedline'], event['event_datetime'], datetime.now()
-                dedline_info = set_individual_dedline(payment_dedline, event_datetime, now)
+                if self._is_admin and now > event_datetime.replace(tzinfo=None):  # если админ уже постфактум добавляет
+                    data['individual_dedline'] = event_datetime.replace(tzinfo=None)
+                else:
+                    dedline_info = set_individual_dedline(payment_dedline, event_datetime, now)
+                    data['individual_dedline'] = dedline_info['individual_dedline']
                 data['created_at'] = data['modified_at'] = now
-                data['individual_dedline'] = dedline_info['individual_dedline']
+
                 await db_rq_event_user.create_event_user(data, friend_id=friend_id,
                                                          i_am_friend=self._handler.from_user.username)
-                text = (f'️⚡️ ️⚡️ <b>ВАЖНАЯ ИНФОРМАЦИЯ</b>\n'
-                        f'Вас записали на следующую тренировку\n'
-                        f'<b>Тип тренировки</b>:{training_type}\n{event_text}\n\n')
-                text += dedline_info['text']
-                if datetime.now() < event['event_datetime'].replace(tzinfo=None):
+                if now < event_datetime.replace(tzinfo=None):
+                    text = (f'️⚡️ ️⚡️ <b>ВАЖНАЯ ИНФОРМАЦИЯ</b>\n'
+                            f'Вас записали на следующую тренировку\n'
+                            f'<b>Тип тренировки</b>:{training_type}\n{event_text}\n\n')
+                    text += dedline_info['text']
                     asyncio.create_task(SendMessages.to_one_receiver(text=text, tg_id=friend_tg_id))
                 text = f'Вы успешно записали друга с никнеймом <i>{friend}</i> на тренировку 🖍'
                 await self._handler.message.answer(text, parse_mode='HTML')

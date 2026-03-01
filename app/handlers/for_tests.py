@@ -78,3 +78,4 @@ async def call_olg(msg: Message):
 @test_router.message(Command('msg'))
 async def call_olg(msg: Message):
     await msg_send()
+    await msg.answer('норм msg')

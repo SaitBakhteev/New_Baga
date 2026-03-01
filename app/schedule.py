@@ -432,3 +432,9 @@ async def msg_send():
         for item in msg:
             await SendMessages.to_several_subscribers(item.question, item.training_type)
     await Voting.all().delete()
+
+    events = await Event.filter(event_datetime__lt=datetime.now(), question__isnull=False).all()
+    for event in events:
+        text = (f'Продолжается голосование 💚 по следующей тренировке по дисциплине <b>{event.training_type}</b>:\n\n'
+                f'{event.event_text}')
+        await SendMessages.to_several_subscribers(text, event.training_type)
