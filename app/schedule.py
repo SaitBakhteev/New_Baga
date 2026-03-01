@@ -435,6 +435,12 @@ async def msg_send():
 
     events = await Event.filter(event_datetime__lt=datetime.now(), question__isnull=False).all()
     for event in events:
-        text = (f'Продолжается голосование 💚 по следующей тренировке по дисциплине <b>{event.training_type}</b>:\n\n'
-                f'{event.event_text}')
+        begin_idx, end_idx = event.event_text.find('<b>Адрес зала</b>'), event.event_text.find('<b>Дата тренировки</b>')
+        address = event.event_text[begin_idx:end_idx]
+        event_dt_txt = event.event_datetime.strftime('%d.%m %H:%M')
+        text = (f'<b>ПРОДОЛЖАЕТСЯ ГОЛОСОВАНИЕ 💚</b>\n\n'
+                f'<b>Дисциплина</b>: {event.training_type}:\n'
+                f'<b>Дата и время прошедшей тренировки</b>: {event_dt_txt}\n'
+                f'{address}\n'
+                f'<b>Вопрос голосования ❓</b>: <i>{event.question}</i>')
         await SendMessages.to_several_subscribers(text, event.training_type)
