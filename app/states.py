@@ -120,3 +120,7 @@ class DropUserFSM(StatesGroup):
 class EditStatFSM(StatesGroup):
     process = State()
     confirm = State()
+
+
+class SetFinishEvent(StatesGroup):
+    confirm = State()

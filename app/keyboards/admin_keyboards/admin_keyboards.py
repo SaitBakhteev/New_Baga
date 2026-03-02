@@ -115,7 +115,7 @@ finish_create_event_kb = InlineKeyboardMarkup(inline_keyboard=[
 # АДМИНИСТРИРОВАНИЕ ТРЕНИРОВКИ
 # ==============================
 
-def admin_train_manag_kb(event_id) -> InlineKeyboardMarkup:
+def admin_train_manag_kb(event_id, is_finished) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardBuilder()
     keyboard.add(InlineKeyboardButton(text='💠 Отмена верификации 🔘',
                                       callback_data=f'cancel_verify_payment_of_event_is:{event_id}'))
@@ -131,8 +131,16 @@ def admin_train_manag_kb(event_id) -> InlineKeyboardMarkup:
     keyboard.add(InlineKeyboardButton(text='💠 Удалить участника 🚷',
                                       callback_data=f'drop_user_from_event_is:{event_id}'))
     keyboard.add(InlineKeyboardButton(text='💠 Редактировать тренировку ✏️', callback_data=f'edit_event_is:{event_id}'))
+    if is_finished:
+        keyboard.add(InlineKeyboardButton(text='💠 ▶️ ВОЗОБНОВИТЬ ПОДСЧЕТ ИТОГОВ ⏯️',
+                                          callback_data=f'resume_training_is:{event_id}'))
+    else:
+        keyboard.add(InlineKeyboardButton(text='💠 ♨️ ЗАВЕРШИТЬ ИТОГИ ТРЕНИРОВКИ ⚡️',
+                                          callback_data=f'finish_training_is:{event_id}'))
+
     keyboard.add(InlineKeyboardButton(text='💠 🚫 ОТМЕНИТЬ ТРЕНИРОВКУ 💥',
                                       callback_data=f'cancel_training:{event_id}'))
+
     keyboard.add(interrupt_or_return_button(text='↩️ Назад',
                                             callback_data= f'to_event_is:{event_id}',
                                             this_markup=False))

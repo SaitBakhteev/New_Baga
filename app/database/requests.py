@@ -133,7 +133,7 @@ async def get_event(id=None, for_telegramm=False,
         elif id:
             event = await (Event.filter(id=id).values(
                 'id', 'payment_dedline', 'event_datetime', 'event_text', 'participants_count', 'stars',
-                'training_type','question'
+                'training_type','question', 'is_finished'
             )
             )
             return event[0]
@@ -167,6 +167,14 @@ async def update_event(event_id: int, data, **kwargs):
 
 async def update_for_add_question_to_event(event_id:int, question):
     await Event.filter(id=event_id).update(question=question)
+
+
+# Запрос для обновления статуса заершить/продолжить подсчет итогов по тренировке
+async def update_finish_status(call_data: str, event_id: int):
+    if call_data == 'finish_training_is':
+        await Event.filter(id=event_id).update(is_finished=True)
+    elif call_data == 'resume_training_is':
+        await Event.filter(id=event_id).update(is_finished=None)
 
 
 async def delete_event(id: int):

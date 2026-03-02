@@ -99,6 +99,14 @@ async def call_edit_event(call: CallbackQuery | Message, state: FSMContext, is_a
     await edit_event.dispatch()
 
 
+@admin_router.callback_query(F.data.startswith('finish_training_is'))
+@admin_router.callback_query(F.data.startswith('resume_training_is'))
+@admin_router.message(st.SetFinishEvent.confirm)
+async def call_finish_state(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
+    finish_state = SetCancelFinishState(call, state, is_admin)
+    await finish_state.dispatch()
+
+
 @admin_router.callback_query(F.data.startswith('cancel_training'))
 @admin_router.message(st.DeleteEventFSM.confirm)
 async def call_cancel_training(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):

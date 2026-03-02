@@ -36,7 +36,7 @@ async def show_event_with_manage_interface(call: CallbackQuery | Message, state:
         _call = call.message if isinstance(call, CallbackQuery) else call
         user_id = user_cache[call.from_user.id].id
         event, event_user = await db_rq.get_event(id=event_id), await db_event_user_rq.get_event_user(event_id=event_id)
-        keyboard = admin_train_manag_kb(event_id)
+        keyboard = admin_train_manag_kb(event_id, event['is_finished'])
         text = show_text_about_event(event, event_user, user_id)
         await _call.answer(text, parse_mode='HTML', reply_markup=keyboard)
         asyncio.create_task(delete_bkg(call))
@@ -407,3 +407,49 @@ class DropUser(ParentClassForTrainingOperations):
         await self._handler.answer(msg)
         await self._state.clear()
         await show_event_with_manage_interface(self._handler, self._state, event_id)
+
+
+class SetCancelFinishState(ParentClassForTrainingOperations):
+    async def dispatch(self):
+        if isinstance(self._handler, CallbackQuery):
+            call_data = self._handler.data.split(':')
+            call_type, event_id = call_data[0], int(call_data[1])
+            if self._handler.data.startswith('finish_training_is'):
+                await self._finish_mode(call_type, event_id)
+            elif self._handler.data.startswith('resume_training_is'):
+                await self._resume_mode(call_type, event_id)
+        elif await self._state.get_state() == st.SetFinishEvent.confirm:
+            await self._confirm()
+
+    async def _finish_mode(self, call_type, event_id):
+        msg = ('Подтверждение действия означает, что в ночные часы итоги тренировки будут обработаны '
+               'и тренировка будет удалена. Для подтверждения отправьте <b><i>да</i></b>')
+        await self._state.update_data(call_type=call_type, event_id=event_id)
+        await self._state.set_state(st.SetFinishEvent.confirm)
+        _cancel_kb = interrupt_or_return_button(callback_data=f'to_manage_of_event_is:{event_id}')
+        await self._handler.message.answer(msg, parse_mode='HTML', reply_markup=_cancel_kb)
+
+    async def _resume_mode(self, call_type, event_id):
+        await self._finish_status_of_event(call_type, event_id)
+        msg = 'Подведение итогов возобновлено'
+        await show_event_with_manage_interface(self._handler, self._state, event_id)
+        await self._handler.message.answer(msg, parse_mode='HTML')
+        asyncio.create_task(delete_bkg(self._handler))
+
+    async def _confirm(self):
+        data = await self._state.get_data()
+        call_type, event_id = data['call_type'], data['event_id']
+        if self._handler.text.strip().lower() == 'да':
+            await self._finish_status_of_event(call_type, event_id)
+            msg = ('Вы установили подведение итогов тренировки. Это означает, что итоги будут '
+                   'обработаны планировщиком в часы его работы ')
+        else:
+            msg = '🛑 Отправлено невалидное сообщение. Операция отклонена'
+        await self._state.clear()
+        await show_event_with_manage_interface(self._handler, self._state, event_id)
+        await self._handler.answer(msg)
+        asyncio.create_task(delete_bkg(self._handler))
+
+    # Операция остановки или отмены остановки подсчета итогов
+    async def _finish_status_of_event(self, call_type:str, event_id: int):
+        await db_rq.update_finish_status(call_data=call_type, event_id=event_id)

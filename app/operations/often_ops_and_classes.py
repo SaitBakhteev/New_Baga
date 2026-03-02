@@ -334,10 +334,9 @@ class SendMessages():
 
     @classmethod
     async def to_admins_about_non_marked_events(cls, events: list):
-        text = ' 🚫🖊 ВНИМАНИЕ админам❗️\nВы не указали звезд следующих <b>прошедших</b> тренировок:\n\n'
+        text = ' 🚫🖊 ВНИМАНИЕ админам❗️\nОстались прошедшие тренировки, ожидающие подведения итогов:\n\n'
         for item in events:
             text += f'{item.event_text}\n\n'
-        text += 'Если на тренировке звезд не было, то нужно отметить прочерком'
         for k in user_cache:
             if user_cache[k].admin_permissions:
                 # print(f'to_admins_about_non_marked_events: {int(k)}')
