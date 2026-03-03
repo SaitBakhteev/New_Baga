@@ -186,8 +186,9 @@ async def main_func(is_move=True):
     if _condition_1 or _condition_4:
         return
     else:
+        reper_h = now if is_move else now + timedelta(hours=1)
         event_user = await (
-                EventUser.filter(event__payment_dedline__lte=now, event__event_datetime__gt=now).
+                EventUser.filter(event__payment_dedline__lte=reper_h, event__event_datetime__gt=now).
                 select_related('event', 'user').order_by('event_id')
             )
         evs = set([item.event.id for item in event_user])
