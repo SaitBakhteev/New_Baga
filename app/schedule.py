@@ -307,7 +307,7 @@ class StatisticOps():
         events_not_finished = await Event.filter(event_datetime__lt=now, is_finished__isnull=True).all()
         if events_not_finished:
             await SendMessages.to_admins_about_non_marked_events(events=events_not_finished)
-        await Event.filter(event_datetime__lt=now, stars__isnull=False).delete()
+        await Event.filter(event_datetime__lt=now, is_finished=True).delete()
 
     # Реформирование рейтинга звезд по типам тренировки
     @classmethod
@@ -416,7 +416,7 @@ def _dct_form(event_user: list) -> dict:
 async def stat_execute_func():
     now = datetime.now()
     event_user = await  EventUser.filter(
-        event__event_datetime__lt=now, event__is_finished__isnull=False
+        event__event_datetime__lt=now, event__is_finished=True
     ).prefetch_related('event', 'user').all()
     if event_user:
         event_user_dct = _dct_form(event_user)

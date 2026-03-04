@@ -416,7 +416,7 @@ class StatEdit(ParentClassForTrainingOperations):
                 if 'user_stat' in data:
                     msg += (f'Вы уверены, что хотите <b><i>{action_txt}</i></b> число {data["edit_type_txt"]} '
                             f'по вышеприведенной статистике?\n')
-                msg += f' Для подтверждения действия отправьте в сообщении <b><i>да</i></b>'
+                msg += f' Для подтверждения действия отправьте в сообщении <b><i>подтверждаю отмену</i></b>'
                 await self._handler.answer(msg, parse_mode='HTML', reply_markup=self._cancel_kb)
                 return
         except (ValueError, IndexError) as e:
@@ -457,7 +457,7 @@ class StatEdit(ParentClassForTrainingOperations):
             await db_rq.create_stat(data['user_id'], data['training_type'])
 
     async def _confirm(self):
-        if self._handler.text.strip().lower() == 'да':
+        if self._handler.text.strip().lower() == 'подтверждаю отмену':
             data = await self._state.get_data()
             await self._save_process(data)
             await StatisticOps.stat_raiting_form()
