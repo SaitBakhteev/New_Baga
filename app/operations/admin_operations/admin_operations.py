@@ -250,7 +250,7 @@ class DeleteEvent(ParentClassForTrainingOperations):
         await self._state.update_data(event_id=event_id)
         await self._state.set_state(st.DeleteEventFSM.confirm)
         await self._handler.message.answer(
-            '📛 Если Вы уверены в отмене тренировки,  отправьте <b><i>да</i></b> в сообщении боту',
+            '📛 Если Вы уверены в отмене тренировки,  отправьте <b><i>подтверждаю отмену</i></b> в сообщении боту',
             parse_mode='HTML',
             reply_markup=interrupt_or_return_button(callback_data=f'to_manage_of_event_is:{event_id}')
         )
@@ -259,13 +259,13 @@ class DeleteEvent(ParentClassForTrainingOperations):
         try:
             data = await self._state.get_data()
             event_id = data['event_id']
-            if self._handler.text.strip().lower() == 'да':
+            if self._handler.text.strip().lower() == 'подтверждаю отмену':
                 await db_rq.delete_event(event_id)
                 await self._handler.answer('Тренировка удалена 💥')
                 await cmd_start(self._handler, self._state, self._is_admin, user_cache)
             else:
                 await show_event_with_manage_interface(self._handler, self._state, event_id)
-                await self._handler.answer('🚫 Удаление тренировки прервано.')
+                await self._handler.answer('🚫 Невалидное сообщение. Удаление тренировки отменено.')
             await self._state.clear()
             asyncio.create_task(delete_bkg(self._handler))
         except Exception as e:
@@ -416,7 +416,7 @@ class StatEdit(ParentClassForTrainingOperations):
                 if 'user_stat' in data:
                     msg += (f'Вы уверены, что хотите <b><i>{action_txt}</i></b> число {data["edit_type_txt"]} '
                             f'по вышеприведенной статистике?\n')
-                msg += f' Для подтверждения действия отправьте в сообщении <b><i>подтверждаю отмену</i></b>'
+                msg += f' Для подтверждения действия отправьте в сообщении <b><i>да</i></b>'
                 await self._handler.answer(msg, parse_mode='HTML', reply_markup=self._cancel_kb)
                 return
         except (ValueError, IndexError) as e:
@@ -457,7 +457,7 @@ class StatEdit(ParentClassForTrainingOperations):
             await db_rq.create_stat(data['user_id'], data['training_type'])
 
     async def _confirm(self):
-        if self._handler.text.strip().lower() == 'подтверждаю отмену':
+        if self._handler.text.strip().lower() == 'да':
             data = await self._state.get_data()
             await self._save_process(data)
             await StatisticOps.stat_raiting_form()
