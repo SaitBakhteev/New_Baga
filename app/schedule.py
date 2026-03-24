@@ -253,7 +253,7 @@ class StatisticOps():
          '''
         try:
             print(f'stars = {self._event_user[0].event.stars}')
-            if self._event_user[0].event.stars != '-':
+            if self._event_user[0].event.stars != '-' and self._event_user[0].event.stars is not None:
                 _stars = self._event_user[0].event.stars.replace(' ', '').split(',')
                 stars_of_event = list(map(lambda x: int(x), _stars))
                 self._stars = stars_of_event
