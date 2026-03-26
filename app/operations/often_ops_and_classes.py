@@ -317,9 +317,11 @@ class SendMessages():
     @classmethod
     async def send_remind_about_quiz(cls, event, event_user, user_id_list: list):
         for user_id in user_id_list:
-            text = show_text_about_event(event, event_user, user_id)
+            text = '<b>💚 НЕ ЗАБУДЬТЕ ПРОГОЛОСОВАТЬ 😊</b>\n\n'
+            text += show_text_about_event(event, event_user, user_id)
             tg_id = next(int(k) for k in user_cache if user_cache[k].id==user_id)
-            await bot.send_message(tg_id, text, parse_mode='HTML', reply_markup=quiz_kb(event))
+            keyboard = quiz_kb(event)
+            await bot.send_message(tg_id, text, parse_mode='HTML', reply_markup=keyboard)
 
     @classmethod
     async def to_admins(cls, text, now, event_datetime):
