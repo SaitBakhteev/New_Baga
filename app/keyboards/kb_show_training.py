@@ -112,3 +112,11 @@ def training_interface_kb(event: dict, event_user: list, user_id: int, admin_per
     except Exception as e:
         sync_logger.error(f'Ошибка в training_interface: {e}')
         # base_logger.error(f'Ошибка в siggn_up_for_training: {e}')
+
+
+# Отдельная кнопка голосования для рассылки напоминаний
+def quiz_kb(event):
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text='Проголосовать за игрока💚', callback_data=f'add_like_of_event_is:{event["id"]}')
+    ]])
+    return keyboard

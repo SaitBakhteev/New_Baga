@@ -36,6 +36,7 @@ class Event(Model):  # модель создаваемых тренирвок
     user = fields.ManyToManyField('models.User', related_name="participants", through='EventUser')
     stars = fields.TextField(null=True)
     question = fields.TextField(null=True)  # вопрос голосования
+    remind_is_sended = fields.BooleanField(null=True)  # напоминание о голосовании
     is_finished = fields.BooleanField(null=True)  # завершена ли тренировка для обработки статистикой
 
     def __str__(self):

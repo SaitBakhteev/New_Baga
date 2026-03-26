@@ -8,7 +8,7 @@ from aiogram.types import TelegramObject, Message, CallbackQuery
 from typing import Callable, Dict, Any, Awaitable
 
 from config.constants import bot, user_cache
-from ..keyboards.kb_show_training import training_interface_kb, show_events_kb
+from ..keyboards.kb_show_training import training_interface_kb, show_events_kb, quiz_kb
 
 from ..database import requests as db_req
 from ..database import event_user_requests as db_rq_event_user
@@ -21,7 +21,6 @@ from config.log_config import setup_logger
 from config.constants import *
 
 logger = setup_logger(__name__)
-
 
 
 # Мидлварь для проверки прав пользователя
@@ -236,9 +235,8 @@ async def show_formed_info_about_event(call_mess: Message | CallbackQuery,
     try:
         event = await db_req.get_event(id=event_id)
         event_user = await db_rq_event_user.get_event_user(event_id=event_id)
-
-        keyboard = training_interface_kb(event, event_user, user_id, is_admin)
         text = show_text_about_event(event, event_user, user_id)
+        keyboard = training_interface_kb(event, event_user, user_id, is_admin)
         mess_handler = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
         await mess_handler.answer(text, parse_mode='HTML', reply_markup=keyboard)
         asyncio.create_task(delete_bkg(call_mess))
@@ -314,6 +312,14 @@ class SendMessages():
                         await bot.send_message(tg_id, text, parse_mode='HTML')
             except Exception as e:
                 await logger.error(f'Ошибка to_several_subscribers: {e}')
+
+    # Рассылка напоминания участникам о тренировке
+    @classmethod
+    async def send_remind_about_quiz(cls, event, event_user, user_id_list: list):
+        for user_id in user_id_list:
+            text = show_text_about_event(event, event_user, user_id)
+            tg_id = next(int(k) for k in user_cache if user_cache[k].id==user_id)
+            await bot.send_message(tg_id, text, parse_mode='HTML', reply_markup=quiz_kb(event))
 
     @classmethod
     async def to_admins(cls, text, now, event_datetime):

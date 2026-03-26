@@ -4,11 +4,13 @@ import asyncio
 from datetime import datetime, timedelta, time
 
 from app.database.models import Event, EventUser, Statistic, Voting
+from app.database.requests import get_event
+from app.database.event_user_requests import get_event_user
 
 from config.log_config import setup_logger
 from config.constants import SEASON_INDEX
 
-from app.operations.often_ops_and_classes import SendMessages, set_individual_dedline
+from app.operations.often_ops_and_classes import SendMessages, set_individual_dedline, show_formed_info_about_event
 
 logger, stream_logger = setup_logger(__name__), logging.getLogger(__name__)
 
@@ -176,6 +178,32 @@ class SendReminders():
         await SendMessages.to_several_receivers(tg_ids=_recepient_list, text=text)
 
 
+async def _send_remind_about_quiz():
+    '''Здесь приходится дважды обращаться к БД Event, чтобы
+    не переделывать бизнес логику функции отображения сведений о тренировке'''
+
+    reper_h = datetime.now() - timedelta(hours=1)
+    events = await Event.filter(event_datetime__lt=reper_h,
+                                question__isnull=False,
+                                remind_is_sended__isnull=True).all()
+    if events:
+        upd_list = []  # лист обновления поля remind_is_sended
+        for event in events:
+            event.remind_is_sended = True
+            upd_list.append(event)
+
+            _event = await get_event(id=event.id)  # здесь опять подгружаем по вышеописанной причине
+            event_user = await get_event_user(event_id=event.id)
+            if event_user:
+                user_id_list = []
+                if len(event_user) > event.participants_count:
+                    event_user = event_user[:event.participants_count]
+                for item in event_user:
+                    if item['me_liked'] is False:
+                        user_id_list.append(item['user__id'])
+                await SendMessages.send_remind_about_quiz(_event, event_user, user_id_list)
+        await Event.bulk_update(upd_list, ['remind_is_sended'])
+
 # Главная исполняющая функция по классам MoveToEnd и SendReminders
 async def main_func(is_move=True):
     now = datetime.now()
@@ -194,8 +222,6 @@ async def main_func(is_move=True):
                 EventUser.filter(event__payment_dedline__lte=reper_h, event__event_datetime__gt=now).
                 select_related('event', 'user').order_by('event_id')
             )
-        evs = set([item.event.id for item in event_user])
-        print(f'evs = {evs}')
         if event_user:
             event_user_dct = _dct_form(event_user)
             if is_move:
@@ -206,6 +232,10 @@ async def main_func(is_move=True):
                 for k in event_user_dct:
                     send_rmnd = SendReminders(event_user=event_user_dct[k], now=now)
                     await send_rmnd.execute()
+
+                await _send_remind_about_quiz()
+
+
 
 
 # БЛОК РАБОТЫ СО СТАТИСТИКОЙ
