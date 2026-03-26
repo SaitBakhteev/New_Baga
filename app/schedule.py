@@ -233,7 +233,8 @@ async def main_func(is_move=True):
                     send_rmnd = SendReminders(event_user=event_user_dct[k], now=now)
                     await send_rmnd.execute()
 
-                await _send_remind_about_quiz()
+        if is_move is not True:    
+            await _send_remind_about_quiz()
 
 
 
