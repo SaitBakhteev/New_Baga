@@ -166,7 +166,7 @@ class CreateEvent(ParentClassForTrainingOperations):
         if now + timedelta(hours=dline_hours) < event_datetime - timedelta(hours=3):
             return now + timedelta(hours=dline_hours)
         else:
-            if now >= event_datetime - timedelta(hours=6):
+            if now >= event_datetime - timedelta(hours=0):
                 raise ValueError('too_fast_event')
             else:
                 return event_datetime - timedelta(hours=3)
