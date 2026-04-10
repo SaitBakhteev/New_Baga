@@ -14,6 +14,16 @@ TOKEN, WEBHOOK_TOKEN = os.getenv("TOKEN"), os.getenv("WEBHOOK_TOKEN")
 BOT_NAME = os.getenv("BOT_NAME")
 URL = os.getenv("URL")
 
+
+# ---------- НАСТРОЙКА ПРОКСИ ----------
+
+SOCK_LOGIN, SOCK_PASS, SOCK_IP, SOCK_PORT = os.getenv("SOCK_LOGIN"), os.getenv("SOCK_PASS"), os.getenv("SOCK_IP"), os.getenv("SOCK_PORT"),
+# PROXY_URL = f"socks5://{SOCK_LOGIN}:{SOCK_PASS}@{SOCK_IP}:{SOCK_PORT}"
+PROXY_URL = f"socks5://{SOCK_IP}:{SOCK_PORT}"
+
+# ------------------------------------
+
+
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
 TRAINING_TYPES = ('🏐 Волейбол', '🏖 Пляжный волейбол', '❄️ Снежный волейбол',
