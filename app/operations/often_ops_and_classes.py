@@ -309,7 +309,7 @@ class SendMessages():
                 if user_cache[k].big_subscription:
                     if training_type in user_cache[k].big_subscription:
                         tg_id = user_cache[k].tg_id
-                        await bot.send_message(tg_id, text, parse_mode='HTML')
+                        # await bot.send_message(tg_id, text, parse_mode='HTML')
             except Exception as e:
                 await logger.error(f'Ошибка to_several_subscribers: {e}')
 

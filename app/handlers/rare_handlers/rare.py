@@ -43,11 +43,11 @@ async def call_subcription_mng(call: CallbackQuery | Message, state: FSMContext,
     await subcription_mng._dispatch()
 
 
-# @rare_router.message(Command('dev'))
-# async def dev(mesage: Message, state: FSMContext, is_admin: bool):
-#     await mesage.answer('Разработчик бота <a href="https://t.me/SaitBakhteev">Саит Бахтеев</a>\n'
-#                         '<a href="https://github.com/SaitBakhteev">GitHub</a> разработчика',
-#                         parse_mode='HTML')
+@rare_router.message(Command('dev'))
+async def dev(mesage: Message, state: FSMContext, is_admin: bool):
+    await mesage.answer('Разработчик бота <a href="https://t.me/SaitBakhteev">Саит Бахтеев</a>\n'
+                        '<a href="https://github.com/SaitBakhteev">GitHub</a> разработчика',
+                        parse_mode='HTML')
 #
 # @rare_router.message(Command('sign'))
 # async def general_tut(message: Message, bot: Bot):
