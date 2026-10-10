@@ -33,6 +33,7 @@ def admin_panel_kb():
     keyboard.add(InlineKeyboardButton(text='💠 Удалить шаблон 🗑', callback_data='delete_template'))
     keyboard.add(InlineKeyboardButton(text='💠 Управление списком админов 😎', callback_data='admin_list'))
     keyboard.add(InlineKeyboardButton(text='💠 Коррекция статистики 📊', callback_data='stat_edit_begin'))
+    keyboard.add(InlineKeyboardButton(text='💠 Изменить баланс 💰', callback_data='edit_balance'))
     keyboard.add(RETURN_TO_START_BUTTON)
     keyboard.adjust(1)
     return keyboard.as_markup()

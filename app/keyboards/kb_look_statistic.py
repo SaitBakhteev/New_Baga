@@ -7,6 +7,7 @@ def choose_raiting_kb() -> InlineKeyboardMarkup:
     keyboard = training_types_list_kb('to_raiting_type_is')
     keyboard.add(InlineKeyboardButton(text='🔥ОБЩИЙ РЕЙТИНГ💫', callback_data='general_statistics'))
     keyboard.add(InlineKeyboardButton(text='🔥ОБЩИЙ РЕЙТИНГ СИМПАТИЙ 💚', callback_data='likes_statistics'))
+    keyboard.add(InlineKeyboardButton(text='📙АРХИВ', callback_data='archive'))
     keyboard.add(RETURN_TO_START_BUTTON)
     keyboard.adjust(1)
     return keyboard.as_markup()

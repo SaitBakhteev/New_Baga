@@ -466,3 +466,108 @@ class StatEdit(ParentClassForTrainingOperations):
             msg = 'Отправлено невалидное сообщение. Операция отменена 🚫'
         await self._begin()
         await self._handler.answer(msg, parse_mode='HTML')
+
+
+class DeleteTemplate(ParentClassForTrainingOperations):
+    _cancel_kb = interrupt_or_return_button(callback_data='/admpan')
+    async def dispatch(self):
+        if isinstance(self._handler, CallbackQuery):
+            if self._handler.data == 'delete_template':
+                await self._begin()
+
+        elif await self._state.get_state() == st.DeleteTemplateFSM.delete_template:
+            await self._confirm()
+
+    async def _begin(self):
+        templates = await db_rq.get_templates()
+        msg = ''
+        for i in templates:
+            end_idx = i['text'].find("\n❗️Босс тренировки")
+            msg += f"<b>{i['id']}</b>  {i['text'][:end_idx]}\n\n"
+        await self._handler.message.answer(msg, parse_mode='HTML')
+        await self._handler.message.answer('Введите id шаблона, который хотите удалить ', parse_mode='HTML',
+                                   reply_markup=self._cancel_kb)
+        await self._state.set_state(st.DeleteTemplateFSM.delete_template)
+
+    async def _confirm(self):
+        try:
+            id = int(self._handler.text.strip())
+            await db_rq.delete_template(id)
+            msg = 'Шаблон успешно удален 🗑'
+            print(494)
+        except Exception as e:
+            msg = ('🚫 Произошла ошибка из-за некорректного формата или несуществующего id шаблона.'
+                   'Операция прервана')
+            await logger.error(f'Ошибка в DeleteTemplate._confirm: {e}')
+            pass
+        await self._handler.answer(msg, parse_mode='HTML')
+        await show_admin_panel(self._handler, self._state)
+        await self._state.clear()
+        asyncio.create_task(delete_bkg(self._handler))
+
+
+class BalanceEdit(ParentClassForTrainingOperations):
+    _cancel_kb = interrupt_or_return_button(callback_data='/admpan')
+    async def dispatch(self):
+        if isinstance(self._handler, CallbackQuery):
+            if self._handler.data == 'edit_balance':
+                await self._begin()
+        elif await self._state.get_state() == st.EditBalanceFSM.input_username:
+            await self._input_username()
+        elif await self._state.get_state() == st.EditBalanceFSM.edit_balance:
+            await self._edit_balance()
+        elif await self._state.get_state() == st.EditBalanceFSM.confirm:
+            await self._confirm()
+
+    async def _begin(self):
+        await self._handler.message.answer('Введите никнейм пользователя, для которого собираетесь изменить баланс',
+                                           reply_markup=self._cancel_kb)
+        await self._state.set_state(st.EditBalanceFSM.input_username)
+
+    async def _input_username(self):
+        username = self._handler.text.strip().replace('@', '')
+        user = next((_user for _user in user_cache.values() if _user.tg_username == username), None)
+        if user:
+            balance = user.balance if user.balance is not None else 0
+            msg = (f'<b>Пользователь</b>: @{user.tg_username} <i>{user.tg_name}</i>\n'
+                   f'<b>Текущий баланс</b>: <i>{balance}</i> руб.\n\n'
+                   f'Введите значение на которое хотите изменить баланс пользователя:\n'
+                   f'🔸 для <u>увеличения</u> баланса введите <b><i>положительное</i></b> число\n'
+                   f'🔸 для <u>уменьшения</u> баланса введите <b><i>отрицательное</i></b> число\n'
+                   f'<b>Примеры</b>:\n'
+                   f'🔸 если ввести 100, то баланс увеличится на 100 руб\n'
+                   f'🔸 если ввести -100, то баланс уменьшится на 100 руб\n')
+            await self._state.update_data(user=user, balance=balance)
+            await self._state.set_state(st.EditBalanceFSM.edit_balance)
+        else:
+            msg = '🤷🏼 Такой никнейм не зарегистрирован в боте'
+        await self._handler.answer(msg, parse_mode='HTML', reply_markup=self._cancel_kb)
+        asyncio.create_task(delete_bkg(self._handler))
+
+    async def _edit_balance(self):
+        try:
+            data = await self._state.get_data()
+            balance = int(data['balance']) + int(self._handler.text.strip())
+            msg = 'Для подтверждения изменения баланса отправьте в сообщении боту <b>да</b>'
+            await self._state.update_data(balance=balance)
+            await self._state.set_state(st.EditBalanceFSM.confirm)
+        except ValueError:
+            msg = '❌ Введено некорректное значение'
+            pass
+        await self._handler.answer(msg, parse_mode='HTML', reply_markup=self._cancel_kb)
+        asyncio.create_task(delete_bkg(self._handler))
+
+    async def _confirm(self):
+        if self._handler.text.strip().lower() == 'да':
+            data = await self._state.get_data()
+            user, balance = data['user'], data['balance']
+            fullname =f'<b>{user.tg_name}</b> @{user.tg_username}'
+            await db_rq.update_balance(user.id, balance)
+            user_cache[user.tg_id].balance = balance
+            msg = f'👌🏼Баланс пользователя {fullname} успешно изменен на значение {balance}'
+        else:
+            msg = f'⛔️ Отправлено невалидное сообщение, операция прервана'
+        await show_admin_panel(self._handler, self._state)
+        await self._state.clear()
+        await self._handler.answer(msg, parse_mode='HTML')
+        asyncio.create_task(delete_bkg(self._handler))

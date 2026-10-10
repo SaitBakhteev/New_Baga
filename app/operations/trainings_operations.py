@@ -5,12 +5,26 @@ from tortoise.exceptions import IntegrityError
 
 from app.operations.often_ops_and_classes import *
 import app.states as st
-from .often_ops_and_classes import set_individual_dedline
 from ..keyboards.kb_show_training import cancel_kb
 from ..keyboards.kb_confirm import add_friend_confirm_kb
 from config.constants import bot, user_cache
 
 logger = setup_logger(__name__)
+
+
+# Проверяем, может ли участник сразу автоматически быть с подтвержденной оплатой
+async def _auto_check_payment_confirmed(event_text: str, tg_id: int, data: dict):
+    sale = extract_sale(event_text)
+    balance = user_cache[tg_id].balance
+    balance = balance if balance is not None else 0
+    if balance >= sale:
+        balance -= sale
+        user_cache[tg_id].balance = balance
+        await db_req.update_balance(user_cache[tg_id].id, balance)
+        data['payment_confirmed'] = True
+    else:
+        data['payment_confirmed'] = None
+    return data
 
 
 # Записаться на тренировку
@@ -27,10 +41,13 @@ async def sign_up_to_training(call: CallbackQuery, state: FSMContext, is_admin: 
         payment_dedline, event_datetime = event['payment_dedline'], event['event_datetime']
         payment_dedline, event_datetime = payment_dedline.replace(tzinfo=None), event_datetime.replace(tzinfo=None)
         if (event_datetime - now) > timedelta(minutes=10):
+            await logger.critical(f"payment_dedline = {payment_dedline}")
             dedline_info = set_individual_dedline(payment_dedline=payment_dedline,
                                                   event_datetime=event_datetime, now=now)
+            
             data = {'user_id': user_id, 'event_id': event_id, 'created_at': now, 'modified_at': now,
                     'individual_dedline':dedline_info['individual_dedline']}
+            data = await _auto_check_payment_confirmed(event['event_text'], call.from_user.id, data)
             await db_rq_event_user.create_event_user(data)
             text = ('Вы записались на тренировку.\n'
                     'Если у вас уже оплачена эта тренировка, нажмите на кнопку оповещения бота ✔️\n')
@@ -229,6 +246,8 @@ class AddFriend(ParentClassForTrainingOperations):
                     dedline_info = set_individual_dedline(payment_dedline, event_datetime, now)
                     data['individual_dedline'] = dedline_info['individual_dedline']
                 data['created_at'] = data['modified_at'] = now
+
+                data = await _auto_check_payment_confirmed(event_text, friend_tg_id, data)
 
                 await db_rq_event_user.create_event_user(data, friend_id=friend_id,
                                                          i_am_friend=self._handler.from_user.username)

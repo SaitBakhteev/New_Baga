@@ -6,6 +6,10 @@ from aiogram.types import CallbackQuery, Message
 from typing import Optional
 
 from math import ceil
+from html import escape
+
+from ..database.requests import get_stat_archive
+from ..operations.often_ops_and_classes import ParentClassForTrainingOperations
 
 from config.constants import TRAINING_TYPES, NUMBERS
 from ..schedule import StatisticOps
@@ -38,8 +42,8 @@ class ShowStat():
                     stars = ''
                 visit_count = f'🏃🏽‍♂️{item.visit_count}'
                 fullname = f'{item.user.tg_name} @{item.user.tg_username}'
-                fullname = f'<b>{fullname}</b>' if call.from_user.id == item.user.tg_id else fullname
-                text += f'<b>{i + 1}</b>. {stars} {fullname} {visit_count}\n'
+                fullname = f'<b>{escape(fullname)}</b>' if call.from_user.id == item.user.tg_id else fullname
+                text += f'<b>{i + 1}</b>. {stars} {fullname}\n  {visit_count}\n'
             return text
         else:
             return None
@@ -61,7 +65,7 @@ class ShowStat():
                     _tag_txt += f'{tag}'
 
                 fullname = f'{item.tg_name} @{item.tg_username}'
-                sum_info = f'{_tag_txt} {fullname}'
+                sum_info = f'{_tag_txt} {escape(fullname)}'
                 if tag == '⭐️':
                     sum_info += f' {item.text}'
 
@@ -147,3 +151,69 @@ class ShowStat():
                 await call.message.answer(msg, parse_mode='HTML', reply_markup=cls._back_kb)
         except Exception as e:
             await logger.error(f'Ошибка _show_likes_rating: {e}')
+
+
+class ShowStatArchive(ParentClassForTrainingOperations):
+    _back_kb = interrupt_or_return_button(text=BACK_TEXT_KB, callback_data='/rait')
+    
+    async def run(self):
+        await self._init_dict()
+        await self._msg_formation()
+
+    async def _init_dict(self):
+        ''' Формируем исходный словарь по игрокам '''
+        self._stat_archive = await get_stat_archive()
+        self._players_dict = dict()
+        for item in self._stat_archive:
+            if item.user.id not in self._players_dict:
+                tg_name = escape(item.user.tg_name)
+                tg_username = escape(item.user.tg_username) if item.user.tg_username else ""
+                self._players_dict[item.user.id] = {'userdata': f"{tg_name} @{tg_username}"}
+
+            # По каждому игроку добавляем внутренние словари по каждой дисциплине
+            icon, visits, stars, likes = item.training_type[0], item.visit_count, item.star_count, item.likes
+            _inner_dict = {"visits": visits, "stars": stars, "likes": likes}
+            self._players_dict[item.user.id][f"{icon}"] = _inner_dict
+
+        # сортируем по сумме stars по всем дисциплинам (по убыванию)
+        self._players_dict = dict(sorted(
+            self._players_dict.items(),
+            key=lambda item: sum(sport['stars'] for sport in item[1].values() if isinstance(sport, dict)),
+            reverse=True,
+        ))
+
+    async def _msg_formation(self):
+        msg = "<b>Статистика сезона 2025-2026</b>\n\n"
+        for i, user_id in enumerate(self._players_dict):
+            userdata = self._players_dict[user_id]["userdata"]
+            msg += (f'<b>{i + 1}</b>. {userdata}\n')
+            # Идем по внутреннему словарю игрока по каждой дисциплине
+            for _k in self._players_dict[user_id]:
+                if _k != "userdata":
+                    visits = self._players_dict[user_id][_k]["visits"]
+                    stars = self._players_dict[user_id][_k]["stars"]
+                    likes = self._players_dict[user_id][_k]["likes"]
+                    msg += (f'{_k}: 🏃🏼‍♂️{visits} ⭐️{stars} 💚{likes}\n')
+
+            msg += '\n'
+
+        # Условия определения для разбивки текста
+        if len(self._players_dict) > 40:
+            self._msg = msg
+            await self._big_text()
+        else:
+            await self._handler.message.answer(msg, parse_mode='HTML')
+
+    async def _big_text(self):
+        n = ceil(len(self._players_dict) / 30)  # поярдковое число, округленное всегда вверх
+        for i in range(0, n):
+            if i == 0:
+                idx_end = self._msg.find('<b>31</b>')
+                msg = self._msg[:idx_end]
+                await self._handler.message.answer(msg, parse_mode='HTML')
+            else:
+                idx_begin = self._msg.find(f'<b>{i * 30 + 1}</b>')
+                idx_end = self._msg.find(f'<b>{(i + 1) * 30 + 1}</b>')
+                msg = f'{self._msg[idx_begin:idx_end]}'
+                keyboard = self._back_kb if i == n - 1 else None
+                await self._handler.message.answer(msg, parse_mode='HTML', reply_markup=keyboard)

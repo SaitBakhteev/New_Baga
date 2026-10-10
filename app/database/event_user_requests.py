@@ -21,7 +21,8 @@ async def create_event_user(data, **kwargs):
             event_id=data['event_id'],
             created_at=data['created_at'],
             modified_at=data['modified_at'],
-            individual_dedline=data['individual_dedline']
+            individual_dedline=data['individual_dedline'],
+            payment_confirmed=data['payment_confirmed']
         )
     else:
         await EventUser.create(
@@ -30,7 +31,8 @@ async def create_event_user(data, **kwargs):
             friend=kwargs['i_am_friend'],
             created_at=data['created_at'],
             modified_at=data['modified_at'],
-            individual_dedline=data['individual_dedline']
+            individual_dedline=data['individual_dedline'],
+            payment_confirmed=data['payment_confirmed']
         )
 
 

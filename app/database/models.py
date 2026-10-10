@@ -12,6 +12,7 @@ class User(Model):
     tg_name = fields.CharField(max_length=150, null=True)
     created_at = fields.DatetimeField(auto_now_add=True, timezone=timezone('Europe/Moscow'))
     admin_permissions = fields.BooleanField(default=False)
+    balance = fields.IntField(null=True)
 
     # На какие типы тренировок должны приходить уведомления
     big_subscription = fields.TextField(null=True)

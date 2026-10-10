@@ -95,7 +95,11 @@ async def update_admin_and_get(tg_username: str, admin_permissions: bool):
 
 async def update_admin(user_id:int, admin_permissions:bool):
     await User.filter(id=user_id).update(admin_permissions=admin_permissions)
+    
 
+async def update_balance(user_id: int, balance: int):
+    await User.filter(id=user_id).update(balance=balance)
+    
 
 ''' ---------------------------- EVENT ------------------------------------------------ '''
 async def create_event(data):  # добавить событие
@@ -216,3 +220,6 @@ async def create_stat(user_id: int, training_type: str):
                            visit_count=1, star_count=0, likes=0,
                            season_index=SEASON_INDEX[0])
 
+
+async def get_stat_archive():
+    return await Statistic.filter(season_index__lt=SEASON_INDEX[0]).select_related('user').all()

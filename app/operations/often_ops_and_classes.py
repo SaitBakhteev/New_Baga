@@ -7,6 +7,9 @@ from aiogram.types import TelegramObject, Message, CallbackQuery
 
 from typing import Callable, Dict, Any, Awaitable
 
+from html import escape
+import re
+
 from config.constants import bot, user_cache
 from ..keyboards.kb_show_training import training_interface_kb, show_events_kb, quiz_kb
 
@@ -17,10 +20,12 @@ from ..keyboards.universal_keyboards import interrupt_or_return_button
 from ..keyboards.kb_show_training import choose_training_type_kb
 
 from ..operations.regisration_ops import registration
-from config.log_config import setup_logger
+from config.log_config import setup_logger, setup_sync_logger
 from config.constants import *
 
 logger = setup_logger(__name__)
+
+sync_logger = setup_sync_logger(__name__)
 
 
 # Мидлварь для проверки прав пользователя
@@ -31,8 +36,22 @@ class AdminMiddleware(BaseMiddleware):
             event: TelegramObject,
             data: Dict[str, Any]
     ) -> Any:
+        
         # Проверяем, является ли пользователь администратором
         if isinstance(event, (Message, CallbackQuery)):
+            # Самый первый фильтр — есть ли username вообще
+            if not event.from_user.username:
+                text = (
+                    "Сожалеем, но у вас отсутствует никнейм телеграмм, "
+                    "поэтому Вам функции бота пока недоступны 🥺.\n"
+                    "Заведите никнейм и возвращайтесь к нам 🤗"
+                )
+                if isinstance(event, CallbackQuery):
+                    await event.answer(text, show_alert=True)
+                else:
+                    await event.answer(text)
+                return
+
             user_tg_id = event.from_user.id
 
             ''' Здесь несеольео нелогичный код, он чисто для перестраховки, если вдруг
@@ -71,6 +90,24 @@ class AdminMiddleware(BaseMiddleware):
             else:
                 data["is_admin"] = False
         return await handler(event, data)
+
+
+# Проверяем, может ли участник сразу автоматически быть с подтвержденной оплатой
+def extract_sale(event_text: str):
+    # Берём фрагмент от "Стоимость тренировки</b>: " до следующего "<b>" или конца строки
+    match = re.search(
+        r'<b>Стоимость тренировки</b>:\s*(.*?)(?=<b>|$)',
+        event_text,
+        flags=re.DOTALL
+    )
+    if not match:
+        return 0
+    cost_part = match.group(1)
+
+    # Находим все числа длиной 3+ цифр и присваиваем sale
+    lst = [int(n) for n in re.findall(r'\d{3,}', cost_part)]
+    sale = min(lst) if len(lst) > 0 else 0
+    return sale
 
 
 # Родительский класс для разных операций (в основном для операций с тренировками)
@@ -174,9 +211,9 @@ def show_text_about_event(event: dict, event_user: list, user_id: int) -> str:
     day_idx = event['event_datetime'].weekday()
     day = DAYS[day_idx]
     # Присваиваем фрагмент инфы по трени временной переменной и вставляем в новый фрагмент день недели
+
     new_info = ev_dt_info.replace('\n',f' ({day})\n')
     text = text.replace(ev_dt_info, new_info)
-
     star_tpl = None
     if event['stars'] is not None and event['stars'] != '-':
         stars_text = event['stars'].replace(' ', '').split(',')  # переводим текстовый набор user_id в список
@@ -205,7 +242,7 @@ def show_text_about_event(event: dict, event_user: list, user_id: int) -> str:
                 _dedline = f"⏳ <b><i>{item['individual_dedline'].strftime('%H:%M %d.%m')}</i></b>"
             else:
                 _dedline = ''
-            fullname = f'{item["user__tg_name"]} @{item["user__tg_username"]}'
+            fullname = f'{escape(item["user__tg_name"])} @{escape(item["user__tg_username"])}'
             star_txt = ''
             if star_tpl:
                 stars_count = star_tpl.count(item['user__id'])
@@ -223,7 +260,6 @@ def show_text_about_event(event: dict, event_user: list, user_id: int) -> str:
             text+=f"<b>{i+1}</b>. {fullname}{status_tag}{_dedline}{star_likes_txt}\n"
             if i + 1 == participants_count:
                 text += "\n 📌📌 <b><i>Резерв</i></b>: \n"
-
     return text
 
 
@@ -309,7 +345,7 @@ class SendMessages():
                 if user_cache[k].big_subscription:
                     if training_type in user_cache[k].big_subscription:
                         tg_id = user_cache[k].tg_id
-                        # await bot.send_message(tg_id, text, parse_mode='HTML')
+                        await bot.send_message(tg_id, text, parse_mode='HTML')
             except Exception as e:
                 await logger.error(f'Ошибка to_several_subscribers: {e}')
 

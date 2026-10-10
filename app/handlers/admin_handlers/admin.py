@@ -112,3 +112,20 @@ async def call_finish_state(call: CallbackQuery | Message, state: FSMContext, is
 async def call_cancel_training(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
     del_event = DeleteEvent(call, state, is_admin)
     await del_event.dispatch()
+
+
+
+@admin_router.callback_query(F.data=='delete_template')
+@admin_router.message(st.DeleteTemplateFSM.delete_template)
+async def call_delete_template(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
+    delete_template = DeleteTemplate(call, state, is_admin)
+    await delete_template.dispatch()
+
+
+@admin_router.callback_query(F.data=='edit_balance')
+@admin_router.message(st.EditBalanceFSM.input_username)
+@admin_router.message(st.EditBalanceFSM.edit_balance)
+@admin_router.message(st.EditBalanceFSM.confirm)
+async def call_edit_balance(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
+    edit_balance = BalanceEdit(call, state, is_admin)
+    await edit_balance.dispatch()

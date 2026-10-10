@@ -3,14 +3,14 @@ import asyncio
 
 from datetime import datetime, timedelta, time
 
-from app.database.models import Event, EventUser, Statistic, Voting
+from app.database.models import User, Event, EventUser, Statistic, Voting
 from app.database.requests import get_event
 from app.database.event_user_requests import get_event_user
 
 from config.log_config import setup_logger
-from config.constants import SEASON_INDEX
+from config.constants import SEASON_INDEX, user_cache
 
-from app.operations.often_ops_and_classes import SendMessages, set_individual_dedline, show_formed_info_about_event
+from app.operations.often_ops_and_classes import SendMessages, set_individual_dedline, show_formed_info_about_event, extract_sale
 
 logger, stream_logger = setup_logger(__name__), logging.getLogger(__name__)
 
@@ -67,6 +67,7 @@ class MoveToEnd():
         - вызывает класс по рассылке тем, кто перешел из резерва
         :return: список тех, кто перешел из резерва
         '''
+
         if is_ex_move_to_end_ptcps:  # если есть из основного списка те, кто перемещен в конец
             # Устанавливаем индвидуальный дедлайн
             payment_dedline = self._event_user[0].event.payment_dedline
@@ -78,8 +79,10 @@ class MoveToEnd():
             transfer_lst_from_reserve = self._event_user[begin_idx:end_idx]
             for obj in transfer_lst_from_reserve:
                 obj.individual_dedline = individual_dedline['individual_dedline'].replace(tzinfo=None)
+            
+            const_for_seconds = len(self._event_user)
             for i, obj in enumerate(self._reserv_list):
-                seconds = len(self._event_user) - i
+                seconds = const_for_seconds - i
                 modified_at = self._now - timedelta(seconds=seconds)
                 obj.modified_at = modified_at.replace(tzinfo=None)
                 self._update_list.append(obj)
@@ -261,10 +264,14 @@ class StatisticOps():
         await self._load_stat()
         await self._extract_stars()
         self._lists_formation()
-        if self._update_list:
-            await Statistic.bulk_update(self._update_list, ['modifed_at', 'star_count', 'visit_count', 'likes'])
-        if self._create_list:
-            await Statistic.bulk_create(self._create_list)
+        try:
+            # await self._user_balance_update()
+            if self._update_list:
+                await Statistic.bulk_update(self._update_list, ['modifed_at', 'star_count', 'visit_count', 'likes'])
+            if self._create_list:
+                await Statistic.bulk_create(self._create_list)
+        except Exception as e:
+            await logger.error(f'Ошибка StatisticOps.execute: {e}')
 
     async def _load_stat(self):
         _user_ids = [item.user.id for item in self._event_user]
@@ -329,9 +336,24 @@ class StatisticOps():
                 new_stat = Statistic(
                     user=item.user, training_type=self._train_type,
                     visit_count=1, star_count=stars_count, likes=likes,
-                    created_at=self._now, modifed_at=self._now
+                    created_at=self._now, modifed_at=self._now, season_index=SEASON_INDEX[0]
                 )
                 self._create_list.append(new_stat)
+
+    async def _user_balance_update(self):
+        sale = extract_sale(self._event_user[0].event.event_text)  # фиксируется стоимость прошедшей тренировки
+        users = []
+        for item in self._event_user:
+            if item.user.balance is not None:
+                # Немного хитрая проверка, чтоб не допустить минусового баланса
+                if (item.user.balance - sale) >= 0:
+                    item.user.balance -= sale
+                    users.append(item.user)
+        # синхронизация кэша
+        if len(users) > 0:
+            for user in users:
+                user_cache[user.tg_id].balance = user.balance
+            await User.bulk_update(users, ['balance'])
 
     @classmethod
     async def delete_events(cls, now):

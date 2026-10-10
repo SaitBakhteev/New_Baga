@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from dotenv import load_dotenv, find_dotenv
 
+from .log_config import setup_logger
 from aiogram import Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
@@ -14,6 +15,7 @@ TOKEN, WEBHOOK_TOKEN = os.getenv("TOKEN"), os.getenv("WEBHOOK_TOKEN")
 BOT_NAME = os.getenv("BOT_NAME")
 URL = os.getenv("URL")
 
+logger = setup_logger(__name__)
 
 # ---------- НАСТРОЙКА ПРОКСИ ----------
 
@@ -48,6 +50,7 @@ async def season_index(write_mode: bool = False):
             SEASON_INDEX[0] += 1
             with open('season_index.txt', 'w') as f:
                 f.write(str(SEASON_INDEX[0]))
+    await logger.critical(f'загружено значение SEASON_INDEX = {SEASON_INDEX[0]}')
     return SEASON_INDEX[0]
 
 

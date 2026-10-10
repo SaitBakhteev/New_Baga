@@ -124,3 +124,9 @@ class EditStatFSM(StatesGroup):
 
 class SetFinishEvent(StatesGroup):
     confirm = State()
+
+
+class EditBalanceFSM(StatesGroup):
+    input_username = State()
+    edit_balance = State()
+    confirm = State()

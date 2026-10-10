@@ -30,7 +30,10 @@ class ProfileManagment(ParentClassForTrainingOperations):
     async def _show_profile(self):
         await self._state.clear()
         tg_name = user_cache[self._handler.from_user.id].tg_name
-        text = f'На данный момент Вы зарегистрированы в боте как <b><i>{tg_name}</i></b>'
+        balance = user_cache[self._handler.from_user.id].balance
+        balance = 0 if balance is None else balance
+        text = (f'На данный момент Вы зарегистрированы в боте как <b><i>{tg_name}</i></b>\n'
+                f'<b><i>Ваш текущий баланс</i></b>: {balance} руб')
         _handler = self._handler.message if isinstance(self._handler, CallbackQuery) else self._handler
         await _handler.answer(text, reply_markup=profile_edit_kb, parse_mode='HTML')
 
