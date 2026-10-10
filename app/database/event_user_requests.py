@@ -22,7 +22,6 @@ async def create_event_user(data, **kwargs):
             created_at=data['created_at'],
             modified_at=data['modified_at'],
             individual_dedline=data['individual_dedline'],
-            payment_confirmed=data['payment_confirmed']
         )
     else:
         await EventUser.create(
@@ -32,7 +31,6 @@ async def create_event_user(data, **kwargs):
             created_at=data['created_at'],
             modified_at=data['modified_at'],
             individual_dedline=data['individual_dedline'],
-            payment_confirmed=data['payment_confirmed']
         )
 
 
@@ -78,6 +76,7 @@ async def get_event_user(event_id=None, user_tg_id=None,
                                    'individual_dedline',
                                    'likes',
                                    'me_liked',
+                                   'is_deposit',
                                    'event__participants_count',
                                    'event__event_datetime',
                                    'event__event_text',
@@ -159,6 +158,10 @@ async def update_event_user(user_id: int, event_id: int,
         await logger.error(f'update_event_user: Does Not exist')
     except Exception as e:
         await logger.error(f'update_event_user: {e}')
+
+
+async def bulk_update_event_user_by_deposit(objs: list):
+    await EventUser.bulk_update(objs, ["modified_at", "payment_confirmed", "is_deposit"])
 
 
 # Обновление поля friend после записи друга на тренировку

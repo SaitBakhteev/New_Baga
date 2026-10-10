@@ -53,6 +53,7 @@ class EventUser(Model):
     individual_dedline = fields.DatetimeField(auto_now_add=True, timezone=timezone('Europe/Moscow'))
     paid_check = fields.BooleanField(null=True)
     payment_confirmed = fields.BooleanField(default=None, null=True)  # подтверждение оплаты, доступное только админу
+    is_deposit = fields.BooleanField(null=True)
 
     # Последняя дата и время отправки напоминания об оплате
     last_payment_notify = fields.DatetimeField(null=True, timezone=timezone('Europe/Moscow'))

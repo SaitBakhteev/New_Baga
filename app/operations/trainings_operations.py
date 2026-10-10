@@ -13,18 +13,11 @@ logger = setup_logger(__name__)
 
 
 # Проверяем, может ли участник сразу автоматически быть с подтвержденной оплатой
-async def _auto_check_payment_confirmed(event_text: str, tg_id: int, data: dict):
+def _enough_deposit(event_text: str, tg_id: int, data: dict):
     sale = extract_sale(event_text)
     balance = user_cache[tg_id].balance
     balance = balance if balance is not None else 0
-    if balance >= sale:
-        balance -= sale
-        user_cache[tg_id].balance = balance
-        await db_req.update_balance(user_cache[tg_id].id, balance)
-        data['payment_confirmed'] = True
-    else:
-        data['payment_confirmed'] = None
-    return data
+    return True if balance >= sale else False
 
 
 # Записаться на тренировку
@@ -47,11 +40,15 @@ async def sign_up_to_training(call: CallbackQuery, state: FSMContext, is_admin: 
             
             data = {'user_id': user_id, 'event_id': event_id, 'created_at': now, 'modified_at': now,
                     'individual_dedline':dedline_info['individual_dedline']}
-            data = await _auto_check_payment_confirmed(event['event_text'], call.from_user.id, data)
+            is_enough = _enough_deposit(event['event_text'], call.from_user.id, data)
             await db_rq_event_user.create_event_user(data)
             text = ('Вы записались на тренировку.\n'
                     'Если у вас уже оплачена эта тренировка, нажмите на кнопку оповещения бота ✔️\n')
-            text += dedline_info['text']
+            if is_enough:
+                text += (f'У Вас достаточно средств на депозите 👍🏼💰. Поэтому если Вы в основном списке'
+                         f'планировщик в ближайшее время закрепит за Вами место 😊')
+            else:
+                text += dedline_info['text']
         else:
             text = 'Новых участников, менее, чем за 10 минут до начала тренировки, могут записывать только админы.'
     except IntegrityError:
@@ -247,7 +244,7 @@ class AddFriend(ParentClassForTrainingOperations):
                     data['individual_dedline'] = dedline_info['individual_dedline']
                 data['created_at'] = data['modified_at'] = now
 
-                data = await _auto_check_payment_confirmed(event_text, friend_tg_id, data)
+                is_enough = _enough_deposit(event_text, friend_tg_id, data)
 
                 await db_rq_event_user.create_event_user(data, friend_id=friend_id,
                                                          i_am_friend=self._handler.from_user.username)
@@ -255,7 +252,13 @@ class AddFriend(ParentClassForTrainingOperations):
                     text = (f'️⚡️ ️⚡️ <b>ВАЖНАЯ ИНФОРМАЦИЯ</b>\n'
                             f'Вас записали на следующую тренировку\n'
                             f'<b>Тип тренировки</b>:{training_type}\n{event_text}\n\n')
-                    text += dedline_info['text']
+
+                    if is_enough:
+                        text += (f'У Вас достаточно средств на депозите 👍🏼💰. Поэтому если Вы в основном списке'
+                                 f'планировщик в ближайшее время закрепит за Вами место 😊')
+                    else:
+                        text += dedline_info['text']
+
                     asyncio.create_task(SendMessages.to_one_receiver(text=text, tg_id=friend_tg_id))
                 text = f'Вы успешно записали друга с никнеймом <i>{friend}</i> на тренировку 🖍'
                 await self._handler.message.answer(text, parse_mode='HTML')
@@ -380,9 +383,10 @@ class DeleteFromTraining(ParentClassForTrainingOperations):
                 self._now = datetime.now()
                 important_params = await self._important_params()
                 await db_rq_event_user.delete_event_user(self._user_id, event_id)
-                await self._send_messages(important_params)
+                if important_params:  # ← защита
+                    await self._send_messages(important_params)
                 msg = '🗑 Вы удалились из записи на тренировку.'
-                await cmd_start(self._handler, self._state, self._is_admin, user_cache)
+                await show_training_types(self._handler, self._state)
             else:
                 msg = '🟠 Удаление прервано.'
                 await show_formed_info_about_event(self._handler, self._is_admin, event_id, self._user_id)
@@ -402,28 +406,29 @@ class DeleteFromTraining(ParentClassForTrainingOperations):
         - находится ли удаляемый в основном списке.
         Если выполняются оба критерия, то фиксируется tg_id первого участника резерва, который поднимется из резерва
         '''
-        try:
-            data = await self._state.get_data()
-            event_id = data.get('event_id')
-            current_event_user = await db_rq_event_user.get_event_user_before_delete(event_id=event_id)
-            participants_count = current_event_user[0].event.participants_count
-            event_datetime = current_event_user[0].event.event_datetime
-            payment_dedline = current_event_user[0].event.payment_dedline
-            training_type = current_event_user[0].event.training_type
-            event_text = current_event_user[0].event.event_text
 
-            idx_pos = next(i for i, item in enumerate(current_event_user) if item.user.id == self._user_id)
-            if idx_pos < participants_count and len(current_event_user) > participants_count:
-                rsrv_tg_id = current_event_user[participants_count].user.tg_id
-                rsrv_tg_username = current_event_user[participants_count].user.tg_username
-                await self._update_params(current_event_user, participants_count, payment_dedline, event_datetime)
-            else:
-                rsrv_tg_id = rsrv_tg_username = None
+        data = await self._state.get_data()
+        event_id = data.get('event_id')
+        current_event_user = await db_rq_event_user.get_event_user_before_delete(event_id=event_id)
+        participants_count = current_event_user[0].event.participants_count
+        event_datetime = current_event_user[0].event.event_datetime
+        payment_dedline = current_event_user[0].event.payment_dedline
+        training_type = current_event_user[0].event.training_type
+        event_text = current_event_user[0].event.event_text  # ← было _event_text
 
-            return {'rsrv_tg_id': rsrv_tg_id, 'rsrv_tg_username': rsrv_tg_username, 'training_type': training_type,
-                    'event_datetime': event_datetime.replace(tzinfo=None), 'event_text': event_text}
-        except Exception as e:
-            await logger.error(f'ERROR on _important_params: {e}')
+        idx_pos = next(i for i, item in enumerate(current_event_user) if item.user.id == self._user_id)
+        if idx_pos < participants_count and len(current_event_user) > participants_count:
+            rsrv_tg_id = current_event_user[participants_count].user.tg_id
+            rsrv_tg_username = current_event_user[participants_count].user.tg_username
+            await self._update_params(current_event_user, participants_count, payment_dedline, event_datetime)
+        else:
+            rsrv_tg_id = rsrv_tg_username = None
+
+        return {'rsrv_tg_id': rsrv_tg_id,
+                'rsrv_tg_username': rsrv_tg_username,
+                'training_type': training_type,
+                'event_datetime': event_datetime.replace(tzinfo=None),
+                'event_text': event_text}
 
     async def _update_params(self, current_event_user:list, participants_count:int, payment_dedline, event_datetime):
         '''

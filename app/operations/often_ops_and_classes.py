@@ -4,6 +4,7 @@ from datetime import timedelta
 from aiogram import BaseMiddleware
 from aiogram.fsm.context import FSMContext
 from aiogram.types import TelegramObject, Message, CallbackQuery
+from aiogram.exceptions import TelegramBadRequest
 
 from typing import Callable, Dict, Any, Awaitable
 
@@ -92,24 +93,6 @@ class AdminMiddleware(BaseMiddleware):
         return await handler(event, data)
 
 
-# Проверяем, может ли участник сразу автоматически быть с подтвержденной оплатой
-def extract_sale(event_text: str):
-    # Берём фрагмент от "Стоимость тренировки</b>: " до следующего "<b>" или конца строки
-    match = re.search(
-        r'<b>Стоимость тренировки</b>:\s*(.*?)(?=<b>|$)',
-        event_text,
-        flags=re.DOTALL
-    )
-    if not match:
-        return 0
-    cost_part = match.group(1)
-
-    # Находим все числа длиной 3+ цифр и присваиваем sale
-    lst = [int(n) for n in re.findall(r'\d{3,}', cost_part)]
-    sale = min(lst) if len(lst) > 0 else 0
-    return sale
-
-
 # Родительский класс для разных операций (в основном для операций с тренировками)
 class ParentClassForTrainingOperations:
     def __init__(self, handler: CallbackQuery | Message, state: FSMContext, is_admin: bool):
@@ -128,9 +111,16 @@ async def delete_bkg(call_mess: Message | CallbackQuery):
     try:
         call_mess = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
         await call_mess.bot.delete_message(call_mess.chat.id, call_mess.message_id)
+    except TelegramBadRequest as e:
+        msg = str(e).lower()
+        # сообщение уже удалено / слишком старое / не существует — это нормально
+        if ('message to delete not found' in msg
+                or 'message can\'t be deleted' in msg
+                or 'message identifier is not specified' in msg):
+            return
+        await logger.error(f'Ошибка в delete_bkg: {e}')
     except Exception as e:
         await logger.error(f'Ошибка в delete_bkg: {e}')
-        return
 
 
 async def cmd_start(call_mess: CallbackQuery | Message, state: FSMContext, is_admin: bool, user_cache):
@@ -257,6 +247,10 @@ def show_text_about_event(event: dict, event_user: list, user_id: int) -> str:
             likes_txt = f'   {likes_txt}' if len(likes_txt) > 0 else ''
             star_likes_txt = f'\n{star_txt}{likes_txt}' if len(star_txt) > 0 or len(likes_txt) else ''
 
+            # Такой статус выделен обособленно
+            if item['is_deposit']:
+                status_tag = '💰'
+
             text+=f"<b>{i+1}</b>. {fullname}{status_tag}{_dedline}{star_likes_txt}\n"
             if i + 1 == participants_count:
                 text += "\n 📌📌 <b><i>Резерв</i></b>: \n"
@@ -313,6 +307,23 @@ def set_individual_dedline(payment_dedline, event_datetime, now):
 
     text += 'По истечении дедлайна есть риск оказаться в конце очереди при наличии резерва'
     return {'text': text, 'individual_dedline':individual_dedline}
+
+
+def extract_sale(event_text: str):
+    # Берём фрагмент от "Стоимость тренировки</b>: " до следующего "<b>" или конца строки
+    match = re.search(
+        r'<b>Стоимость тренировки</b>:\s*(.*?)(?=<b>|$)',
+        event_text,
+        flags=re.DOTALL
+    )
+    if not match:
+        return 0
+    cost_part = match.group(1)
+
+    # Находим все числа длиной 3+ цифр и присваиваем sale
+    lst = [int(n) for n in re.findall(r'\d{3,}', cost_part)]
+    sale = min(lst) if len(lst) > 0 else 0
+    return sale
 
 
 # Класс с метолдами отправки уведомлений в зависимости от контекста
@@ -380,7 +391,7 @@ class SendMessages():
     async def to_admins_about_non_marked_events(cls, events: list):
         text = ' 🚫🖊 ВНИМАНИЕ админам❗️\nОстались прошедшие тренировки, ожидающие подведения итогов:\n\n'
         for item in events:
-            text += f'{item.event_text}\n\n'
+            text += f'{item._event_text}\n\n'
         for k in user_cache:
             if user_cache[k].admin_permissions:
                 # print(f'to_admins_about_non_marked_events: {int(k)}')

@@ -99,6 +99,9 @@ async def update_admin(user_id:int, admin_permissions:bool):
 
 async def update_balance(user_id: int, balance: int):
     await User.filter(id=user_id).update(balance=balance)
+
+async def bulk_update_balance(users: list):
+    await User.bulk_update(users, ["balance"])
     
 
 ''' ---------------------------- EVENT ------------------------------------------------ '''

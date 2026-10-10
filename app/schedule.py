@@ -10,13 +10,63 @@ from app.database.event_user_requests import get_event_user
 from config.log_config import setup_logger
 from config.constants import SEASON_INDEX, user_cache
 
-from app.operations.often_ops_and_classes import SendMessages, set_individual_dedline, show_formed_info_about_event, extract_sale
+from app.operations.often_ops_and_classes import SendMessages, set_individual_dedline, extract_sale
+from app.database.requests import bulk_update_balance
+from app.database.event_user_requests import bulk_update_event_user_by_deposit
 
 logger, stream_logger = setup_logger(__name__), logging.getLogger(__name__)
 
 stars_dict = dict()  # словарь рейтинга звезд, распределенный по типам тренировок
 general_raiting = []  # список общего рейтинга
 likes_rating = []  # рейтинг симпатий
+
+
+class _DepositOps():
+    def __init__(self, event_user: list):
+        self.event_user = event_user
+        self.event_text = event_user[0].event.event_text
+        self.count = event_user[0].event.participants_count
+        self.update_users = []
+
+    def exec(self):
+        self.set_sale()
+        self.deposit()
+        self.modified_at()
+
+    async def update_users_balance(self):
+        if self.update_users:
+            await bulk_update_balance(self.update_users)
+        for user in self.update_users:
+            user_cache[user.tg_id].balance = user.balance
+
+    def set_sale(self):
+        self.sale = extract_sale(self.event_text)
+
+    def _update_balance(self, user, sale: int):
+        user.balance -= sale
+        self.update_users.append(user)
+
+    # Функция обработки списка с депозитом которая
+    def deposit(self):
+        '''Функция принимает список EventUser
+        Выполняемые действия:
+        - находит людей с депозитом и присваивает им статус подтвержденной оплаты
+        - снимает с баланса, если человек в основном списке'''
+
+        for obj in self.event_user[:self.count]:
+            if obj.payment_confirmed is not True and obj.is_deposit:
+                obj.payment_confirmed = True
+                self._update_balance(obj.user, self.sale)
+
+    def modified_at(self):
+        if len(self.event_user) > self.count:
+            begin_date, millisec = self.event_user[self.count-1].modified_at.replace(tzinfo=None), 0
+            for obj in self.event_user[self.count:]:
+                obj.user.balance = obj.user.balance if obj.user.balance is not None else 0
+                if obj.user.balance >= self.sale:
+                    obj.is_deposit = True
+                    millisec += 1
+                    obj.modified_at = begin_date + timedelta(milliseconds=millisec)
 
 
 # Класс для сканирования и перемещения в конец очереди
@@ -31,12 +81,23 @@ class MoveToEnd():
 
     # Главный исполняющий метод класса
     async def execute(self):
-        if len(self._event_user) > self._participants_count:
-            is_ex_move_to_end_ptcps = self._extract_from_main_lst()
-            await self._reserve_lst_ops(is_ex_move_to_end_ptcps)
-            if len(self._update_list) > 0:
-                await EventUser.bulk_update(self._update_list,
-                                            ['modified_at', 'individual_dedline', 'paid_check'])
+        try:
+            deposit_ops = _DepositOps(self._event_user)
+            deposit_ops.exec()
+            await deposit_ops.update_users_balance()
+
+            if len(self._event_user) > self._participants_count:
+                is_ex_move_to_end_ptcps = self._extract_from_main_lst()
+                await self._reserve_lst_ops(is_ex_move_to_end_ptcps)
+                await EventUser.bulk_update(self._event_user,
+                                            [
+                                                'modified_at', 'individual_dedline', 'paid_check',
+                                                'is_deposit', 'payment_confirmed'
+                                            ])
+        except Exception as e:
+            await logger.error(f'Ошибка планировщика : {e}')
+
+
 
     # Метод, который извлекает в отдельный список участников основного с просроченным дедлайном
     def _extract_from_main_lst(self):
@@ -112,8 +173,20 @@ class MoveToEnd():
             f'<b>Дисциплина</b>: <i>{self._event_user[0].event.training_type}</i>\n'
             f'{self._event_user[0].event.event_text}'
         )
-        text += f'\n{dedline_txt}'
-        await SendMessages.to_several_receivers(text=text, tg_ids=tg_ids)
+        text_dpst = f'\nУ Вас достаточный депозит 💰, Вы автоматически закрепились в основном списке ☺️'
+
+        deposits = []  # список для рассылки депозитчикам, поднявшихся с резерва
+        defaults = []  # список для рассылки обычным участникам, поднявшихся с резерва
+
+        for tg_id in tg_ids:
+            event_user = next(item for item in self._event_user if item.user.tg_id == tg_id)
+            if event_user.is_deposit:
+                deposits.append(tg_id)
+            else:
+                defaults.append(tg_id)
+
+        await SendMessages.to_several_receivers(text=f'{text}\n{dedline_txt}', tg_ids=defaults)
+        await SendMessages.to_several_receivers(text=f'{text}{text_dpst}', tg_ids=deposits)
 
         # БЛОК ДЛЯ РАССЫЛКИ АДМИНАМ
         # --------------------------
@@ -207,6 +280,7 @@ async def _send_remind_about_quiz():
                 await SendMessages.send_remind_about_quiz(_event, event_user, user_id_list)
         await Event.bulk_update(upd_list, ['remind_is_sended'])
 
+
 # Главная исполняющая функция по классам MoveToEnd и SendReminders
 async def main_func(is_move=True):
     now = datetime.now()
@@ -265,7 +339,6 @@ class StatisticOps():
         await self._extract_stars()
         self._lists_formation()
         try:
-            # await self._user_balance_update()
             if self._update_list:
                 await Statistic.bulk_update(self._update_list, ['modifed_at', 'star_count', 'visit_count', 'likes'])
             if self._create_list:
@@ -290,7 +363,6 @@ class StatisticOps():
             - если максимум один, то тогда и присуждаем +1 звезду
          '''
         try:
-            print(f'stars = {self._event_user[0].event.stars}')
             if self._event_user[0].event.stars != '-' and self._event_user[0].event.stars is not None:
                 _stars = self._event_user[0].event.stars.replace(' ', '').split(',')
                 stars_of_event = list(map(lambda x: int(x), _stars))
@@ -339,21 +411,6 @@ class StatisticOps():
                     created_at=self._now, modifed_at=self._now, season_index=SEASON_INDEX[0]
                 )
                 self._create_list.append(new_stat)
-
-    async def _user_balance_update(self):
-        sale = extract_sale(self._event_user[0].event.event_text)  # фиксируется стоимость прошедшей тренировки
-        users = []
-        for item in self._event_user:
-            if item.user.balance is not None:
-                # Немного хитрая проверка, чтоб не допустить минусового баланса
-                if (item.user.balance - sale) >= 0:
-                    item.user.balance -= sale
-                    users.append(item.user)
-        # синхронизация кэша
-        if len(users) > 0:
-            for user in users:
-                user_cache[user.tg_id].balance = user.balance
-            await User.bulk_update(users, ['balance'])
 
     @classmethod
     async def delete_events(cls, now):
