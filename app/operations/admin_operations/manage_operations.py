@@ -134,16 +134,22 @@ class PaymentVerification(ParentClassForTrainingOperations):
             if any(num > available_count or num == 0 for num in number_list):
                 raise IndexError
             index_list = list(map(lambda x: x - 1, number_list))
+            if any(event_user[i]["is_deposit"] is True for i in index_list):
+                raise IndexError("is_deposit")
             asyncio.create_task(delete_bkg(self._handler))
             return {'index_list': index_list, 'number_list': number_list}
         except ValueError:
             error_msg = ('Нужно <i><u>через запятую</u></i> вводить только <b>целочисленные значения</b>. '
                          'Повторите ввод.')
-
-        except IndexError:
-            error_msg = (f'Допустимы только порядковые номера из '
-                         f'<u>ОСНОВНОГО СПИСКА</u>.\n'
-                         f'Повторите ввод.')
+        except IndexError as e:
+            if str(e) == "is_deposit":
+                error_msg = (f'Один из введенных участников с депозитом 💰. '
+                             f'Верификация в его отношении ЗАПРЕЩЕНА 🙅🏼\n'
+                             f'Повторите ввод.')
+            else:
+                error_msg = (f'Допустимы только порядковые номера из '
+                             f'<u>ОСНОВНОГО СПИСКА</u>.\n'
+                             f'Повторите ввод.')
 
         keyboard = interrupt_or_return_button(callback_data=f"to_manage_of_event_is:{event['id']}")
         return {'error_msg': error_msg, 'keyboard': keyboard}

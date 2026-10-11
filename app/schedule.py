@@ -54,17 +54,23 @@ class _DepositOps():
         - снимает с баланса, если человек в основном списке'''
 
         for obj in self.event_user[:self.count]:
-            if obj.payment_confirmed is not True and obj.is_deposit:
-                obj.payment_confirmed = True
-                self._update_balance(obj.user, self.sale)
+            balance = obj.user.balance if obj.user.balance else 0
+            if balance >= self.sale:
+                if obj.is_deposit is not True and obj.payment_confirmed is not True:
+                    obj.payment_confirmed = obj.is_deposit = True
+                    self._update_balance(obj.user, self.sale)
+                elif obj.is_deposit is True and obj.payment_confirmed is not True:
+                    obj.payment_confirmed = True
+                    self._update_balance(obj.user, self.sale)
 
     def modified_at(self):
         if len(self.event_user) > self.count:
             begin_date, millisec = self.event_user[self.count-1].modified_at.replace(tzinfo=None), 0
             for obj in self.event_user[self.count:]:
                 obj.user.balance = obj.user.balance if obj.user.balance is not None else 0
-                if obj.user.balance >= self.sale:
+                if obj.user.balance >= self.sale and obj.is_deposit is not True:
                     obj.is_deposit = True
+                if obj.is_deposit is True:
                     millisec += 1
                     obj.modified_at = begin_date + timedelta(milliseconds=millisec)
 
