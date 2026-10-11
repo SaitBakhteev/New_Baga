@@ -305,10 +305,12 @@ async def main_func(is_move=True):
         return
     else:
         reper_h = now if is_move else now + timedelta(hours=1)
+
         event_user = await (
-                EventUser.filter(event__payment_dedline__lte=reper_h, event__event_datetime__gt=now).
+                EventUser.filter(event__event_datetime__gt=now).
                 select_related('event', 'user').order_by('event_id')
             )
+
         if event_user:
             event_user_dct = _dct_form(event_user)
             if is_move:
