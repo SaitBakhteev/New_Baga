@@ -36,8 +36,8 @@ class _DepositOps():
     async def update_users_balance(self):
         if self.update_users:
             await bulk_update_balance(self.update_users)
-        for user in self.update_users:
-            user_cache[user.tg_id].balance = user.balance
+            for user in self.update_users:
+                user_cache[user.tg_id].balance = user.balance
 
     def set_sale(self):
         self.sale = extract_sale(self.event_text)
@@ -70,6 +70,8 @@ class _DepositOps():
                 obj.user.balance = obj.user.balance if obj.user.balance is not None else 0
                 if obj.user.balance >= self.sale and obj.is_deposit is not True:
                     obj.is_deposit = True
+                elif obj.user.balance < self.sale and obj.is_deposit is True:
+                    obj.is_deposit = False
                 if obj.is_deposit is True:
                     millisec += 1
                     obj.modified_at = begin_date + timedelta(milliseconds=millisec)
