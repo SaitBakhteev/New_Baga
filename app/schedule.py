@@ -46,6 +46,7 @@ class _DepositOps():
         user.balance -= sale
         self.update_users.append(user)
 
+
     # Функция обработки списка с депозитом которая
     def deposit(self):
         '''Функция принимает список EventUser
@@ -97,11 +98,12 @@ class MoveToEnd():
             if len(self._event_user) > self._participants_count:
                 is_ex_move_to_end_ptcps = self._extract_from_main_lst()
                 await self._reserve_lst_ops(is_ex_move_to_end_ptcps)
-                await EventUser.bulk_update(self._event_user,
-                                            [
-                                                'modified_at', 'individual_dedline', 'paid_check',
-                                                'is_deposit', 'payment_confirmed'
-                                            ])
+
+            await EventUser.bulk_update(self._event_user,
+                                        [
+                                            'modified_at', 'individual_dedline', 'paid_check',
+                                            'is_deposit', 'payment_confirmed'
+                                        ])
         except Exception as e:
             await logger.error(f'Ошибка планировщика : {e}')
 

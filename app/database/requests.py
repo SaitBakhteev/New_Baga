@@ -101,8 +101,10 @@ async def update_balance(user_id: int, balance: int):
     await User.filter(id=user_id).update(balance=balance)
 
 async def bulk_update_balance(users: list):
-    await User.bulk_update(users, ["balance"])
-    
+    try:
+        await User.bulk_update(users, ["balance"])
+    except Exception as e:
+        await logger.error(f'bulk_update_balance: {e}')
 
 ''' ---------------------------- EVENT ------------------------------------------------ '''
 async def create_event(data):  # добавить событие

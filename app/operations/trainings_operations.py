@@ -42,13 +42,13 @@ async def sign_up_to_training(call: CallbackQuery, state: FSMContext, is_admin: 
                     'individual_dedline':dedline_info['individual_dedline']}
             is_enough = _enough_deposit(event['event_text'], call.from_user.id, data)
             await db_rq_event_user.create_event_user(data)
-            text = ('Вы записались на тренировку.\n'
-                    'Если у вас уже оплачена эта тренировка, нажмите на кнопку оповещения бота ✔️\n')
+            text = 'Вы записались на тренировку.\n'
             if is_enough:
                 text += (f'У Вас достаточно средств на депозите 👍🏼💰. Поэтому если Вы в основном списке '
                          f'планировщик в ближайшее время закрепит за Вами место 😊')
             else:
-                text += dedline_info['text']
+                text += (f"{dedline_info['text']}\nЕсли у вас уже оплачена эта тренировка,"
+                         f"нажмите на кнопку оповещения бота ✔️\n")
         else:
             text = 'Новых участников, менее, чем за 10 минут до начала тренировки, могут записывать только админы.'
     except IntegrityError:

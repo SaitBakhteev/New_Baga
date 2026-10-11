@@ -228,7 +228,7 @@ def show_text_about_event(event: dict, event_user: list, user_id: int) -> str:
                     status_tag = '⚠️'
             else:
                 status_tag = ''
-            if len(status_tag) > 0 and status_tag != '✅':
+            if len(status_tag) > 0 and status_tag != '✅' and item['is_deposit'] is not True:
                 _dedline = f"⏳ <b><i>{item['individual_dedline'].strftime('%H:%M %d.%m')}</i></b>"
             else:
                 _dedline = ''
