@@ -4,16 +4,18 @@ from aiogram.types import Message, CallbackQuery
 
 from app.keyboards.kb_registr_and_profile import *
 from config.constants import user_cache, TRAINING_TYPES
+from config.log_config import setup_logger
 from app.keyboards import universal_keyboards as kb
 from app import states as st
 from app.database import requests as db_req
 from ..operations.often_ops_and_classes import ParentClassForTrainingOperations, delete_bkg
 
+logger = setup_logger(__name__)
+
 
 async def show_profile_menu(call: CallbackQuery | Message):
     call = call.message if isinstance(call, CallbackQuery) else call
-    await call.answer(text="Профиль ", reply_markup=profile_kb)
-    asyncio.create_task(delete_bkg(call))
+    await call.answer(text="<b>Профиль 👤</b>", reply_markup=profile_kb)
 
 
 class ProfileManagment(ParentClassForTrainingOperations):
@@ -27,10 +29,10 @@ class ProfileManagment(ParentClassForTrainingOperations):
             elif await self._state.get_state() == st.EditProfileFSM.edit_tg_name:
                 await self._profile_edit_tg_name()
         elif isinstance(self._handler, CallbackQuery):
+            if self._handler.data == '/prof':
+                await self._show_profile()
             if self._handler.data == 'profile_edit':
                 await self._edit_profile()
-            elif self._handler.data == '/prof':
-                await self._show_profile()
         asyncio.create_task(delete_bkg(self._handler))
 
     async def _show_profile(self):
@@ -38,8 +40,9 @@ class ProfileManagment(ParentClassForTrainingOperations):
         tg_name = user_cache[self._handler.from_user.id].tg_name
         balance = user_cache[self._handler.from_user.id].balance
         balance = 0 if balance is None else balance
-        text = (f'На данный момент Вы зарегистрированы в боте как <b><i>{tg_name}</i></b>\n'
-                f'<b><i>Ваш текущий баланс</i></b>: {balance} руб')
+        text = (f'<b>👤 Текущие данные вашего профиля</b>:\n\n'
+                f'<i>Имя</i>: <b><i>{tg_name}</i></b>\n'
+                f'<i>Ваш текущий баланс</i>: <b><i>{balance}</i></b>')
         _handler = self._handler.message if isinstance(self._handler, CallbackQuery) else self._handler
         await _handler.answer(text, reply_markup=profile_kb, parse_mode='HTML')
 
@@ -135,3 +138,21 @@ class SubscriptionManage(ParentClassForTrainingOperations):
         await self._state.clear()
         await self._begin()
         await self._handler.answer(msg)
+
+
+async def show_dev_info(call: Message | CallbackQuery):
+    call = call.message if isinstance(call, CallbackQuery) else call
+    txt = ('Разработчик бота <a href="https://t.me/SaitBakhteev">Саит Бахтеев</a>\n\n'
+           '<b><i>Сферы деятельности разработчика</i></b>:\n'
+           '🔹Разработка веб-сервисов\n'
+           '🔹Разработка чат-ботов\n'
+           '🔹Создание цифровых сервисов для научных и производственных задач (химия, анализ, метрология и т.д.)\n'
+           '🔹Автоматизация бизнес-процессов\n'
+           '🔹Работа с базами данных и СУБД\n'
+           '🔹Анализ данных с применением библиотек математической статистики\n'
+           '🔹Цифровые решения для научных задач\n\n'
+           '<b><a href="https://github.com/SaitBakhteev">GitHub</a> разработчика</b>\n\n'
+           '<i>По всем вопросам пишите в телеграмм в @SaitBakhteev</i>')
+    await call.answer(txt, parse_mode='HTML',
+                      reply_markup=kb.interrupt_or_return_button(text='↩️ Назад', callback_data='start'))
+    asyncio.create_task(delete_bkg(call))

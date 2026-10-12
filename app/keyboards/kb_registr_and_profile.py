@@ -10,8 +10,8 @@ registration_kb = InlineKeyboardMarkup(
 
 profile_kb = InlineKeyboardMarkup(
     inline_keyboard=[
-        [InlineKeyboardButton(text='Редактировать профиль 🖌', callback_data='profile_edit')],
-        [InlineKeyboardButton(text='Редактировать подписку на уведомления 🔔🖌', callback_data='subscription_edit')],
+        [InlineKeyboardButton(text='Редактировать имя 🖌', callback_data='profile_edit')],
+        [InlineKeyboardButton(text='Редактировать подписку на уведомления 🔔', callback_data='subscription_edit')],
         [RETURN_TO_START_BUTTON]
     ],
 )

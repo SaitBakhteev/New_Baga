@@ -1,12 +1,14 @@
+import asyncio
+
 from aiogram import F, Bot
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 from aiogram.dispatcher.router import Router
 
-from app.operations.often_ops_and_classes import cmd_start, AdminMiddleware
+from app.operations.often_ops_and_classes import cmd_start
 from app.operations.regisration_ops import registration_and_welcome
-from app.operations.rare_ops import ProfileManagment, SubscriptionManage, show_profile_menu
+from app.operations.rare_ops import ProfileManagment, SubscriptionManage, show_profile_menu, show_dev_info
 
 from config.constants import user_cache
 from app import states as st
@@ -25,12 +27,11 @@ async def call_registration(call: CallbackQuery):
     await registration_and_welcome(call)
 
 
+# async def call_prof_menu(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
+#     await show_profile_menu(call)
+
 @rare_router.message(Command('prof'))
 @rare_router.callback_query(F.data == '/prof')
-async def call_prof_menu(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
-    await show_profile_menu(call)
-
-
 @rare_router.callback_query(F.data == 'profile_edit')
 @rare_router.message(st.EditProfileFSM.edit_tg_name)
 async def call_prof_manage(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
@@ -47,12 +48,12 @@ async def call_subcription_mng(call: CallbackQuery | Message, state: FSMContext,
     await subcription_mng._dispatch()
 
 
+@rare_router.callback_query(F.data=='/dev')
 @rare_router.message(Command('dev'))
-async def dev(mesage: Message, state: FSMContext, is_admin: bool):
-    await mesage.answer('Разработчик бота <a href="https://t.me/SaitBakhteev">Саит Бахтеев</a>\n'
-                        '<a href="https://github.com/SaitBakhteev">GitHub</a> разработчика',
-                        parse_mode='HTML')
-#
+async def dev(call: Message | CallbackQuery):
+    await show_dev_info(call)
+
+
 # @rare_router.message(Command('sign'))
 # async def general_tut(message: Message, bot: Bot):
 #     await load_video(message, bot, 'sign_rend')

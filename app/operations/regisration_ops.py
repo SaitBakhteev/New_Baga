@@ -36,3 +36,5 @@ async def registration_and_welcome(call: CallbackQuery):
         f"Для пользования ботом внизу слева расположено меню, "
         f"где Вы можете выбрать интересующую Вас команду."
     )
+
+

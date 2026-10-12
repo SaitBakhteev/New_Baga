@@ -11,7 +11,7 @@ from app.database import requests as db_rq
 
 from config.constants import *
 
-from ..often_ops_and_classes import delete_bkg, ParentClassForTrainingOperations, cmd_start, SendMessages
+from ..often_ops_and_classes import delete_bkg, ParentClassForTrainingOperations, SendMessages, cmd_start
 from ...keyboards.admin_keyboards.admin_keyboards import *
 from .manage_operations import show_event_with_manage_interface
 from ..stat_ops import StatisticOps

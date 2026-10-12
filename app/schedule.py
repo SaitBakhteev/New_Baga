@@ -1,6 +1,6 @@
 import logging
 import asyncio
-
+import traceback
 
 from datetime import datetime, timedelta, time
 
@@ -353,13 +353,10 @@ class StatisticOps():
         await self._load_stat()
         await self._extract_stars()
         self._lists_formation()
-        try:
-            if self._update_list:
-                await Statistic.bulk_update(self._update_list, ['modifed_at', 'star_count', 'visit_count', 'likes'])
-            if self._create_list:
-                await Statistic.bulk_create(self._create_list)
-        except Exception as e:
-            await logger.error(f'Ошибка StatisticOps.execute: {e}')
+        if self._update_list:
+            await Statistic.bulk_update(self._update_list, ['modifed_at', 'star_count', 'visit_count', 'likes'])
+        if self._create_list:
+            await Statistic.bulk_create(self._create_list)
 
     async def _load_stat(self):
         _user_ids = [item.user.id for item in self._event_user]
@@ -377,34 +374,32 @@ class StatisticOps():
             - смотрим количество записей этого списка
             - если максимум один, то тогда и присуждаем +1 звезду
          '''
-        try:
-            if self._event_user[0].event.stars != '-' and self._event_user[0].event.stars is not None:
-                _stars = self._event_user[0].event.stars.replace(' ', '').split(',')
-                stars_of_event = list(map(lambda x: int(x), _stars))
-                self._stars = stars_of_event
+
+        if self._event_user[0].event.stars != '-' and self._event_user[0].event.stars is not None:
+            _stars = self._event_user[0].event.stars.replace(' ', '').split(',')
+            stars_of_event = list(map(lambda x: int(x), _stars))
+            self._stars = stars_of_event
+        else:
+            self._stars = []
+        if not all(item.likes==0 for item in self._event_user):  # если было голосование
+            obj = max(self._event_user, key=lambda item: item.likes)
+            max_count = len([item.likes for item in self._event_user if item.likes == obj.likes])
+            training_type = obj.event.training_type
+            _datetime = obj.event.event_datetime.strftime('%d.%m %H:%M')
+            question = obj.event.question
+            if max_count == 1:  # звезду добавляем, если лидер голосования один единственный
+                self._stars.append(obj.user.id)
+                fullname = f'{obj.user.tg_name} @{obj.user.tg_username}'
+                text=('<b>🩷 ИТОГИ ГОЛОСОВАНИЯ 🔥</b>\n\n'
+                      f'Лидером голосования ❓"<b><i>{question}</i></b>"❓ прошедшей тренировки '
+                      f'(<i>{_datetime}</i>) по дисциплине <b><i>{training_type}</i></b> становится участник '
+                      f'<b><i>{fullname}</i></b> 🥳. Ему присуждается звезда 🤩\n\n'
+                      f'💥🔥ПОЗДРАВЛЯЕМ!!😍')
             else:
-                self._stars = []
-            if not all(item.likes==0 for item in self._event_user):  # если было голосование
-                obj = max(self._event_user, key=lambda item: item.likes)
-                max_count = len([item.likes for item in self._event_user if item.likes == obj.likes])
-                training_type = obj.event.training_type
-                _datetime = obj.event.event_datetime.strftime('%d.%m %H:%M')
-                question = obj.event.question
-                if max_count == 1:  # звезду добавляем, если лидер голосования один единственный
-                    self._stars.append(obj.user.id)
-                    fullname = f'{obj.user.tg_name} @{obj.user.tg_username}'
-                    text=('<b>🩷 ИТОГИ ГОЛОСОВАНИЯ 🔥</b>\n\n'
-                          f'Лидером голосования ❓"<b><i>{question}</i></b>"❓ прошедшей тренировки '
-                          f'(<i>{_datetime}</i>) по дисциплине <b><i>{training_type}</i></b> становится участник '
-                          f'<b><i>{fullname}</i></b> 🥳. Ему присуждается звезда 🤩\n\n'
-                          f'💥🔥ПОЗДРАВЛЯЕМ!!😍')
-                else:
-                    text=('<b>🩷 ИТОГИ ГОЛОСОВАНИЯ 🔥</b>\n\n'
-                          f'Голосование ❓"<b><i>{question}</i></b>"❓ прошедшей тренировки (<i>{_datetime}</i>) '
-                          f'по дисциплине <b><i>{training_type}</i></b> не выявила лидера 🤷🏼‍♂️')
-                await Voting.create(question=text, training_type=training_type)
-        except Exception as e:
-            await logger.error(f'Error on _extract_stars: {e}')
+                text=('<b>🩷 ИТОГИ ГОЛОСОВАНИЯ 🔥</b>\n\n'
+                      f'Голосование ❓"<b><i>{question}</i></b>"❓ прошедшей тренировки (<i>{_datetime}</i>) '
+                      f'по дисциплине <b><i>{training_type}</i></b> не выявила лидера 🤷🏼‍♂️')
+            await Voting.create(question=text, training_type=training_type)
 
     def _lists_formation(self):
         for item in self._event_user:
@@ -429,10 +424,13 @@ class StatisticOps():
 
     @classmethod
     async def delete_events(cls, now):
-        events_not_finished = await Event.filter(event_datetime__lt=now, is_finished__isnull=True).all()
-        if events_not_finished:
-            await SendMessages.to_admins_about_non_marked_events(events=events_not_finished)
         await Event.filter(event_datetime__lt=now, is_finished=True).delete()
+
+    # Проверяем не остались незакрытые админом прошедшие тренировки
+    @classmethod
+    async def check_events_not_finished(cls, now):
+        events_not_finished = await Event.filter(event_datetime__lt=now, is_finished__isnull=True).all()
+        return events_not_finished
 
     # Реформирование рейтинга звезд по типам тренировки
     @classmethod
@@ -539,27 +537,34 @@ def _dct_form(event_user: list) -> dict:
 
 # Главная исполняющая функция по работе со статистикой
 async def stat_execute_func():
+    now = datetime.now()
+    event_user = await  EventUser.filter(
+        event__event_datetime__lt=now, event__is_finished=True
+    ).prefetch_related('event', 'user').all()
     try:
-        async with in_transaction():
-            now = datetime.now()
-            event_user = await  EventUser.filter(
-                event__event_datetime__lt=now, event__is_finished=True
-            ).prefetch_related('event', 'user').all()
-            if event_user:
+        if event_user:
+            async with in_transaction():
                 event_user_dct = _dct_form(event_user)
 
                 # Исполняем класс StatisticOps
                 for k in event_user_dct:
                     stat_ops = StatisticOps(event_user=event_user_dct[k], now=now)
                     await stat_ops.execute()
-                await StatisticOps.delete_events(now)
                 await StatisticOps.stat_raiting_form()
-                await SendMessages.send_to_admins_bug_or_norm(f'✅📈 Обработка прошедших тренировок'
-                                                              f' и обновление статистики проведено успешно')
+                await StatisticOps.delete_events(now)
     except Exception as e:
-        await logger.critical(f'Критическая ошибка в статистике {e}')
-        await SendMessages.send_to_admins_bug_or_norm(f'🆘 критическая ошибка в обработке статистики')
-
+        await logger.critical(f'Критическая ошибка в статистике {e}\n{traceback.format_exc()}')
+        await SendMessages.send_to_admins_bug_or_norm(f'🆘 Критическая ошибка в обработке статистики')
+        return
+    try:
+        if event_user:
+            await SendMessages.send_to_admins_bug_or_norm(f'✅📈 Обработка прошедших тренировок'
+                                                          f' и обновление статистики проведено успешно')
+        events_not_finished = await StatisticOps.check_events_not_finished(now)
+        if events_not_finished:
+            await SendMessages.to_admins_about_non_marked_events(events=events_not_finished)
+    except Exception as e:
+        await logger.error(f'Ошибка при отправке уведомлений админам после пополнения статистики {e}')
 
 # Функция для рассылки уведомлений подписчикам
 async def msg_send():

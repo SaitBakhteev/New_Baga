@@ -1,5 +1,6 @@
 import asyncio
-from datetime import timedelta
+
+import traceback
 
 from aiogram import BaseMiddleware
 from aiogram.fsm.context import FSMContext
@@ -11,19 +12,16 @@ from typing import Callable, Dict, Any, Awaitable
 from html import escape
 import re
 
-from pycparser.ply.ctokens import t_XOR
-
-from config.constants import bot, user_cache
 from ..keyboards.kb_show_training import training_interface_kb, show_events_kb, quiz_kb
-from ..keyboards.start_menu_kb import start_menu_kb
 from ..database import requests as db_req
 from ..database import event_user_requests as db_rq_event_user
+from ..keyboards.start_menu_kb import start_menu_kb
 
 from ..keyboards.universal_keyboards import interrupt_or_return_button
 from ..keyboards.kb_show_training import choose_training_type_kb
 
 from ..operations.regisration_ops import registration
-from config.log_config import setup_logger, setup_sync_logger
+from config.log_config import setup_sync_logger
 from config.constants import *
 
 logger = setup_logger(__name__)
@@ -125,14 +123,18 @@ async def delete_bkg(call_mess: Message | CallbackQuery):
         await logger.error(f'Ошибка в delete_bkg: {e}')
 
 
-async def cmd_start(call_mess: CallbackQuery | Message, state: FSMContext, is_admin: bool, user_cache):
+# Вряд ли юзер будет часто попадать на старт, но сама функция в коде применяется во многих других блоках
+async def cmd_start(init_call: CallbackQuery | Message, state: FSMContext, is_admin: bool, user_cache):
     try:
-        if call_mess.from_user.id not in user_cache:
-            await registration(call_mess)
+        if init_call.from_user.id not in user_cache:
+            await registration(init_call)
             return
         await state.clear()
-        call_mess = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
-        await call_mess.answer(f"Главное меню 🧮", reply_markup=start_menu_kb)
+        call = init_call.message if isinstance(init_call, CallbackQuery) else init_call
+        await call.answer(f"Главное меню 🧮 ываыва", reply_markup=start_menu_kb)
+        if isinstance(init_call, CallbackQuery):
+            await init_call.answer()  # гасим спинер
+        asyncio.create_task(delete_bkg(init_call))
     except Exception as e:
         await logger.error(f'Ошибка в cmd_start: {e}')
         # stream_logger.error(log_message)
@@ -143,9 +145,12 @@ async def cmd_start(call_mess: CallbackQuery | Message, state: FSMContext, is_ad
 # =====================================
 
 async def show_training_types(message: Message, state: FSMContext):
-    await state.clear()
-    await message.answer('Выберите тип тренировки', reply_markup=choose_training_type_kb())
-    asyncio.create_task(delete_bkg(message))
+    try:
+        await state.clear()
+        await message.answer('Выберите тип тренировки', reply_markup=choose_training_type_kb())
+        asyncio.create_task(delete_bkg(message))
+    except Exception:
+        print(traceback.format_exc())
 
 
 async def show_events(call: CallbackQuery, state: FSMContext, is_admin: bool):
@@ -390,7 +395,7 @@ class SendMessages():
     async def to_admins_about_non_marked_events(cls, events: list):
         text = ' 🚫🖊 ВНИМАНИЕ админам❗️\nОстались прошедшие тренировки, ожидающие подведения итогов:\n\n'
         for item in events:
-            text += f'{item._event_text}\n\n'
+            text += f'{item.event_text}\n\n'
         for k in user_cache:
             if user_cache[k].admin_permissions:
                 # print(f'to_admins_about_non_marked_events: {int(k)}')
