@@ -1,7 +1,10 @@
 import logging
 import asyncio
 
+
 from datetime import datetime, timedelta, time
+
+from tortoise.transactions import in_transaction
 
 from app.database.models import User, Event, EventUser, Statistic, Voting
 from app.database.requests import get_event
@@ -536,19 +539,26 @@ def _dct_form(event_user: list) -> dict:
 
 # Главная исполняющая функция по работе со статистикой
 async def stat_execute_func():
-    now = datetime.now()
-    event_user = await  EventUser.filter(
-        event__event_datetime__lt=now, event__is_finished=True
-    ).prefetch_related('event', 'user').all()
-    if event_user:
-        event_user_dct = _dct_form(event_user)
+    try:
+        async with in_transaction():
+            now = datetime.now()
+            event_user = await  EventUser.filter(
+                event__event_datetime__lt=now, event__is_finished=True
+            ).prefetch_related('event', 'user').all()
+            if event_user:
+                event_user_dct = _dct_form(event_user)
 
-        # Исполняем класс StatisticOps
-        for k in event_user_dct:
-            stat_ops = StatisticOps(event_user=event_user_dct[k], now=now)
-            await stat_ops.execute()
-    await StatisticOps.delete_events(now)
-    await StatisticOps.stat_raiting_form()
+                # Исполняем класс StatisticOps
+                for k in event_user_dct:
+                    stat_ops = StatisticOps(event_user=event_user_dct[k], now=now)
+                    await stat_ops.execute()
+                await StatisticOps.delete_events(now)
+                await StatisticOps.stat_raiting_form()
+                await SendMessages.send_to_admins_bug_or_norm(f'✅📈 Обработка прошедших тренировок'
+                                                              f' и обновление статистики проведено успешно')
+    except Exception as e:
+        await logger.critical(f'Критическая ошибка в статистике {e}')
+        await SendMessages.send_to_admins_bug_or_norm(f'🆘 критическая ошибка в обработке статистики')
 
 
 # Функция для рассылки уведомлений подписчикам

@@ -11,9 +11,11 @@ from typing import Callable, Dict, Any, Awaitable
 from html import escape
 import re
 
+from pycparser.ply.ctokens import t_XOR
+
 from config.constants import bot, user_cache
 from ..keyboards.kb_show_training import training_interface_kb, show_events_kb, quiz_kb
-
+from ..keyboards.start_menu_kb import start_menu_kb
 from ..database import requests as db_req
 from ..database import event_user_requests as db_rq_event_user
 
@@ -130,14 +132,11 @@ async def cmd_start(call_mess: CallbackQuery | Message, state: FSMContext, is_ad
             return
         await state.clear()
         call_mess = call_mess.message if isinstance(call_mess, CallbackQuery) else call_mess
-        await call_mess.answer(
-            f"Для работы воспользуйтесь меню внизу слева \n↙️"
-        )
+        await call_mess.answer(f"Главное меню 🧮", reply_markup=start_menu_kb)
     except Exception as e:
         await logger.error(f'Ошибка в cmd_start: {e}')
         # stream_logger.error(log_message)
         return
-
 
 
 # БЛОК ФУНКЦИЙ ПО ОТОБРАЖЕНИЮ ТРЕНИРОВКИ
@@ -396,3 +395,9 @@ class SendMessages():
             if user_cache[k].admin_permissions:
                 # print(f'to_admins_about_non_marked_events: {int(k)}')
                 await bot.send_message(int(k), text, parse_mode='HTML')
+
+    @classmethod
+    async def send_to_admins_bug_or_norm(cls, msg):
+        for k in user_cache:
+            if user_cache[k].admin_permissions:
+                await bot.send_message(int(k), msg, parse_mode='HTML')

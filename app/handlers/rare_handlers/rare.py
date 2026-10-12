@@ -6,7 +6,7 @@ from aiogram.dispatcher.router import Router
 
 from app.operations.often_ops_and_classes import cmd_start, AdminMiddleware
 from app.operations.regisration_ops import registration_and_welcome
-from app.operations.rare_ops import ProfileManagment, SubscriptionManage
+from app.operations.rare_ops import ProfileManagment, SubscriptionManage, show_profile_menu
 
 from config.constants import user_cache
 from app import states as st
@@ -27,6 +27,10 @@ async def call_registration(call: CallbackQuery):
 
 @rare_router.message(Command('prof'))
 @rare_router.callback_query(F.data == '/prof')
+async def call_prof_menu(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
+    await show_profile_menu(call)
+
+
 @rare_router.callback_query(F.data == 'profile_edit')
 @rare_router.message(st.EditProfileFSM.edit_tg_name)
 async def call_prof_manage(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):

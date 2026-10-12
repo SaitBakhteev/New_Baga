@@ -10,6 +10,12 @@ from app.database import requests as db_req
 from ..operations.often_ops_and_classes import ParentClassForTrainingOperations, delete_bkg
 
 
+async def show_profile_menu(call: CallbackQuery | Message):
+    call = call.message if isinstance(call, CallbackQuery) else call
+    await call.answer(text="Профиль ", reply_markup=profile_kb)
+    asyncio.create_task(delete_bkg(call))
+
+
 class ProfileManagment(ParentClassForTrainingOperations):
     # Кнопка возврата для управления профилем
     _return_to_profile_kb = kb.interrupt_or_return_button(callback_data='/prof')
@@ -35,7 +41,7 @@ class ProfileManagment(ParentClassForTrainingOperations):
         text = (f'На данный момент Вы зарегистрированы в боте как <b><i>{tg_name}</i></b>\n'
                 f'<b><i>Ваш текущий баланс</i></b>: {balance} руб')
         _handler = self._handler.message if isinstance(self._handler, CallbackQuery) else self._handler
-        await _handler.answer(text, reply_markup=profile_edit_kb, parse_mode='HTML')
+        await _handler.answer(text, reply_markup=profile_kb, parse_mode='HTML')
 
     async def _edit_profile(self):
         text = 'Введите свое имя. Например, <i>Иван Иванов</i>'
@@ -87,7 +93,7 @@ class SubscriptionManage(ParentClassForTrainingOperations):
             txt = ';\n'.join(map(str, subscription.split(',')))
             msg = f'У Вас на данный момент подписки на следующие уведомления:\n\n<b><i>{txt}</i></b>'
         _handler = self._handler.message if isinstance(self._handler, CallbackQuery) else self._handler
-        await _handler.answer(msg, reply_markup=subscription_manage_kb)
+        await _handler.answer(msg, reply_markup=profile_kb)
 
     async def _input_data(self):
         txt = ('Отправьте боту сообщение в зависимости от задачи:\n'
