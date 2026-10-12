@@ -131,7 +131,7 @@ async def cmd_start(init_call: CallbackQuery | Message, state: FSMContext, is_ad
             return
         await state.clear()
         call = init_call.message if isinstance(init_call, CallbackQuery) else init_call
-        await call.answer(f"Главное меню 🧮", reply_markup=start_menu_kb)
+        await call.answer(f"Главное меню 🏠", reply_markup=start_menu_kb)
         if isinstance(init_call, CallbackQuery):
             await init_call.answer()  # гасим спинер
         asyncio.create_task(delete_bkg(init_call))
