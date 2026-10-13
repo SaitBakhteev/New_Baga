@@ -329,8 +329,6 @@ async def main_func(is_move=True):
             await _send_remind_about_quiz()
 
 
-
-
 # БЛОК РАБОТЫ СО СТАТИСТИКОЙ
 # ==========================
 class _LocalStatObj():
@@ -558,7 +556,8 @@ async def stat_execute_func():
         return
     try:
         if event_user:
-            await SendMessages.send_to_admins_bug_or_norm(f'✅📈 Обработка прошедших тренировок'
+            await SendMessages.send_to_admins_bug_or_norm(f'👥📢 <b>ОБЪЯВЛЕНИЕ ДЛЯ АДМИНОВ</b>\n'
+                                                          f'✅📈 Обработка прошедших тренировок'
                                                           f' и обновление статистики проведено успешно')
         events_not_finished = await StatisticOps.check_events_not_finished(now)
         if events_not_finished:

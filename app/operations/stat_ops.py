@@ -1,6 +1,6 @@
 import asyncio
+import traceback
 
-from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery, Message
 
 from typing import Optional
@@ -41,8 +41,8 @@ class ShowStat():
                 else:
                     stars = ''
                 visit_count = f'🏃🏽‍♂️{item.visit_count}'
-                fullname = f'{item.user.tg_name} @{item.user.tg_username}'
-                fullname = f'<b>{escape(fullname)}</b>' if call.from_user.id == item.user.tg_id else fullname
+                fullname = f'{escape(item.user.tg_name)} @{escape(item.user.tg_username)}'
+                fullname = f'<b>{fullname}</b>' if call.from_user.id == item.user.tg_id else fullname
                 text += f'<b>{i + 1}</b>. {stars} {fullname}\n  {visit_count}\n'
             return text
         else:
@@ -99,16 +99,19 @@ class ShowStat():
 
     @classmethod
     async def _show_type_raiting(cls, call: CallbackQuery):
-        training_index = int(call.data.split(':')[1])
-        training_type = TRAINING_TYPES[training_index]
-        stars_dict = StatisticOps.stars_dict_getter()
-        rating_txt = cls._rating_txt_form(call, stars_dict[training_type], '⭐️') if training_type in stars_dict else None
-        if rating_txt:
-            msg = (f'Текущий рейтинг по дисциплине <b>"{training_type}"</b>:\n\n'
-                   f'{rating_txt}')
-        else:
-            msg = f'По дисциплине <b>"{training_type}"</b> в этом сезоне тренировки пока не проводились'
-        await call.message.answer(msg, parse_mode='HTML', reply_markup=cls._back_kb)
+        try:
+            training_index = int(call.data.split(':')[1])
+            training_type = TRAINING_TYPES[training_index]
+            stars_dict = StatisticOps.stars_dict_getter()
+            rating_txt = cls._rating_txt_form(call, stars_dict[training_type], '⭐️') if training_type in stars_dict else None
+            if rating_txt:
+                msg = (f'Текущий рейтинг по дисциплине <b>"{training_type}"</b>:\n\n'
+                       f'{rating_txt}')
+            else:
+                msg = f'По дисциплине <b>"{training_type}"</b> в этом сезоне тренировки пока не проводились'
+            await call.message.answer(msg, parse_mode='HTML', reply_markup=cls._back_kb)
+        except Exception as e:
+            logger.error(f'ERROR on _show_type_raiting {e}:\n{traceback.format_exc()}')
 
     @classmethod
     async def _process_big_txt(cls, _count:int, rating_txt:str, call: CallbackQuery):
