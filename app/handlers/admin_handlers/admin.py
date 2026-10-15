@@ -142,3 +142,15 @@ async def call_edit_balance(call: CallbackQuery | Message, state: FSMContext, is
 async def call_create_product(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
     create_product = CreateProduct(call, state, is_admin)
     await create_product.dispatch()
+
+
+@admin_router.callback_query(F.data.startswith('edit_product'))
+@admin_router.callback_query(F.data=='edit_title')
+@admin_router.message(st.UpdateProductFSM.photo)
+@admin_router.message(st.UpdateProductFSM.title)
+@admin_router.message(st.UpdateProductFSM.sale)
+@admin_router.message(st.UpdateProductFSM.description)
+@admin_router.message(st.UpdateProductFSM.position)
+async def call_update_product(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
+    update_product = UpdateProduct(call, state, is_admin)
+    await update_product.dispatch()

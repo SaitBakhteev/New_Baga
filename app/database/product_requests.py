@@ -1,3 +1,6 @@
+import os
+
+from datetime import datetime
 from tortoise.transactions import in_transaction
 import traceback
 
@@ -35,3 +38,26 @@ async def _resort_products(products):
 
 async def get_all_products():
     return await Product.all().order_by('position')
+
+
+async def update_product(data, current_index: int, products: list):
+    try:
+        async with in_transaction():
+            product = products[current_index]
+            product.title, product.sale, product.description, product.position =(
+                data['title'], data['sale'],
+                data['description'], data['position']
+            )
+            current_photo, new_photo = products[current_index].photo, data['photo']
+            product.photo = new_photo
+            products[current_index].modified_at = datetime.now()
+            if current_photo != new_photo:
+                product.photo = new_photo
+
+            await product.save()
+
+        if current_photo != new_photo:
+            os.remove(current_photo)
+        products.sort(key=lambda p: p.position)
+    except Exception as e:
+        await logger.error(f'Error on update_product {e}:\n{traceback.format_exc()}')

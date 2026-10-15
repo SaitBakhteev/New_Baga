@@ -138,3 +138,11 @@ class CreateProductFSM(StatesGroup):
     sale = State()
     description = State()
     position = State()
+
+
+class UpdateProductFSM(StatesGroup):
+    photo = State()
+    title = State()
+    sale = State()
+    description = State()
+    position = State()
