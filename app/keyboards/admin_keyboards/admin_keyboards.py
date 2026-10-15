@@ -7,11 +7,11 @@ from ..universal_keyboards import interrupt_or_return_button, RETURN_TO_START_BU
 logger, sync_logger = setup_logger(__name__), setup_sync_logger(__name__)
 
 # Константы модуля
-_RETURN_TO_ADMIN_PANEL_BUTTON = interrupt_or_return_button(
+RETURN_TO_ADMIN_PANEL_BUTTON = interrupt_or_return_button(
     text='↩️ Назад', callback_data='/admpan', this_markup=False
 )
 
-_CANCEL_ADMIN_OPERATION_BUTTON = interrupt_or_return_button(
+CANCEL_ADMIN_OPERATION_BUTTON = interrupt_or_return_button(
     callback_data='/admpan', this_markup=False
 )
 
@@ -34,6 +34,7 @@ def admin_panel_kb():
     keyboard.add(InlineKeyboardButton(text='💠 Управление списком админов 😎', callback_data='admin_list'))
     keyboard.add(InlineKeyboardButton(text='💠 Коррекция статистики 📊', callback_data='stat_edit_begin'))
     keyboard.add(InlineKeyboardButton(text='💠 Изменить баланс 💰', callback_data='edit_balance'))
+    keyboard.add(InlineKeyboardButton(text='💠 Добавить новый товар/услугу 🎁', callback_data='add_new_product'))
     keyboard.add(RETURN_TO_START_BUTTON)
     keyboard.adjust(1)
     return keyboard.as_markup()
@@ -45,7 +46,7 @@ def admin_panel_kb():
 # Выбор типа создаваемй тренировки
 def show_creating_event_types_kb():
     keyboard = training_types_list_kb('create_event_type_is')
-    keyboard.add(_RETURN_TO_ADMIN_PANEL_BUTTON)
+    keyboard.add(RETURN_TO_ADMIN_PANEL_BUTTON)
     keyboard.adjust(1)
     return keyboard.as_markup()
 
@@ -79,7 +80,7 @@ def input_template_kb(templates: list) -> InlineKeyboardMarkup:
             keyboard.add(
                 InlineKeyboardButton(text=title, switch_inline_query_current_chat=dct["text"])
             )
-    keyboard.add(_CANCEL_ADMIN_OPERATION_BUTTON)
+    keyboard.add(CANCEL_ADMIN_OPERATION_BUTTON)
     keyboard.adjust(1)
     return keyboard.as_markup()
 
@@ -87,7 +88,7 @@ def input_template_kb(templates: list) -> InlineKeyboardMarkup:
 choose_pay_dline_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='12 часов', callback_data='payment_dedline:12')],
     [InlineKeyboardButton(text='24 часа', callback_data='payment_dedline:24')],
-    [_CANCEL_ADMIN_OPERATION_BUTTON]
+    [CANCEL_ADMIN_OPERATION_BUTTON]
 ])
 
 
@@ -98,7 +99,7 @@ def curr_tmplt_kb(template_text: str, event_id: int=None) -> InlineKeyboardMarku
         _cancel_btn = interrupt_or_return_button(callback_data=f'to_manage_of_event_is:{event_id}',
                                              this_markup=False)
     else:
-        _cancel_btn = _RETURN_TO_ADMIN_PANEL_BUTTON
+        _cancel_btn = RETURN_TO_ADMIN_PANEL_BUTTON
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=text, switch_inline_query_current_chat=switch)],
         [_cancel_btn],
@@ -109,7 +110,7 @@ def curr_tmplt_kb(template_text: str, event_id: int=None) -> InlineKeyboardMarku
 finish_create_event_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Сохранить шаблон', callback_data='save_template')],
     [InlineKeyboardButton(text='Утвердить новую тренировку 🆗', callback_data='add_new_event')],
-    [_CANCEL_ADMIN_OPERATION_BUTTON]
+    [CANCEL_ADMIN_OPERATION_BUTTON]
 ])
 
 
@@ -184,7 +185,7 @@ def edit_admins() -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardBuilder()
     keyboard.button(text='Добавить админа 😎', callback_data='edit_admin:add')
     keyboard.button(text='Удалить админа 🚯', callback_data='edit_admin:delete')
-    keyboard.add(_RETURN_TO_ADMIN_PANEL_BUTTON)
+    keyboard.add(RETURN_TO_ADMIN_PANEL_BUTTON)
     keyboard.adjust(1)
     return keyboard.as_markup()
 
@@ -195,6 +196,6 @@ def stat_edit_kb() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text='Редактирование посещений 🏃‍♂️', callback_data='stat_edit:visit')],
         [InlineKeyboardButton(text='Редактирование звезд ⭐️', callback_data='stat_edit:star')],
         [InlineKeyboardButton(text='Редактирование симпатий 💚', callback_data='stat_edit:like')],
-        [_RETURN_TO_ADMIN_PANEL_BUTTON]
+        [RETURN_TO_ADMIN_PANEL_BUTTON]
     ])
     return keyboard

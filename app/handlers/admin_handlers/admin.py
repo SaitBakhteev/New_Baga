@@ -2,8 +2,8 @@ from aiogram import F, Router
 from aiogram.filters import Command
 
 from app.operations.admin_operations.admin_operations import *
-
 from app.operations.admin_operations.manage_operations import *
+from app.operations.admin_operations.product_ops import *
 
 admin_router = Router()
 
@@ -129,3 +129,16 @@ async def call_delete_template(call: CallbackQuery | Message, state: FSMContext,
 async def call_edit_balance(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
     edit_balance = BalanceEdit(call, state, is_admin)
     await edit_balance.dispatch()
+
+
+@admin_router.callback_query(F.data=='add_new_product')
+@admin_router.callback_query(F.data=='add_sale')
+@admin_router.callback_query(F.data=='add_description')
+@admin_router.message(st.CreateProductFSM.photo)
+@admin_router.message(st.CreateProductFSM.title)
+@admin_router.message(st.CreateProductFSM.sale)
+@admin_router.message(st.CreateProductFSM.description)
+@admin_router.message(st.CreateProductFSM.position)
+async def call_create_product(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
+    create_product = CreateProduct(call, state, is_admin)
+    await create_product.dispatch()

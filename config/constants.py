@@ -38,6 +38,11 @@ REPER_HOURS = (8, 13, 17, 22)
 # Кэш список пользователей и дедлайнов
 user_cache, dedlines, dedline_notifications = dict(), [], []
 
+media_products_dir = "media/products/"
+
+# Кэш продуктов
+products = []
+
 SEASON_INDEX = [0]  # спец переменная, означающая начало летоисчисления сезона
 
 
@@ -50,7 +55,6 @@ async def season_index(write_mode: bool = False):
             SEASON_INDEX[0] += 1
             with open('season_index.txt', 'w') as f:
                 f.write(str(SEASON_INDEX[0]))
-    await logger.critical(f'загружено значение SEASON_INDEX = {SEASON_INDEX[0]}')
     return SEASON_INDEX[0]
 
 

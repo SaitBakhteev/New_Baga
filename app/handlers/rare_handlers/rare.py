@@ -9,6 +9,7 @@ from aiogram.dispatcher.router import Router
 from app.operations.often_ops_and_classes import cmd_start
 from app.operations.regisration_ops import registration_and_welcome
 from app.operations.rare_ops import ProfileManagment, SubscriptionManage, show_profile_menu, show_dev_info
+from app.operations.product_operations import ShowProducts
 
 from config.constants import user_cache
 from app import states as st
@@ -52,6 +53,13 @@ async def call_subcription_mng(call: CallbackQuery | Message, state: FSMContext,
 @rare_router.message(Command('dev'))
 async def dev(call: Message | CallbackQuery):
     await show_dev_info(call)
+
+
+@rare_router.callback_query(F.data=='show_products')
+@rare_router.callback_query(F.data.startswith("product_index"))
+async def call_show_products(call: Message | CallbackQuery, state: FSMContext, is_admin: bool):
+    show_prod = ShowProducts(call, state, is_admin)
+    await show_prod.dispatch()
 
 
 # @rare_router.message(Command('sign'))

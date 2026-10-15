@@ -1,6 +1,3 @@
-import asyncio
-
-from aiogram.types import InlineKeyboardMarkup
 from tortoise.exceptions import IntegrityError
 
 from app.operations.often_ops_and_classes import *

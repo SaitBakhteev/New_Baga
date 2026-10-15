@@ -130,3 +130,11 @@ class EditBalanceFSM(StatesGroup):
     input_username = State()
     edit_balance = State()
     confirm = State()
+
+
+class CreateProductFSM(StatesGroup):
+    photo = State()
+    title = State()
+    sale = State()
+    description = State()
+    position = State()

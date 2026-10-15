@@ -11,6 +11,7 @@ from tortoise.exceptions import DBConnectionError, OperationalError
 
 from app.handlers.main import main_router
 from app.database.requests import get_all_users
+from app.database.product_requests import get_all_products
 
 from config.constants import *
 from config.db_config import TORTOISE_ORM
@@ -60,7 +61,11 @@ async def startup(dispatcher: Dispatcher):
         users = await get_all_users()
         for user_ in users:
             user_cache[user_.tg_id] = user_
-        print(user_cache)
+
+        # Формирование списка товаров/услуг
+        products_from_db = await get_all_products()
+        for item_ in products_from_db:
+            products.append(item_)
 
         await season_index()  # загрузка текущего индекса летоичсчисления сезона
         await StatisticOps.stat_raiting_form()

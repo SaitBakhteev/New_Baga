@@ -95,4 +95,15 @@ class Voting(Model):
     причине поле question не соответствует своему названия, на самом деле это текст рассылки уведомлений подписчикам'''
     question = fields.TextField()
     training_type = fields.TextField(null=True)
-    
+
+
+class Product(Model):
+    id = fields.IntField(primary_key=True)
+    created_at = fields.DatetimeField(auto_now_add=True, timezone=timezone('Europe/Moscow'))
+    modified_at = fields.DatetimeField(auto_now_add=True, timezone=timezone('Europe/Moscow'))
+
+    photo = fields.TextField(null=True)
+    title = fields.TextField(null=True)
+    sale = fields.CharField(null=True, max_length=100)
+    description = fields.TextField(null=True)
+    position = fields.IntField(null=True)
