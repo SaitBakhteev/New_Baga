@@ -40,24 +40,35 @@ async def get_all_products():
     return await Product.all().order_by('position')
 
 
-async def update_product(data, current_index: int, products: list):
-    try:
-        async with in_transaction():
-            product = products[current_index]
-            product.title, product.sale, product.description, product.position =(
-                data['title'], data['sale'],
-                data['description'], data['position']
-            )
-            current_photo, new_photo = products[current_index].photo, data['photo']
-            product.photo = new_photo
-            products[current_index].modified_at = datetime.now()
-            if current_photo != new_photo:
-                product.photo = new_photo
+async def update_product(data, current_index, products):
+    product = products[current_index]
+    old_photo = product.photo
+    new_photo = data.get("photo")
+    now = datetime.now()
 
-            await product.save()
+    async with in_transaction():
+        await Product.filter(id=product.id).update(
+            title=data.get("title"),
+            sale=data.get("sale"),
+            description=data.get("description"),
+            position=data.get("position"),
+            photo=new_photo,
+            modified_at=now,
+        )
+    # Далее это место продолжится только если транзацкяи прошлда успешно?
+    # БД зафиксирована → теперь безопасно правим память
+    product.title = data.get("title")
+    product.sale = data.get("sale")
+    product.description = data.get("description")
+    product.position = data.get("position")
+    product.photo = new_photo
+    product.modified_at = now
 
-        if current_photo != new_photo:
-            os.remove(current_photo)
-        products.sort(key=lambda p: p.position)
-    except Exception as e:
-        await logger.error(f'Error on update_product {e}:\n{traceback.format_exc()}')
+    # файлы — после успеха БД
+    if old_photo and old_photo != new_photo and os.path.exists(old_photo):
+        try:
+            os.remove(old_photo)
+        except OSError as e:
+            logger.warning(f"Не удалил старый файл {old_photo}: {e}")
+
+    products.sort(key=lambda p: (p.position is None, p.position or 0))

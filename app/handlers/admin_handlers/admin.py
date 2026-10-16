@@ -154,3 +154,7 @@ async def call_create_product(call: CallbackQuery | Message, state: FSMContext, 
 async def call_update_product(call: CallbackQuery | Message, state: FSMContext, is_admin: bool):
     update_product = UpdateProduct(call, state, is_admin)
     await update_product.dispatch()
+
+@admin_router.callback_query(F.data.startswith('edit_sale'))
+async def call_delete_product(call: Message | CallbackQuery, state: FSMContext, is_admin: bool):
+    pass

@@ -1,10 +1,12 @@
 import asyncio
+import traceback
 
 from aiogram.types import FSInputFile, CallbackQuery
+from aiogram.exceptions import TelegramNetworkError
 
-from ..operations.often_ops_and_classes import ParentClassForTrainingOperations, delete_bkg
+from ..operations.often_ops_and_classes import ParentClassForTrainingOperations, delete_bkg, cmd_start
 from ..keyboards.product_kb import show_products_kb
-from config.constants import products
+from config.constants import products, user_cache
 
 
 class ShowProducts(ParentClassForTrainingOperations):
@@ -29,20 +31,24 @@ class ShowProducts(ParentClassForTrainingOperations):
         return {"current_index": current_index, "left_index": left_index, "right_index": right_index}
 
     async def show_product(self, begin_show_products=False):
-        data = self.product_index_counter(begin_show_products)
-        product = products[int(data["current_index"])]
-        keyboard = show_products_kb(data, self._is_admin)
+        try:
+            data = self.product_index_counter(begin_show_products)
+            product = products[int(data["current_index"])]
+            keyboard = show_products_kb(data, self._is_admin)
 
-        caption = ""
-        if product.title:
-            caption += f"📌 <b>{product.title}</b>\n"
-        if product.sale:
-            caption += f"💵 <b><i>{product.sale}</i></b>\n\n"
-        caption += f"{product.description}\n"
+            caption = ""
+            if product.title:
+                caption += f"📌 <b>{product.title}</b>\n"
+            if product.sale:
+                caption += f"💵 <b><i>{product.sale}</i></b>\n\n"
+            caption += f"{product.description}\n"
 
-        handler = self._handler.message if isinstance(self._handler, CallbackQuery) else self._handler
-        await handler.answer_photo(photo=FSInputFile(product.photo),
-                                   caption=caption, parse_mode="HTML",
-                                   reply_markup=keyboard)
-        await self._handler.answer()
-        asyncio.create_task(delete_bkg(self._handler))
+            handler = self._handler.message if isinstance(self._handler, CallbackQuery) else self._handler
+            await handler.answer_photo(photo=FSInputFile(product.photo),
+                                       caption=caption, parse_mode="HTML",
+                                       reply_markup=keyboard)
+            asyncio.create_task(delete_bkg(self._handler))
+        except TelegramNetworkError as e:
+            await self._state.clear()
+            await cmd_start(self._handler, self._state, self._is_admin, user_cache)
+            await self._handler.message.answer("🚫 Возникла ошибка при загрузке фото")

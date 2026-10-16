@@ -146,3 +146,8 @@ class UpdateProductFSM(StatesGroup):
     sale = State()
     description = State()
     position = State()
+
+
+class DeleteProductFSM(StatesGroup):
+    begin = State()
+    finish = State()

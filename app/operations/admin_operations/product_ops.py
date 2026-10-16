@@ -1,13 +1,18 @@
+import traceback
+
 import asyncio
 from aiogram.types import CallbackQuery
 
-from ..often_ops_and_classes import ParentClassForTrainingOperations, delete_bkg
+from ..often_ops_and_classes import ParentClassForTrainingOperations, delete_bkg, cmd_start
 from ..admin_operations.admin_operations import show_admin_panel
 import app.states as st
 from app.database.product_requests import create_product, update_product
-from config.constants import products, media_products_dir
+from config.constants import products, media_products_dir, BOT_NAME
+from config.log_config import setup_logger
 from ..product_operations import ShowProducts
 from ...keyboards.admin_keyboards.products_kb import CreateProductKeyboards, UpdateProductKeyboards
+
+logger = setup_logger(__name__)
 
 
 class CreateProduct(ParentClassForTrainingOperations):
@@ -75,6 +80,8 @@ class CreateProduct(ParentClassForTrainingOperations):
     async def _add_position_and_finish(self):
         try:
             position = int(self._handler.text.replace(" ", "")) - 1
+            if position < 0:
+                raise ValueError("less_1")
             await self._state.update_data(position=position)
             data = await self._state.get_data()
             await create_product(data, products)
@@ -82,7 +89,10 @@ class CreateProduct(ParentClassForTrainingOperations):
             await show_admin_panel(self._handler, self._state)
             await self._handler.answer("Новое объявление товара/услуги добавлено успешно 📍")
         except (TypeError, ValueError) as e:
-            await self._handler.answer("🚫 Некорректный формат числа. Потворите ввод")
+            msg = "☝🏼 Позиция не может быть меньше 1" if str(e) == "less_1" else ("🚫 Некорректный формат числа.")
+            msg += "\nПоворите ввод"
+            await self._handler.answer(msg)
+            return
 
 
 class UpdateProduct(ParentClassForTrainingOperations):
@@ -112,6 +122,11 @@ class UpdateProduct(ParentClassForTrainingOperations):
     async def _get_current_index(self):
         data = await self._state.get_data()
         return data["current_index"]
+
+    def _erase_bot_name(self, value: str):
+        transform_value = (value.replace("@", "").replace(f"{BOT_NAME}", "").
+                           replace(f"{BOT_NAME[1:]}", ""))
+        return transform_value
 
     # Меняем фото или пропускаем
     async def _change_photo_or_skip(self):
@@ -150,6 +165,7 @@ class UpdateProduct(ParentClassForTrainingOperations):
     async def _edit_title_and_wait_sale(self):
         title = self._handler.text
         title = title if title.strip() != "0" else None
+        title = self._erase_bot_name(title)
         await self._state.update_data(title = title)
         await self._state.set_state(st.UpdateProductFSM.sale)
         current_index = await self._get_current_index()
@@ -160,10 +176,10 @@ class UpdateProduct(ParentClassForTrainingOperations):
         keyboard = self._kb.inter_kb(sale, txt, current_index)
         await self._handler.answer(msg, reply_markup=keyboard, parse_mode="HTML")
 
-    async def _edit_sale_and_wait_description(self, sale=True):
-        sale = self._handler.text
+    async def _edit_sale_and_wait_description(self):
+        sale = self._erase_bot_name(self._handler.text)
         sale = sale if sale.strip() != "0" else None
-        await self._state.update_data(sale = sale)
+        await self._state.update_data(sale=sale)
         await self._state.set_state(st.UpdateProductFSM.description)
         current_index = await self._get_current_index()
         msg, description, txt = "Редактирование описания", "Текущее описание 🗒", products[current_index].description
@@ -172,7 +188,8 @@ class UpdateProduct(ParentClassForTrainingOperations):
         await asyncio.create_task(delete_bkg(self._handler))
 
     async def _edit_description_and_wait_position(self):
-        await self._state.update_data(description = self._handler.text)
+        description = self._erase_bot_name(self._handler.text)
+        await self._state.update_data(description = description)
         await self._state.set_state(st.UpdateProductFSM.position)
         current_index = await self._get_current_index()
         msg = "Редактирование приоритета"
@@ -183,17 +200,32 @@ class UpdateProduct(ParentClassForTrainingOperations):
 
     async def _edit_position_and_finish(self):
         try:
-            position = int(self._handler.text.replace(" ", "")) - 1
+            position = self._erase_bot_name(self._handler.text)
+            position = int(position.strip()) - 1
+            if position < 0:
+                raise ValueError("less_1")
             await self._state.update_data(position=position)
             current_index = await self._get_current_index()
             await self._state.update_data(current_index=current_index)
             data = await self._state.get_data()
             await update_product(data, current_index, products)
-            await self._state.clear()
             show_product = ShowProducts(self._handler, self._state, self._is_admin, current_index)
             await show_product.show_product()
             await self._handler.answer("Товар/услуга отредактирована успешно ✏️")
-            asyncio.create_task(delete_bkg(self._handler))
-
         except (TypeError, ValueError) as e:
-            await self._handler.answer("🚫 Некорректный формат числа. Потворите ввод")
+            msg = "☝🏼 Позиция не может быть меньше 1" if str(e) == "less_1" else ("🚫 Некорректный формат числа.")
+            msg += "\nПоворите ввод"
+            await self._handler.answer(msg)
+            return
+        except Exception as e:
+            await cmd_start(self._handler, self._state, self._is_admin)
+            await self._handler.answer("🚫 Возникла неизвестная ошибка!")
+            await logger.error(f"Error on _edit_position_and_finish: {e}\n{traceback.format_exc()}")
+            pass
+        await self._state.clear()
+        asyncio.create_task(delete_bkg(self._handler))
+
+
+class DeleteProduct(ParentClassForTrainingOperations):
+    async def dispatch(self):
+        pass

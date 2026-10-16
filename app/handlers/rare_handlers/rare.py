@@ -8,7 +8,7 @@ from aiogram.dispatcher.router import Router
 
 from app.operations.often_ops_and_classes import cmd_start
 from app.operations.regisration_ops import registration_and_welcome
-from app.operations.rare_ops import ProfileManagment, SubscriptionManage, show_profile_menu, show_dev_info
+from app.operations.rare_ops import ProfileManagment, SubscriptionManage, show_dev_info
 from app.operations.product_operations import ShowProducts
 
 from config.constants import user_cache
