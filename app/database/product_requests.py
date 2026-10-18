@@ -56,7 +56,7 @@ def _input_to_redis():
     None
     '''
     now = time.time()
-    dedline = now  + 30
+    dedline = now  + 3 * 24 * 60 * 60
     all_promo = redis_client.hgetall("promo")
     to_update = {}  # словарь для обновления кэшей
     for tg_id in user_cache:
