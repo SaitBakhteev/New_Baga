@@ -55,6 +55,7 @@ async def dev(call: Message | CallbackQuery):
     await show_dev_info(call)
 
 
+@rare_router.message(Command("promo"))
 @rare_router.callback_query(F.data=='show_products')
 @rare_router.callback_query(F.data.startswith("product_index"))
 @rare_router.callback_query(F.data.startswith("want_announcement"))
