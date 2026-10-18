@@ -57,13 +57,17 @@ def _input_to_redis():
     '''
     now = time.time()
     dedline = now  + 30
+    all_promo = redis_client.hgetall("promo")
+    to_update = {}  # словарь для обновления кэшей
     for tg_id in user_cache:
-        if not redis_client.hget("promo", tg_id):
-            redis_client.hset("promo", tg_id, dedline)
+        old_dedline = all_promo.get(str(tg_id))
+        if not old_dedline:
+            to_update[str(tg_id)] = dedline
         else:
-            old_dedline = redis_client.hget("promo", tg_id)
-            if now > old_dedline:
-                redis_client.hset("promo", tg_id, dedline)
+            if now > float(old_dedline):
+                to_update[str(tg_id)] = dedline
+    if to_update:
+        redis_client.hset("promo", mapping=to_update)
 
 
 async def get_all_products():
