@@ -125,7 +125,7 @@ class UpdateProduct(ParentClassForTrainingOperations):
         return data["current_index"]
 
     def _erase_bot_name(self, value: str):
-        transform_value = (value.replace("@", "").replace(f"{BOT_NAME}", "").
+        transform_value = (value.replace(f"@{BOT_NAME}", "").
                            replace(f"{BOT_NAME[1:]}", ""))
         return transform_value
 
