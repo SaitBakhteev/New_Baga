@@ -91,8 +91,9 @@ class ShowProducts(ParentClassForTrainingOperations):
                     enumerate(products),
                     key=lambda item: item[1].created_at
                 )
-                await asyncio.sleep(2)
-                await self._handler.answer(
+                await asyncio.sleep(3)
+                handler = self._handler.message if isinstance(self._handler, CallbackQuery) else self._handler
+                await handler.answer(
                     f"👋 Привет, <b>{self._handler.from_user.first_name}</b>!\n\n"
                     f"У нас появились <b>свежие предложения</b> товаров и услуг. 🛍️\n"
                     f"Скорее загляните, чтобы ничего не пропустить! 👇",
