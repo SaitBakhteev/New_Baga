@@ -85,6 +85,11 @@ class ShowProducts(ParentClassForTrainingOperations):
             if float(dedline) > now:
                 return
 
+            # Пытаемся удалить. Если вернулось 1 (успех) - мы "забронировали" показ.
+            is_first_click = redis_client.hdel("promo", tg_id)
+            if not is_first_click:
+                return  # 4. Если 0, значит другой клик уже удалил и запустил показ. Выходим.
+
             async def delayed_promo():
                 # Находим элемент с максимальным created_at и возвращаем его индекс
                 start_index, last_prod = max(
@@ -100,7 +105,6 @@ class ShowProducts(ParentClassForTrainingOperations):
                     parse_mode="HTML"
                 )
                 await self.show_product(start_index=start_index)
-                redis_client.hdel("promo", tg_id)
             asyncio.create_task(delayed_promo())
         else:
             return
