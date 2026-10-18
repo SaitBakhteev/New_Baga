@@ -20,31 +20,35 @@ class ShowProducts(ParentClassForTrainingOperations):
 
     async def dispatch(self):
             redis_client.hdel("promo", self._handler.from_user.id)
-            if self._handler.data == "show_products":
+            if isinstance(self._handler, CallbackQuery):
+                if self._handler.data == "show_products":
+                    await self.show_product(begin_show_products=True)
+                elif self._handler.data.startswith("product_index"):
+                    await self.show_product()
+                if self._handler.data == "want_announcement":
+                    await self.want_announcement()
+            else:
                 await self.show_product(begin_show_products=True)
-            elif self._handler.data.startswith("product_index"):
-                await self.show_product()
-            # await cmd_start(self._handler, self._state, self._is_admin, user_cache)
-            # asyncio.create_task(delete_bkg(self._handler))
-
-            if self._handler.data == "want_announcement":
-                await self.want_announcement()
 
     # Счетчик индексов кнопок
     def product_index_counter(self, begin_show_products=False, **kwargs):
         if "start_index" in kwargs:
             current_index = kwargs["start_index"]
         else:
-            if self._current_index is None:
-                current_index = int(self._handler.data.split(":")[1]) if not begin_show_products else 0
+            if isinstance(self._handler, CallbackQuery):
+                if self._current_index is None:
+                    current_index = int(self._handler.data.split(":")[1]) if not begin_show_products else 0
+                else:
+                    current_index = self._current_index
             else:
-                current_index = self._current_index
+                current_index = 0
         left_index = current_index - 1 if current_index > 0 else False
         right_index = current_index + 1 if current_index < len(products) - 1 else False
         return {"current_index": current_index, "left_index": left_index, "right_index": right_index}
 
     async def show_product(self, begin_show_products=False, **kwargs):
         try:
+            handler = self._handler.message if isinstance(self._handler, CallbackQuery) else self._handler
             if products:                # спец фильтр, чтобы сразу проверить есть ли какие-нибудь объявления
                 data = self.product_index_counter(begin_show_products, **kwargs)
                 product = products[int(data["current_index"])]
@@ -57,13 +61,11 @@ class ShowProducts(ParentClassForTrainingOperations):
                     caption += f"💵 <b><i>{product.sale}</i></b>\n\n"
                 caption += f"{product.description}\n"
 
-                handler = self._handler.message if isinstance(self._handler, CallbackQuery) else self._handler
                 await handler.answer_photo(photo=FSInputFile(product.photo),
                                            caption=caption, parse_mode="HTML",
                                            reply_markup=keyboard)
                 asyncio.create_task(delete_bkg(self._handler))
             else:
-                handler = self._handler.message if isinstance(self._handler, CallbackQuery) else self._handler
                 await handler.answer("Список объявлений товаров/услуг пока пуст 📭",
                                                    reply_markup=want_announcement_kb())
         except TelegramNetworkError as e:
