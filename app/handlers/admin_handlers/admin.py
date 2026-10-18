@@ -155,6 +155,18 @@ async def call_update_product(call: CallbackQuery | Message, state: FSMContext, 
     update_product = UpdateProduct(call, state, is_admin)
     await update_product.dispatch()
 
-@admin_router.callback_query(F.data.startswith('edit_sale'))
+
+@admin_router.callback_query(F.data.startswith('change_position'))
+@admin_router.message(st.ChangePositionFSM.finish)
+async def call_change_position(call: Message | CallbackQuery, state: FSMContext, is_admin: bool):
+    change_position = ChangePosition(call, state, is_admin)
+    await change_position.dispatch()
+
+
+@admin_router.callback_query(F.data.startswith('delete_product'))
+@admin_router.message(st.DeleteProductFSM.confirm)
 async def call_delete_product(call: Message | CallbackQuery, state: FSMContext, is_admin: bool):
-    pass
+    del_prod = DeleteProduct(call, state, is_admin)
+    await del_prod.dispatch()
+
+

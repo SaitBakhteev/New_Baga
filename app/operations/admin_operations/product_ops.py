@@ -6,11 +6,12 @@ from aiogram.types import CallbackQuery
 from ..often_ops_and_classes import ParentClassForTrainingOperations, delete_bkg, cmd_start
 from ..admin_operations.admin_operations import show_admin_panel
 import app.states as st
-from app.database.product_requests import create_product, update_product
-from config.constants import products, media_products_dir, BOT_NAME
+from app.database.product_requests import create_product, update_product, delete_product, update_position
+from config.constants import products, media_products_dir, BOT_NAME, redis_client
 from config.log_config import setup_logger
 from ..product_operations import ShowProducts
 from ...keyboards.admin_keyboards.products_kb import CreateProductKeyboards, UpdateProductKeyboards
+from ...keyboards.universal_keyboards import interrupt_or_return_button
 
 logger = setup_logger(__name__)
 
@@ -38,7 +39,7 @@ class CreateProduct(ParentClassForTrainingOperations):
                "Название товара можете прописать в подписи к фото")
         await self._handler.message.answer(msg, reply_markup=self._kb.interrupt_kb(), parse_mode="HTML")
         await self._state.set_state(st.CreateProductFSM.photo)
-        asyncio.create_task(delete_bkg(self._handler))
+        # asyncio.create_task(delete_bkg(self._handler))
 
     async def _upload_photo_to_server(self):
         if self._handler.photo:
@@ -49,7 +50,7 @@ class CreateProduct(ParentClassForTrainingOperations):
             await self._state.set_state(st.CreateProductFSM.sale)
             await self._handler.answer("Введите цену товара/услуги или пропустите этот шаг",
                                        reply_markup=self._kb.interplace_kb("add_description"))
-            await asyncio.create_task(delete_bkg(self._handler))
+            # await asyncio.create_task(delete_bkg(self._handler))
         else:
             await self._handler.answer('🚫 Ошибка загрузки!'
                                        'Загружать фото нужно <i><u>не как документ</u></i>')
@@ -193,7 +194,7 @@ class UpdateProduct(ParentClassForTrainingOperations):
         await self._state.set_state(st.UpdateProductFSM.position)
         current_index = await self._get_current_index()
         msg = "Редактирование приоритета"
-        position, txt = "Текущий приоритет 🔼🔽", str(products[current_index].position)
+        position, txt = "Текущий приоритет 🔼🔽", str(products[current_index].position+1)
         keyboard = self._kb.inter_kb(position, txt, current_index)
         await self._handler.answer(msg, reply_markup=keyboard, parse_mode="HTML")
         await asyncio.create_task(delete_bkg(self._handler))
@@ -228,4 +229,70 @@ class UpdateProduct(ParentClassForTrainingOperations):
 
 class DeleteProduct(ParentClassForTrainingOperations):
     async def dispatch(self):
-        pass
+        if isinstance(self._handler, CallbackQuery):
+            if self._handler.data.startswith("delete_product"):
+                await self._begin()
+        else:
+            if await self._state.get_state() == st.DeleteProductFSM.confirm:
+                await self._finish()
+
+    async def _begin(self):
+        current_index = int(self._handler.data.split(":")[1])
+        await self._state.update_data(current_index=current_index)
+        await self._state.set_state(st.DeleteProductFSM.confirm)
+        await self._handler.message.answer(
+            "Отправьте <b><i>да</i></b> для подтверждения удаления.\n"
+            "Для отмены действия отправьте любое другое сообщение"
+        )
+
+    async def _finish(self):
+        data = await self._state.get_data()
+        current_index = data["current_index"]
+        if self._handler.text.strip().lower() == "да":
+            product_id = products[current_index].id
+            await delete_product(product_id, products)
+            msg = "Объявление удалено 🗑️"
+            current_index = 0
+            if not products:
+                redis_client.delete("promo")
+        else:
+            msg = "⛔️ Операция удаления отменена"
+        await asyncio.create_task(delete_bkg(self._handler))
+        show_prod = ShowProducts(self._handler, self._state, self._is_admin, current_index)
+        await show_prod.show_product()
+        await self._handler.answer(msg)
+
+
+class ChangePosition(ParentClassForTrainingOperations):
+    async def dispatch(self):
+        if isinstance(self._handler, CallbackQuery):
+            if self._handler.data.startswith('change_position'):
+                await self._change_position()
+        else:
+            if await self._state.get_state() == st.ChangePositionFSM.finish:
+                await self._finish()
+
+    async def _change_position(self):
+        current_index = int(self._handler.data.split(":")[1])
+        await self._state.update_data(current_index=current_index)
+        current_position = products[current_index].position
+        msg = (f"<b>Текущая позиция в карусели</b>: {current_position+1}\n"
+               f"Введите новый номер позиции и отправьте сообщение боту")
+        await self._state.set_state(st.ChangePositionFSM.finish)
+        keyboard = interrupt_or_return_button(callback_data=f"product_index:{current_index}")
+        await self._handler.message.answer(msg, reply_markup=keyboard, parse_mode="HTML")
+
+    async def _finish(self):
+        try:
+            data = await self._state.get_data()
+            current_index = data["current_index"]
+            products[current_index].position = int(self._handler.text.strip()) - 1
+            await update_position(products, current_index)
+            msg = "🔝 Приоритет изменен успешно"
+        except (TypeError, ValueError):
+            msg = "🚫 Неверный формат. Операция отклонена"
+        await asyncio.create_task(delete_bkg(self._handler))
+        show_product = ShowProducts(self._handler, self._state, self._is_admin, current_index)
+        await show_product.show_product(start_index=current_index)
+        await self._handler.answer(msg, parse_mode="HTML")
+

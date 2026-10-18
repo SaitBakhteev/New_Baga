@@ -1,4 +1,5 @@
 import os
+import redis
 
 from datetime import datetime, timedelta
 
@@ -11,11 +12,13 @@ from aiogram.enums import ParseMode
 
 load_dotenv(find_dotenv())
 
+HOST, REDIS_PORT = os.getenv("HOST"), int(os.getenv("REDIS_PORT"))
 TOKEN, WEBHOOK_TOKEN = os.getenv("TOKEN"), os.getenv("WEBHOOK_TOKEN")
 BOT_NAME = os.getenv("BOT_NAME")
 URL = os.getenv("URL")
 
 logger = setup_logger(__name__)
+redis_client = redis.Redis(host=HOST, port=REDIS_PORT, db=0, protocol=2)
 
 # ---------- НАСТРОЙКА ПРОКСИ ----------
 

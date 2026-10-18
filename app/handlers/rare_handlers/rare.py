@@ -57,9 +57,12 @@ async def dev(call: Message | CallbackQuery):
 
 @rare_router.callback_query(F.data=='show_products')
 @rare_router.callback_query(F.data.startswith("product_index"))
+@rare_router.callback_query(F.data.startswith("want_announcement"))
 async def call_show_products(call: Message | CallbackQuery, state: FSMContext, is_admin: bool):
     show_prod = ShowProducts(call, state, is_admin)
     await show_prod.dispatch()
+
+# announcement
 
 
 # @rare_router.message(Command('sign'))

@@ -149,5 +149,8 @@ class UpdateProductFSM(StatesGroup):
 
 
 class DeleteProductFSM(StatesGroup):
-    begin = State()
+    confirm = State()  # подтверждение удаления товара/услуги
+
+
+class ChangePositionFSM(StatesGroup):
     finish = State()

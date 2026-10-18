@@ -5,11 +5,8 @@ from app.keyboards.universal_keyboards import interrupt_or_return_button
 
 
 class CreateProductKeyboards():
-    def interrupt_kb(current_index=None) -> InlineKeyboardMarkup:
-        if not current_index:
-            keyboard = InlineKeyboardMarkup(inline_keyboard=[[CANCEL_ADMIN_OPERATION_BUTTON]])
-        else:
-            keyboard = interrupt_or_return_button(f"product_index:{current_index}")
+    def interrupt_kb(self) -> InlineKeyboardMarkup:
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[CANCEL_ADMIN_OPERATION_BUTTON]])
         return keyboard
 
     def __init__(self, edit_mode=False):
@@ -21,10 +18,7 @@ class CreateProductKeyboards():
 
     def interplace_kb(self, call_data: str) -> InlineKeyboardMarkup:
         buttons = [[self._skip_kb(call_data)], [CANCEL_ADMIN_OPERATION_BUTTON]]
-        if self.edit_mode:
-            buttons.append([InlineKeyboardButton(text="📥 Заменить", callback_data="add_new_product")])
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        ])
+        keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
         return keyboard
 
 
@@ -41,9 +35,6 @@ class UpdateProductKeyboards():
         keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
         return keyboard
 
-    def _inline_insert_kb(self, txt):
-        pass
-
     # Клавиатура промежуточных шагов
     def inter_kb(self, title, txt, current_index:int) -> InlineKeyboardMarkup:
         buttons = [
@@ -53,12 +44,12 @@ class UpdateProductKeyboards():
         keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
         return keyboard
 
-    def _finish_buttons(self):
-        pass
 
 def manage_product_kb(current_index: int) -> list[InlineKeyboardButton]:
-    buttons = [
-        InlineKeyboardButton(text="Редактировать 📝", callback_data=f"edit_product:{current_index}"),
-        InlineKeyboardButton(text="Удалить 🗑",  callback_data=f"delete_product:{current_index}")
-    ]
+    buttons = [InlineKeyboardButton(text="Редактировать 📝", callback_data=f"edit_product:{current_index}"),
+            InlineKeyboardButton(text="Удалить 🗑",  callback_data=f"delete_product:{current_index}"),]
+    return buttons
+
+def change_position_product_kb(current_index: int) -> list[InlineKeyboardButton]:
+    buttons = [InlineKeyboardButton(text="Сменить приоритет 🔝", callback_data=f"change_position:{current_index}"),]
     return buttons

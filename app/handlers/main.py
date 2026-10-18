@@ -1,10 +1,10 @@
 from aiogram import Router, F
 from aiogram.filters import Command
 
+from ..operations.middleware import AdminMiddleware
 from ..operations.trainings_operations import *
 from app.handlers.rare_handlers.rare import rare_router
 from ..handlers.admin_handlers.admin import admin_router
-from ..handlers.for_tests import test_router
 from ..operations.stat_ops import ShowStat, ShowStatArchive
 
 from .. import states as st
