@@ -1,5 +1,6 @@
 import asyncio
 import time
+import traceback
 
 from aiogram.types import FSInputFile, CallbackQuery
 from aiogram.exceptions import TelegramNetworkError
@@ -7,6 +8,9 @@ from aiogram.exceptions import TelegramNetworkError
 from ..operations.often_ops_and_classes import ParentClassForTrainingOperations, delete_bkg, cmd_start
 from ..keyboards.product_kb import show_products_kb, want_announcement_kb
 from config.constants import products, user_cache, redis_client
+from config.log_config import setup_logger
+
+logger = setup_logger(__name__)
 
 
 class ShowProducts(ParentClassForTrainingOperations):
@@ -63,6 +67,7 @@ class ShowProducts(ParentClassForTrainingOperations):
                 await handler.answer("Список объявлений товаров/услуг пока пуст 📭",
                                                    reply_markup=want_announcement_kb())
         except TelegramNetworkError as e:
+            await logger.critical(f"Error on photo_load {e}\n: {traceback.format_exc()}")
             await self._state.clear()
             await cmd_start(self._handler, self._state, self._is_admin, user_cache)
             await self._handler.message.answer("🚫 Возникла ошибка при загрузке фото")
