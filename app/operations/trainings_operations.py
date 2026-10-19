@@ -1,3 +1,5 @@
+import asyncio
+
 from tortoise.exceptions import IntegrityError
 
 from app.operations.often_ops_and_classes import *
@@ -295,24 +297,31 @@ class AddLike(ParentClassForTrainingOperations):
 
     # Проверяем доступность голосования для дальнейших действий
     async def _check_avlblty_on_begin(self, event_user: list):
-        question, event_datetime = event_user[0]['event__question'], event_user[0]['event__event_datetime']
-        prtcpts_count = event_user[0]['event__participants_count']
-        main_lst = event_user[:prtcpts_count]  # отсекаем резерв
-        await self._state.update_data(main_lst=main_lst)
+        if not event_user:  # ← сюда, в начало
+            return ('Такой тренировки уже нет или список участников пуст 🤷🏼‍♂️.\n'
+                    'Зайдите вновь через главное меню и проверьте есть ли такая тренировка')
+        try:
+            question = event_user[0]['event__question']
+            event_datetime = event_user[0]['event__event_datetime']
+            prtcpts_count = event_user[0]['event__participants_count']
+            main_lst = event_user[:prtcpts_count]
+            await self._state.update_data(main_lst=main_lst)
 
-        i_am = next((item for item in main_lst if item['user__id']==self._user_id), None)
-        if not i_am:  # проверка, есть ли Вы в основном списке и не голосовали ли ранее
-            return 'Вы отсутствуете в основном списке 🙅🏻'
-        elif not question:
-            return 'К сожалению админ не добавил вопрос для голосования 🥺'
-        elif len(event_user) == 0:
-            return 'Увы, но никого нет в списке на тренировку 🤷🏼‍♂️'
-        elif datetime.now() + timedelta(hours=1) < event_datetime.replace(tzinfo=None):
-            return 'Голосование открывается через час после начала тренировки ⏱️️'
-        elif i_am['me_liked']:
-            return 'Вы уже ранее отдали свой голос ☝🏼'
-
-        return True
+            i_am = next((item for item in main_lst if item['user__id'] == self._user_id), None)
+            if not i_am:
+                return 'Вы отсутствуете в основном списке 🙅🏻'
+            if not question:
+                return 'К сожалению админ не добавил вопрос для голосования 🥺'
+            if datetime.now() + timedelta(hours=1) < event_datetime.replace(tzinfo=None):
+                return 'Голосование открывается через час после начала тренировки ⏱️️'
+            if i_am['me_liked']:
+                return 'Вы уже ранее отдали свой голос ☝🏼'
+            return True
+        except Exception:
+            asyncio.create_task(delete_bkg(self._handler))
+            await logger.exception("Ошибка в _check_avlblty_on_begin")
+            return ('🚫 Произошла неизвестная ошибка. Возможно этой тренировки уже нет\n'
+                    'Вернитесь в главное меню и проверьте наличие этой тренировки')
 
     async def _input(self):
         data = await self._state.get_data()
