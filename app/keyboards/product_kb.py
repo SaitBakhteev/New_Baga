@@ -18,7 +18,7 @@ def show_products_kb(data: dict, is_admin: bool) -> InlineKeyboardMarkup:
     if is_admin:  # нижний админский ряд кнопок редактирования и удаления текущего товара
         buttons.append(manage_product_kb(current_index))
         buttons.append(change_position_product_kb(current_index))
-    buttons.append([want_announcement_kb(False)])
+    # buttons.append([want_announcement_kb(False)])
     buttons.append([RETURN_TO_START_BUTTON])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 

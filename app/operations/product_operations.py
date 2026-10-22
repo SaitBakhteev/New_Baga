@@ -51,6 +51,10 @@ class ShowProducts(ParentClassForTrainingOperations):
     async def show_product(self, begin_show_products=False, **kwargs):
         try:
             handler = self._handler.message if isinstance(self._handler, CallbackQuery) else self._handler
+            promo_txt = ("📌📌📌📌📌📌📌\n"
+                         "По вопросам размещения объявления напишите "
+                         "@Rustambagautdinov или @SaitBakhteev 😌")
+
             if products:                # спец фильтр, чтобы сразу проверить есть ли какие-нибудь объявления
                 data = self.product_index_counter(begin_show_products, **kwargs)
                 product = products[int(data["current_index"])]
@@ -61,15 +65,16 @@ class ShowProducts(ParentClassForTrainingOperations):
                     caption += f"📌 <b>{product.title}</b>\n"
                 if product.sale:
                     caption += f"💵 <b><i>{product.sale}</i></b>\n\n"
-                caption += f"{product.description}\n"
+
+                caption += f"{product.description}\n\n<b><i>{promo_txt}</i></b>"
 
                 await handler.answer_photo(photo=FSInputFile(product.photo),
                                            caption=caption, parse_mode="HTML",
                                            reply_markup=keyboard)
                 asyncio.create_task(delete_bkg(self._handler))
             else:
-                await handler.answer("Список объявлений товаров/услуг пока пуст 📭",
-                                                   reply_markup=want_announcement_kb())
+                await handler.answer(f"Список объявлений товаров/услуг пока пуст 📭"
+                                     f"\n<b><i>{promo_txt}</i></b>")
         except TelegramNetworkError as e:
             await logger.critical(f"Error on photo_load {e}\n: {traceback.format_exc()}")
             await self._state.clear()
