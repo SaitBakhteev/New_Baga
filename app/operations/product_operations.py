@@ -44,7 +44,9 @@ class ShowProducts(ParentClassForTrainingOperations):
                 current_index = 0
         left_index = current_index - 1 if current_index > 0 else False
         right_index = current_index + 1 if current_index < len(products) - 1 else False
-        return {"current_index": current_index, "left_index": left_index, "right_index": right_index}
+        last_index = len(products) - 1
+        return {"current_index": current_index, "left_index": left_index,
+                "right_index": right_index, "last_index": last_index}
 
     async def show_product(self, begin_show_products=False, **kwargs):
         try:
