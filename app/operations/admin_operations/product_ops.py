@@ -6,7 +6,11 @@ from aiogram.types import CallbackQuery
 from ..often_ops_and_classes import ParentClassForTrainingOperations, delete_bkg, cmd_start
 from ..admin_operations.admin_operations import show_admin_panel
 import app.states as st
-from app.database.product_requests import create_product, update_product, delete_product, update_position
+from app.database.product_requests import (create_product,
+                                           update_product,
+                                           delete_product,
+                                           update_position,
+                                           reload_to_redis)
 from config.constants import products, media_products_dir, BOT_NAME, redis_client
 from config.log_config import setup_logger
 from ..product_operations import ShowProducts
@@ -254,7 +258,7 @@ class DeleteProduct(ParentClassForTrainingOperations):
             msg = "Объявление удалено 🗑️"
             current_index = 0
             if not products:
-                redis_client.delete("promo")
+                await redis_client.delete("promo")
         else:
             msg = "⛔️ Операция удаления отменена"
         await asyncio.create_task(delete_bkg(self._handler))
@@ -296,3 +300,7 @@ class ChangePosition(ParentClassForTrainingOperations):
         await show_product.show_product(start_index=current_index)
         await self._handler.answer(msg, parse_mode="HTML")
 
+
+async def reshow_promo(call: CallbackQuery):
+    await reload_to_redis()
+    await call.message.answer("Демонстрация выпадающей рекламы возобновлена")

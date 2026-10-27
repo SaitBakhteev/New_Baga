@@ -35,6 +35,7 @@ def admin_panel_kb():
     keyboard.add(InlineKeyboardButton(text='💠 Коррекция статистики 📊', callback_data='stat_edit_begin'))
     keyboard.add(InlineKeyboardButton(text='💠 Изменить баланс 💰', callback_data='edit_balance'))
     keyboard.add(InlineKeyboardButton(text='💠 Добавить новый товар/услугу 🎁', callback_data='add_new_product'))
+    keyboard.add(InlineKeyboardButton(text='💠 Возобновить показ рекламы 🔛', callback_data='reshow_promo'))
     keyboard.add(RETURN_TO_START_BUTTON)
     keyboard.adjust(1)
     return keyboard.as_markup()

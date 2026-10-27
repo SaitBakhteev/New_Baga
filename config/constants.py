@@ -1,5 +1,5 @@
 import os
-import redis
+import redis.asyncio as redis
 
 from datetime import datetime, timedelta
 
@@ -18,7 +18,7 @@ BOT_NAME = os.getenv("BOT_NAME")
 URL = os.getenv("URL")
 
 logger = setup_logger(__name__)
-redis_client = redis.Redis(host=HOST, port=REDIS_PORT, db=0, protocol=2)
+redis_client = redis.Redis(host=HOST, port=REDIS_PORT, db=0)
 
 # ---------- НАСТРОЙКА ПРОКСИ ----------
 

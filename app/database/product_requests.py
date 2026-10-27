@@ -29,7 +29,7 @@ async def create_product(data, products):
                                  position=data['position'],
                                  description=data['description'])
             await _resort_products(products)
-            _input_to_redis()
+            await _input_to_redis()
 
         except Exception as e:
             await logger.error(f'Error on create_product {e}:\n{traceback.format_exc()}')
@@ -43,7 +43,7 @@ async def _resort_products(products):
 
 
 # Вставлять в редис значения хешей всех юзеров и установки дедлайна
-def _input_to_redis():
+async def _input_to_redis():
     '''
     Функция работает по двум сценариям схеме
     1. Если tg_id юзера изначально нет в кэше,то добавляем
@@ -57,7 +57,7 @@ def _input_to_redis():
     '''
     now = time.time()
     dedline = now  + 3 * 24 * 60 * 60
-    all_promo = redis_client.hgetall("promo")
+    all_promo = await redis_client.hgetall("promo")
     to_update = {}  # словарь для обновления кэшей
     for tg_id in user_cache:
         old_dedline = all_promo.get(str(tg_id))
@@ -67,7 +67,14 @@ def _input_to_redis():
             if now > float(old_dedline):
                 to_update[str(tg_id)] = dedline
     if to_update:
-        redis_client.hset("promo", mapping=to_update)
+        await redis_client.hset("promo", mapping=to_update)
+
+
+# Вставка текущего абсолютного времени в redis после возобновления рекламы
+async def reload_to_redis():
+    current_time = time.time()
+    mapping = {str(k):current_time for k in user_cache}
+    await redis_client.hset("promo", mapping=mapping)
 
 
 async def get_all_products():

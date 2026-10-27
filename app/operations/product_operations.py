@@ -19,7 +19,7 @@ class ShowProducts(ParentClassForTrainingOperations):
         self._current_index = current_index
 
     async def dispatch(self):
-            redis_client.hdel("promo", self._handler.from_user.id)
+            await redis_client.hdel("promo", self._handler.from_user.id)
             if isinstance(self._handler, CallbackQuery):
                 if self._handler.data == "show_products":
                     await self.show_product(begin_show_products=True)
@@ -89,13 +89,13 @@ class ShowProducts(ParentClassForTrainingOperations):
     async def promo_managment(self, tg_id):
         if not products:
             return
-        now, dedline = time.time(), redis_client.hget("promo", tg_id)
+        now, dedline = time.time(), await redis_client.hget("promo", tg_id)
         if dedline:
             if float(dedline) > now:
                 return
 
             # Пытаемся удалить. Если вернулось 1 (успех) - мы "забронировали" показ.
-            is_first_click = redis_client.hdel("promo", tg_id)
+            is_first_click = await redis_client.hdel("promo", tg_id)
             if not is_first_click:
                 return  # 4. Если 0, значит другой клик уже удалил и запустил показ. Выходим.
 

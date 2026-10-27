@@ -170,3 +170,6 @@ async def call_delete_product(call: Message | CallbackQuery, state: FSMContext, 
     await del_prod.dispatch()
 
 
+@admin_router.callback_query(F.data=='reshow_promo')
+async def call_reshow_promo(call: CallbackQuery):
+    await reshow_promo(call)
