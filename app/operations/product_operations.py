@@ -109,7 +109,7 @@ class ShowProducts(ParentClassForTrainingOperations):
                 handler = self._handler.message if isinstance(self._handler, CallbackQuery) else self._handler
                 await handler.answer(
                     f"👋 Привет, <b>{self._handler.from_user.first_name}</b>!\n\n"
-                    f"У нас появились <b>свежие объявления</b>. 🛍️\n"
+                    f"У нас всегда есть что-то интересное. 🛍️\n"
                     f"Скорее загляните, чтобы ничего не пропустить! 👇",
                     parse_mode="HTML"
                 )
