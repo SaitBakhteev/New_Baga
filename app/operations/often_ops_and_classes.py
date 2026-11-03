@@ -4,7 +4,7 @@ import traceback
 
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
-from aiogram.exceptions import TelegramBadRequest
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 
 from html import escape
 import re
@@ -301,11 +301,16 @@ class SendMessages():
     @classmethod
     async def send_remind_about_quiz(cls, event, event_user, user_id_list: list):
         for user_id in user_id_list:
-            text = '<b>💚 НЕ ЗАБУДЬТЕ ПРОГОЛОСОВАТЬ 😊</b>\n\n'
-            text += show_text_about_event(event, event_user, user_id)
-            tg_id = next(int(k) for k in user_cache if user_cache[k].id==user_id)
-            keyboard = quiz_kb(event)
-            await bot.send_message(tg_id, text, parse_mode='HTML', reply_markup=keyboard)
+            try:
+                text = '<b>💚 НЕ ЗАБУДЬТЕ ПРОГОЛОСОВАТЬ 😊</b>\n\n'
+                text += show_text_about_event(event, event_user, user_id)
+                tg_id = next(int(k) for k in user_cache if user_cache[k].id==user_id)
+                keyboard = quiz_kb(event)
+                await bot.send_message(tg_id, text, parse_mode='HTML', reply_markup=keyboard)
+            except TelegramForbiddenError:
+                await logger.critical(f"Пользователь id={user_id} заблокировал уведомления от бота")
+            except Exception as e:
+                await logger.error(f'Ошибка в send_remind_about_quiz (user_id={user_id}): {e}')
 
     @classmethod
     async def to_admins(cls, text, now, event_datetime):
@@ -320,9 +325,12 @@ class SendMessages():
         if event_datetime - now < timedelta(hours=12):
             # await logger.critical(f'\n\nto_admins_txt: {text}')
             for k in user_cache:
-                if user_cache[k].admin_permissions:
-                    # print(f'to_admins: {int(k)}')
-                    await bot.send_message(int(k), text, parse_mode='HTML')
+                try:
+                    if user_cache[k].admin_permissions:
+                        # print(f'to_admins: {int(k)}')
+                        await bot.send_message(int(k), text, parse_mode='HTML')
+                except Exception as e:
+                    await logger.error(f'Ошибка в to_admins (tg_id={k}): {e}')
 
     @classmethod
     async def to_admins_about_non_marked_events(cls, events: list):
@@ -330,12 +338,18 @@ class SendMessages():
         for item in events:
             text += f'{item.event_text}\n\n'
         for k in user_cache:
-            if user_cache[k].admin_permissions:
-                # print(f'to_admins_about_non_marked_events: {int(k)}')
-                await bot.send_message(int(k), text, parse_mode='HTML')
+            try:
+                if user_cache[k].admin_permissions:
+                    # print(f'to_admins_about_non_marked_events: {int(k)}')
+                    await bot.send_message(int(k), text, parse_mode='HTML')
+            except Exception as e:
+                await logger.error(f'Ошибка в to_admins_about_non_marked_events (tg_id={k}): {e}')
 
     @classmethod
     async def send_to_admins_bug_or_norm(cls, msg):
         for k in user_cache:
-            if user_cache[k].admin_permissions:
-                await bot.send_message(int(k), msg, parse_mode='HTML')
+            try:
+                if user_cache[k].admin_permissions:
+                    await bot.send_message(int(k), msg, parse_mode='HTML')
+            except Exception as e:
+                await logger.error(f'Ошибка в send_to_admins_bug_or_norm (tg_id={k}): {e}')
