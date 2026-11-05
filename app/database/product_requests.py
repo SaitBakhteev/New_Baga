@@ -56,16 +56,13 @@ async def _input_to_redis():
     None
     '''
     now = time.time()
-    dedline = now  + 3 * 24 * 60 * 60
+    dedline = now  + 36 * 3600
     all_promo = await redis_client.hgetall("promo")
     to_update = {}  # словарь для обновления кэшей
     for tg_id in user_cache:
         old_dedline = all_promo.get(str(tg_id))
         if not old_dedline:
             to_update[str(tg_id)] = dedline
-        else:
-            if now > float(old_dedline):
-                to_update[str(tg_id)] = dedline
     if to_update:
         await redis_client.hset("promo", mapping=to_update)
 

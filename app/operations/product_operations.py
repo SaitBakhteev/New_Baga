@@ -1,6 +1,7 @@
 import asyncio
 import time
 import traceback
+from random import randint
 
 from aiogram.types import FSInputFile, CallbackQuery
 from aiogram.exceptions import TelegramNetworkError
@@ -19,7 +20,6 @@ class ShowProducts(ParentClassForTrainingOperations):
         self._current_index = current_index
 
     async def dispatch(self):
-            await redis_client.hdel("promo", self._handler.from_user.id)
             if isinstance(self._handler, CallbackQuery):
                 if self._handler.data == "show_products":
                     await self.show_product(begin_show_products=True)
@@ -94,17 +94,9 @@ class ShowProducts(ParentClassForTrainingOperations):
             if float(dedline) > now:
                 return
 
-            # Пытаемся удалить. Если вернулось 1 (успех) - мы "забронировали" показ.
-            is_first_click = await redis_client.hdel("promo", tg_id)
-            if not is_first_click:
-                return  # 4. Если 0, значит другой клик уже удалил и запустил показ. Выходим.
-
             async def delayed_promo():
                 # Находим элемент с максимальным created_at и возвращаем его индекс
-                start_index, last_prod = max(
-                    enumerate(products),
-                    key=lambda item: item[1].created_at
-                )
+                start_index = randint(0, len(products) - 1)
                 await asyncio.sleep(3)
                 handler = self._handler.message if isinstance(self._handler, CallbackQuery) else self._handler
                 await handler.answer(
@@ -113,7 +105,9 @@ class ShowProducts(ParentClassForTrainingOperations):
                     f"Скорее загляните, чтобы ничего не пропустить! 👇",
                     parse_mode="HTML"
                 )
+                await redis_client.hset("promo", tg_id, now + 36 * 3600)
                 await self.show_product(start_index=start_index)
             asyncio.create_task(delayed_promo())
         else:
+            await redis_client.hset("promo", tg_id, now + 36 * 3600)
             return
