@@ -93,6 +93,7 @@ class ShowProducts(ParentClassForTrainingOperations):
         if dedline:
             if float(dedline) > now:
                 return
+            await redis_client.hset("promo", tg_id, now + 36 * 3600)
             async def delayed_promo():
                 # Находим элемент с максимальным created_at и возвращаем его индекс
                 start_index = randint(0, len(products) - 1)
