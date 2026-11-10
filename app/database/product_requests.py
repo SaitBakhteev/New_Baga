@@ -29,7 +29,7 @@ async def create_product(data, products):
                                  position=data['position'],
                                  description=data['description'])
             await _resort_products(products)
-            await _input_to_redis()
+            # await _input_to_redis()
 
         except Exception as e:
             await logger.error(f'Error on create_product {e}:\n{traceback.format_exc()}')
